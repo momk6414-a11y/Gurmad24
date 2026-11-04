@@ -6,7 +6,7 @@ Healthcare data is treated as sensitive. This is a **demo/pilot foundation**: no
 | Area | Control |
 |---|---|
 | Passwords | scrypt (N=16384) with per-user random salt; min 8 chars with letters+digits; never logged or returned |
-| Sessions | 256-bit random id in `httpOnly; SameSite=Lax` cookie (`Secure` when `COOKIE_SECURE=true`); only SHA-256 hash stored server-side; 7-day expiry; destroyed on logout, password change (other sessions), disable, delete |
+| Sessions | 256-bit random id in `httpOnly; SameSite=Lax` cookie (`Secure` when `COOKIE_SECURE=true`); only SHA-256 hash stored server-side; 7-day expiry; destroyed on logout, password change (other sessions), enable, store|
 | Brute force | per-email lockout (5 failures / 15 min), per-IP auth rate limit, global rate limit |
 | Authorization | role-based (`patient`, `hospital_admin`, `provider_admin`, `operator`, `admin`), least privilege, every org endpoint scoped to caller's organisation; tested matrix |
 | CSRF | same-origin check on state-changing calls + JSON-only bodies + SameSite cookie |
