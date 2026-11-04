@@ -1,0 +1,15 @@
+{
+  "name": "gurmad24",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GURMAD 24 - emergency coordination (simulation) and digital healthcare marketplace platform. Zero runtime dependencies.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js",
+    "docs": "node scripts/gen-docs.js",
+    "backup": "node scripts/backup.js",
+    "restore": "node scripts/restore.js"
+  },
+  "engines": { "node": ">=18" }
+}
