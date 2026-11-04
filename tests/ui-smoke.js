@@ -28,10 +28,10 @@ const { chromium } = require('playwright');
   // full order flow through the UI
   await pg.goto(t.base + '/#/cards/' + cardId); await pg.reload(); await pg.click('text=/Dalbo kaarkan/'); await pg.check('#f_acceptTerms'); await pg.click('button:has-text("Gudbi dalab tijaabo")');
   await pg.waitForSelector('.receipt', { timeout: 8000 }).catch(() => errors.push('order flow: no receipt shown'));
-  await session('hospital', 'hospital@demo.gurmad24.test', 'DemoPass12345', ['/org', '/org/cards', '/org/services', '/org/appointments', '/org/sales', '/org/subscription', '/org/complaints', '/org/profile']);
+  await session('hospital', 'hospital@demo.gurmad24.test', 'DemoPass12345', ['/org', '/org/cards', '/org/services', '/org/appointments', '/org/sales', '/org/subscription', '/org/complaints', '/org/profile', '/account']);
   await session('ambulance', 'ambulance@demo.gurmad24.test', 'DemoPass12345', ['/org', '/org/requests', '/org/services', '/org/sales', '/org/subscription']);
   await session('operator', 'operator@demo.gurmad24.test', 'DemoPass12345', ['/ops', '/ops/case/' + caseId, '/ops/directory']);
-  await session('admin', 'admin@test.local', 'AdminPass123', ['/admin', '/admin/orgs', '/admin/users', '/admin/cards', '/admin/finance', '/admin/finance?tab=orders', '/admin/finance?tab=invoices', '/admin/finance?tab=statements', '/admin/revenue', '/admin/revenue?period=year', '/admin/settings', '/admin/complaints', '/admin/audit'], { width: 1100, height: 800 });
+  await session('admin', 'admin@test.local', 'AdminPass123', ['/admin', '/admin/orgs', '/admin/users', '/admin/cards', '/admin/finance', '/admin/finance?tab=orders', '/admin/finance?tab=invoices', '/admin/finance?tab=statements', '/admin/revenue', '/admin/revenue?period=year', '/admin/settings', '/admin/complaints', '/admin/audit', '/account'], { width: 1100, height: 800 });
   await browser.close(); await t.stop();
   console.log(`routes checked: ${checked}`); console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'No browser errors.'); process.exit(errors.length ? 1 : 0);
 })();
