@@ -36,7 +36,7 @@ function navItems() {
 function chrome() {
   const view = document.getElementById('view');
   document.getElementById('top').replaceChildren(
-    h('a', { class: 'brand', href: '#/' }, h('div', { class: 'logo' }, icon('shield', 22)), h('div', h('b', 'GURMAD 24'), h('small', t('Emergency Coordination & Health Marketplace')))),
+    h('a', { class: 'brand', href: '#/' }, h('img', { class: 'logo-img', src: '/icon.svg', width: 42, height: 42, alt: '' }), h('div', h('b', 'GURMAD 24'), h('small', t('Emergency Coordination & Health Marketplace')))),
     h('div', { class: 'top-actions' },
       h('div', { class: 'seg', role: 'group', 'aria-label': t('Language') }, [['so', 'SO'], ['en', 'EN']].map(([l, n]) => h('button', { 'aria-pressed': S.lang === l, onclick: () => { setLang(l); chrome(); render(true); } }, n))),
       S.user ? h('button', { class: 'btn sm ghost', onclick: logout }, icon('logout', 16), t('Log out')) : null));

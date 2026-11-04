@@ -88,3 +88,23 @@ input:focus,select:focus,textarea:focus{border-color:var(--mint)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 .top-actions .btn{white-space:nowrap}@media(max-width:480px){.brand small{display:none}.top{padding:8px 12px}}
+
+/* ---- v3 design: brand, hero, sections */
+.logo-img{width:42px;height:42px;border-radius:12px;box-shadow:0 8px 22px #29d7ae33;display:block}
+h1,h2,h3,h4{letter-spacing:-.01em}
+.sec-title{font-size:clamp(20px,3.4vw,26px);margin:26px 0 14px}
+.hero2{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:center;margin:4px 0 18px;padding:26px;border-radius:24px;border:1px solid var(--line);background:radial-gradient(circle at 90% 10%,#48e0b230,transparent 45%),linear-gradient(150deg,var(--panel2),var(--bg2));box-shadow:var(--shadow)}
+.hero2 h1{font-size:clamp(30px,6vw,50px);line-height:1.05;margin:8px 0 12px}.hero2 p{color:var(--muted);margin:0 0 16px;max-width:560px;font-size:17px}
+.hero2-img{width:100%;height:auto;border-radius:20px;box-shadow:0 20px 50px #00101466}
+@media(max-width:860px){.hero2{grid-template-columns:1fr;padding:18px}.hero2-img{order:-1;max-height:200px;object-fit:cover}}
+.stats-row{display:flex;gap:22px;margin-top:20px;flex-wrap:wrap}.stats-row b{display:block;font-size:28px;color:var(--mint);line-height:1}.stats-row span{font-size:12px;color:var(--muted)}
+.step,.who{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}
+.step h4,.who h4{font-size:17px;margin:10px 0 6px}.step p,.who p{margin:0 0 12px;color:var(--muted);font-size:14.5px}.step p{margin:0}
+.step-n{position:absolute;right:16px;top:10px;font-size:40px;font-weight:900;color:var(--mint);opacity:.18}
+.step-ic,.who-ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#48e0b233,#48e0b210);color:var(--mint);border:1px solid #48e0b244}
+.trust{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}.trust svg{color:var(--mint);flex:none;margin-top:2px}.trust p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.hc{transition:transform .15s,border-color .15s}.hc:hover{transform:translateY(-2px);border-color:var(--mint)}
+.hc .sym{background:linear-gradient(145deg,#127a80,#0a4a52);color:#c8fff0}
+.panel{backdrop-filter:blur(2px)}
+.btn{box-shadow:0 6px 18px #29d7ae22}.btn.ghost{box-shadow:none}
+.page-head h2{letter-spacing:-.02em}

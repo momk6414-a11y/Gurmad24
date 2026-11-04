@@ -102,5 +102,17 @@ export const so = {
 "I confirm this hospital has approved this card's description, price, validity period and terms, and that it is not presented as insurance.":"Waxaan xaqiijinayaa in isbitaalkani ansixiyey sharaxaadda, qiimaha, muddada ansaxa iyo shuruudaha kaarkan, iyo in aan loo soo bandhigin caymis ahaan.",
 "I agree to the privacy notice: GURMAD 24 stores only what is needed, never sells personal data, and I can export or delete my data at any time.":"Waan oggolahay ogeysiiska asturnaanta: GURMAD 24 wuxuu kaydiyaa wixii loo baahan yahay oo keliya, weligiis ma iibiyo xog shakhsi ah, waxaanan dhoofin/tirtiri karaa xogtayda wakhti kasta.",
 "verified":"la xaqiijiyey","pending":"sugaya","rejected":"la diiday","suspended":"la hakadiyey","hospital":"isbitaal","ambulance":"ambalaas","lab":"shaybaar","receipt":"rasiid","invoice":"qaansheeg","statement":"warbixin xisaab","credit":"qoraal celin",
+"Languages":"Luqado","How it works":"Sida ay u shaqeyso","Find":"Raadi","Use":"Isticmaal",
+"Browse verified hospitals and compare their health cards side by side.":"Fiiri isbitaallada la xaqiijiyey oo is barbar dhig kaararkooda caafimaadka.",
+"Order a card in a minute. In this demo no real money is charged.":"Dalbo kaar hal daqiiqo gudaheed. Demo-gan lacag dhab ah lagama qaado.",
+"Keep your receipt and show it at the hospital. Terms are those the hospital approved.":"Rasiidkaaga keydso oo isbitaalka ka tus. Shuruudaha waa kuwa isbitaalku ansixiyey.",
+"Built for everyone in healthcare":"Loogu talagalay qof kasta oo caafimaadka ku jira","Patients and families":"Bukaannada iyo qoysaska",
+"Compare cards, request appointments, get support in Somali or English.":"Is barbar dhig kaararka, codso ballamo, hel taageero Soomaali ama Ingiriisi.",
+"Publish your own health cards, set your prices, manage appointments and see your sales.":"Daabac kaararkaaga caafimaadka, deji qiimayaashaada, maamul ballamaha oo arag iibkaaga.",
+"Ambulance and labs":"Ambalaas iyo shaybaarro","List your services, manage availability and reach more patients.":"Liis garee adeegyadaada, maamul helitaanka oo gaadh bukaan badan.",
+"Trust and safety":"Aamin iyo badbaado","Verified organisations":"Hay'ado la xaqiijiyey","Every hospital and provider is reviewed by an administrator before it appears.":"Isbitaal kasta iyo bixiye kasta waxaa dib u eega maamule ka hor inta aysan muuqan.",
+"Hospitals approve their own terms":"Isbitaalladu waxay ansixiyaan shuruudahooda","Prices, services and refund rules are written and approved by each hospital.":"Qiimayaasha, adeegyada iyo xeerarka lacag-celinta waxaa qora oo ansixiya isbitaal kasta.",
+"Your data stays yours":"Xogtaadu adigaa leh","We never sell personal data. Download or delete your data any time.":"Weligeen ma iibinno xog shakhsi ah. Soo dejiso ama tirtir xogtaada wakhti kasta.",
+"No medical advice":"Talo caafimaad ma bixinno","The platform never diagnoses and never decides treatment.":"Madashu weligeed ma baadho cudurka mana go'aamiso daaweyn.",
 "Optional: ":"Ikhtiyaari: ","Skip to content":"U gudub nuxurka","Hello":"Salaan"
 };
