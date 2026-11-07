@@ -1,17 +1,26 @@
 
 // GURMAD 24 - Core application helpers
 // SVG icons, API, Somali/English, forms, tables, modals and dashboard tiles.
+
 import { so } from './i18n.js';
 
 // ---------- Storage and application state
+
 const LS = {
   get(k) {
-    try { return localStorage.getItem(k); }
-    catch (_) { return null; }
+    try {
+      return localStorage.getItem(k);
+    } catch (_) {
+      return null;
+    }
   },
+
   set(k, v) {
-    try { localStorage.setItem(k, v); }
-    catch (_) { /* Storage unavailable */ }
+    try {
+      localStorage.setItem(k, v);
+    } catch (_) {
+      // Storage unavailable
+    }
   },
 };
 
@@ -30,27 +39,34 @@ export function setLang(l) {
 }
 
 // ---------- Translation
+
 export function t(s, vars) {
   let out = (S.lang === 'so' && so[s]) || s;
+
   if (vars) {
     out = out.replace(/\{(\w+)\}/g, (_, k) =>
       vars[k] === undefined ? '' : vars[k]
     );
   }
+
   return out;
 }
 
 // ---------- Safe DOM builder
+
 const SVGNS = 'http://www.w3.org/2000/svg';
 
 export function h(tag, attrs, ...kids) {
   const el = document.createElement(tag);
 
-  if (attrs && (
-    typeof attrs !== 'object' ||
-    attrs.nodeType ||
-    Array.isArray(attrs)
-  )) {
+  if (
+    attrs &&
+    (
+      typeof attrs !== 'object' ||
+      attrs.nodeType ||
+      Array.isArray(attrs)
+    )
+  ) {
     kids.unshift(attrs);
     attrs = null;
   }
@@ -63,21 +79,23 @@ export function h(tag, attrs, ...kids) {
 
     if (v === false || v === null || v === undefined) continue;
 
-    if (k === 'class') el.className = v;
-    else if (k.startsWith('on') && typeof v === 'function') {
+    if (k === 'class') {
+      el.className = v;
+    } else if (k.startsWith('on') && typeof v === 'function') {
       el.addEventListener(k.slice(2), v);
-    }
-    else if (
+    } else if (
       k === 'style' ||
       k === 'value' ||
       k === 'checked' ||
       k === 'disabled' ||
       k === 'selected'
     ) {
-      try { el[k] = v; }
-      catch (_) { el.setAttribute(k, v); }
-    }
-    else {
+      try {
+        el[k] = v;
+      } catch (_) {
+        el.setAttribute(k, v);
+      }
+    } else {
       el.setAttribute(k, v === true ? '' : v);
     }
   }
@@ -89,7 +107,10 @@ export function h(tag, attrs, ...kids) {
 function append(el, kids) {
   for (const k of kids.flat(Infinity)) {
     if (k === null || k === undefined || k === false) continue;
-    el.append(k.nodeType ? k : document.createTextNode(String(k)));
+
+    el.append(
+      k.nodeType ? k : document.createTextNode(String(k))
+    );
   }
 }
 
@@ -100,6 +121,7 @@ export const frag = (...kids) => {
 };
 
 // ---------- SVG icon library
+
 const ICONS = {
   home: 'M3 11l9-8 9 8M5 10v10h14V10M9 20v-6h6v6',
   card: 'M3 6h18v12H3zM3 10h18M7 15h4',
@@ -159,9 +181,11 @@ export function icon(name, size = 20) {
 }
 
 // ---------- API client
+
 export class ApiError extends Error {
   constructor(status, code, fields) {
     super(code);
+    this.name = 'ApiError';
     this.status = status;
     this.code = code;
     this.fields = fields;
@@ -180,14 +204,17 @@ export async function api(method, path, body) {
       body: body !== undefined ? JSON.stringify(body) : undefined,
       credentials: 'same-origin',
     });
-  }
-  catch (_) {
+  } catch (_) {
     throw new ApiError(0, 'offline');
   }
 
   let data = null;
-  try { data = await res.json(); }
-  catch (_) { /* Non-JSON response */ }
+
+  try {
+    data = await res.json();
+  } catch (_) {
+    // Non-JSON response
+  }
 
   if (!res.ok) {
     throw new ApiError(
@@ -206,7 +233,23 @@ export const PATCH = (p, b = {}) => api('PATCH', p, b);
 export const PUT = (p, b = {}) => api('PUT', p, b);
 export const DEL = p => api('DELETE', p);
 
+// ---------- Navigation helpers
+
+export function go(path) {
+  const target = path.startsWith('/') ? path : '/' + path;
+  location.hash = '#' + target;
+}
+
+export function link(path, label) {
+  const target = path.startsWith('/') ? path : '/' + path;
+
+  return h('a', {
+    href: '#' + target,
+  }, label);
+}
+
 // ---------- Error messages
+
 const ERR = {
   offline: 'No connection to the server. Check your internet and try again.',
   auth_required: 'Please log in first.',
@@ -233,6 +276,7 @@ const ERR = {
   org_unavailable: 'This organisation is not available.',
   payload_too_large: 'Too much data.',
   provider_not_connected: 'This payment provider is not connected.',
+  download_failed: 'Download failed. Please try again.',
 };
 
 const FIELD = {
@@ -251,19 +295,30 @@ const FIELD = {
   invalid: 'Invalid value',
 };
 
-export const errText = e => t(ERR[e.code] || ERR.server_error);
-export const fieldText = c => t(FIELD[c] || c);
+export const errText = e =>
+  t(ERR[e.code] || ERR.server_error);
+
+export const fieldText = c =>
+  t(FIELD[c] || c);
 
 // ---------- Formatting
-export const money = c =>
-  (c < 0 ? '-' : '') + '$' + (Math.abs(c || 0) / 100).toFixed(2);
 
-export const fdate = iso => (iso ? String(iso).slice(0, 10) : '');
-export const fdt = iso => (iso ? String(iso).replace('T', ' ').slice(0, 16) : '');
+export const money = c =>
+  (c < 0 ? '-' : '') +
+  '$' +
+  (Math.abs(c || 0) / 100).toFixed(2);
+
+export const fdate = iso =>
+  (iso ? String(iso).slice(0, 10) : '');
+
+export const fdt = iso =>
+  (iso ? String(iso).replace('T', ' ').slice(0, 16) : '');
+
 export const pct = bps =>
   (bps / 100).toFixed(2).replace(/\.?0+$/, '') + '%';
 
 // ---------- Status badges
+
 const BADGE = {
   paid_sandbox: 'ok',
   published: 'ok',
@@ -324,9 +379,14 @@ const STATUS_TXT = {
 };
 
 export const badge = s =>
-  h('span', { class: 'badge ' + (BADGE[s] || 'mute') }, t(STATUS_TXT[s] || s));
+  h(
+    'span',
+    { class: 'badge ' + (BADGE[s] || 'mute') },
+    t(STATUS_TXT[s] || s)
+  );
 
 // ---------- Toast notifications
+
 let toastTimer;
 
 export function toast(msg, kind = 'ok') {
@@ -337,18 +397,21 @@ export function toast(msg, kind = 'ok') {
   el.className = 'toast show ' + kind;
 
   clearTimeout(toastTimer);
+
   toastTimer = setTimeout(() => {
     el.className = 'toast';
   }, 3200);
 }
 
 // ---------- Modal windows
+
 export function modal(title, body, { wide = false } = {}) {
   const prev = document.activeElement;
 
   const close = () => {
     back.remove();
     document.body.classList.remove('noscroll');
+
     if (prev && prev.focus) prev.focus();
   };
 
@@ -391,7 +454,10 @@ export function modal(title, body, { wide = false } = {}) {
   document.body.append(back);
   document.body.classList.add('noscroll');
 
-  const first = box.querySelector('input,select,textarea,button.btn');
+  const first = box.querySelector(
+    'input,select,textarea,button.btn'
+  );
+
   if (first) first.focus();
 
   return { close, box };
@@ -416,12 +482,18 @@ export const confirmBox = (msg, okText) =>
           { class: 'actions end' },
           h(
             'button',
-            { class: 'btn ghost', onclick: () => done(false) },
+            {
+              class: 'btn ghost',
+              onclick: () => done(false),
+            },
             t('Cancel')
           ),
           h(
             'button',
-            { class: 'btn', onclick: () => done(true) },
+            {
+              class: 'btn',
+              onclick: () => done(true),
+            },
             okText || t('Confirm')
           )
         )
@@ -430,9 +502,15 @@ export const confirmBox = (msg, okText) =>
   });
 
 // ---------- Forms
+
 export function form(
   fields,
-  { submit = 'Save', onSubmit, initial = {}, cancel } = {}
+  {
+    submit = 'Save',
+    onSubmit,
+    initial = {},
+    cancel,
+  } = {}
 ) {
   const inputs = {};
   const errs = {};
@@ -444,7 +522,8 @@ export function form(
 
   const rows = fields.map(f => {
     const val =
-      initial[f.name] !== undefined && initial[f.name] !== null
+      initial[f.name] !== undefined &&
+      initial[f.name] !== null
         ? initial[f.name]
         : f.default;
 
@@ -454,17 +533,22 @@ export function form(
       id: 'f_' + f.name,
       name: f.name,
       required: f.required,
-      placeholder: f.placeholder ? t(f.placeholder) : undefined,
+      placeholder: f.placeholder
+        ? t(f.placeholder)
+        : undefined,
       maxlength: f.max,
     };
 
     if (f.type === 'textarea' || f.type === 'lines') {
-      el = h('textarea', { ...base, rows: f.rows || 3 });
+      el = h('textarea', {
+        ...base,
+        rows: f.rows || 3,
+      });
+
       el.value = f.type === 'lines'
         ? (val || []).join('\n')
         : (val || '');
-    }
-    else if (f.type === 'select') {
+    } else if (f.type === 'select') {
       el = h(
         'select',
         base,
@@ -479,15 +563,13 @@ export function form(
           )
         )
       );
-    }
-    else if (f.type === 'checkbox') {
+    } else if (f.type === 'checkbox') {
       el = h('input', {
         ...base,
         type: 'checkbox',
         checked: !!val,
       });
-    }
-    else if (f.type === 'money') {
+    } else if (f.type === 'money') {
       el = h('input', {
         ...base,
         type: 'number',
@@ -498,8 +580,7 @@ export function form(
           ? ''
           : (val / 100).toFixed(2),
       });
-    }
-    else if (f.type === 'percent') {
+    } else if (f.type === 'percent') {
       el = h('input', {
         ...base,
         type: 'number',
@@ -507,12 +588,14 @@ export function form(
         min: '0',
         max: '50',
         inputmode: 'decimal',
-        value: val === undefined || val === null || val === ''
-          ? ''
-          : (val / 100).toFixed(2),
+        value:
+          val === undefined ||
+          val === null ||
+          val === ''
+            ? ''
+            : (val / 100).toFixed(2),
       });
-    }
-    else {
+    } else {
       el = h('input', {
         ...base,
         type: f.type || 'text',
@@ -525,7 +608,10 @@ export function form(
 
     inputs[f.name] = el;
 
-    const er = h('div', { class: 'field-error' });
+    const er = h('div', {
+      class: 'field-error',
+    });
+
     errs[f.name] = er;
 
     const label = h(
@@ -533,10 +619,14 @@ export function form(
       { for: 'f_' + f.name },
       t(f.label),
       f.required
-        ? h('span', {
-            class: 'req',
-            'aria-hidden': 'true',
-          }, ' *')
+        ? h(
+            'span',
+            {
+              class: 'req',
+              'aria-hidden': 'true',
+            },
+            ' *'
+          )
         : null
     );
 
@@ -554,14 +644,19 @@ export function form(
           { class: 'field' },
           label,
           el,
-          f.hint ? h('small', { class: 'hint' }, t(f.hint)) : null,
+          f.hint
+            ? h('small', { class: 'hint' }, t(f.hint))
+            : null,
           er
         );
   });
 
   const btn = h(
     'button',
-    { class: 'btn', type: 'submit' },
+    {
+      class: 'btn',
+      type: 'submit',
+    },
     t(submit)
   );
 
@@ -569,10 +664,12 @@ export function form(
     'form',
     {
       novalidate: true,
+
       onsubmit: async e => {
         e.preventDefault();
 
         banner.textContent = '';
+
         Object.values(errs).forEach(x => {
           x.textContent = '';
         });
@@ -583,49 +680,56 @@ export function form(
           const el = inputs[fd.name];
           let x;
 
-          if (fd.type === 'checkbox') x = el.checked;
-          else if (fd.type === 'lines') {
+          if (fd.type === 'checkbox') {
+            x = el.checked;
+          } else if (fd.type === 'lines') {
             x = el.value
               .split('\n')
               .map(s => s.trim())
               .filter(Boolean);
-          }
-          else if (fd.type === 'money' || fd.type === 'percent') {
+          } else if (
+            fd.type === 'money' ||
+            fd.type === 'percent'
+          ) {
             x = el.value === ''
               ? undefined
               : Math.round(Number(el.value) * 100);
-          }
-          else if (fd.type === 'number') {
-            x = el.value === '' ? undefined : Number(el.value);
-          }
-          else {
+          } else if (fd.type === 'number') {
+            x = el.value === ''
+              ? undefined
+              : Number(el.value);
+          } else {
             x = el.value;
           }
 
-          if (x !== undefined) v[fd.name] = x;
+          if (x !== undefined) {
+            v[fd.name] = x;
+          }
         }
 
         btn.disabled = true;
         btn.classList.add('busy');
 
         try {
-          await onSubmit(v);
-        }
-        catch (err) {
+          if (typeof onSubmit === 'function') {
+            await onSubmit(v);
+          }
+        } catch (err) {
           if (err instanceof ApiError) {
             banner.textContent = errText(err);
 
             for (const [k, c] of Object.entries(err.fields || {})) {
               const key = k.replace(/\[\d+\]$/, '');
-              if (errs[key]) errs[key].textContent = fieldText(c);
+
+              if (errs[key]) {
+                errs[key].textContent = fieldText(c);
+              }
             }
-          }
-          else {
+          } else {
             banner.textContent = t(ERR.server_error);
             console.error(err);
           }
-        }
-        finally {
+        } finally {
           btn.disabled = false;
           btn.classList.remove('busy');
         }
@@ -656,7 +760,12 @@ export function form(
 }
 
 // ---------- Responsive tables
-export function table(cols, rows, { empty = 'Nothing here yet.' } = {}) {
+
+export function table(
+  cols,
+  rows,
+  { empty = 'Nothing here yet.' } = {}
+) {
   if (!rows.length) return emptyState(empty);
 
   return h(
@@ -695,6 +804,7 @@ export function table(cols, rows, { empty = 'Nothing here yet.' } = {}) {
 }
 
 // ---------- Empty states and loading
+
 export const emptyState = (msg, action) =>
   h(
     'div',
@@ -718,6 +828,7 @@ export const loading = () =>
   );
 
 // ---------- Panels and dashboard tiles
+
 export const panel = (title, body, right) =>
   h(
     'section',
@@ -770,6 +881,7 @@ export const tile = (label, value, sub, onclick) =>
   );
 
 // ---------- Lists and notices
+
 export const list = items =>
   h(
     'ul',
@@ -785,10 +897,17 @@ export const demoNote = text =>
     h('span', t(text))
   );
 
-
 // ---------- File downloads
-export function download(name, content, type = 'application/json') {
-  const blob = new Blob([content], { type });
+
+export function download(
+  name,
+  content,
+  type = 'application/json'
+) {
+  const blob = content instanceof Blob
+    ? content
+    : new Blob([content], { type });
+
   const url = URL.createObjectURL(blob);
 
   const a = h('a', {
@@ -801,4 +920,45 @@ export function download(name, content, type = 'application/json') {
   a.remove();
 
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ---------- API file downloads
+
+export async function downloadApi(path, filename) {
+  try {
+    const res = await fetch('/api' + path, {
+      method: 'GET',
+      credentials: 'same-origin',
+    });
+
+    if (!res.ok) {
+      let data = null;
+
+      try {
+        data = await res.json();
+      } catch (_) {
+        // Response was not JSON
+      }
+
+      throw new ApiError(
+        res.status,
+        (data && data.error) || 'server_error'
+      );
+    }
+
+    const blob = await res.blob();
+
+    download(
+      filename,
+      blob,
+      blob.type || 'text/csv'
+    );
+  } catch (err) {
+    toast(
+      err instanceof ApiError
+        ? errText(err)
+        : t('Download failed.'),
+      'err'
+    );
+  }
 }
