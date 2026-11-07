@@ -796,3 +796,20 @@ export function download(name, text, type = 'application/json') {
   });
 
   document.body.appen
+
+/* GURMAD 24 - Dashboard icon alignment */
+.tile .tile-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tile .tile-title svg {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--mint);
+}
