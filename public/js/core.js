@@ -785,9 +785,10 @@ export const demoNote = text =>
     h('span', t(text))
   );
 
+
 // ---------- File downloads
-export function download(name, text, type = 'application/json') {
-  const blob = new Blob([text], { type });
+export function download(name, content, type = 'application/json') {
+  const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
 
   const a = h('a', {
@@ -795,21 +796,9 @@ export function download(name, text, type = 'application/json') {
     download: name,
   });
 
-  document.body.appen
+  document.body.append(a);
+  a.click();
+  a.remove();
 
-/* GURMAD 24 - Dashboard icon alignment */
-.tile .tile-title {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.tile .tile-title svg {
-  flex: 0 0 18px;
-  width: 18px;
-  height: 18px;
-  color: var(--mint);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
