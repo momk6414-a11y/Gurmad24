@@ -1,8 +1,8 @@
 
-// GURMAD 24 Service Worker
-// Cache static app files only. Never cache API or personal data.
+// GURMAD 24 - Service Worker
+// Version 5: refreshes old app cache and keeps API/personal data uncached.
 
-const CACHE = 'g24-v4';
+const CACHE = 'g24-v5';
 
 const SHELL = [
   '/',
@@ -26,22 +26,26 @@ const SHELL = [
 
 const SHELL_PATHS = new Set(SHELL);
 
+// Install the new cache.
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE)
       .then(async cache => {
         await Promise.all(
-          SHELL.map(path =>
-            cache.add(path).catch(error => {
-              console.warn('Could not cache:', path, error);
-            })
-          )
+          SHELL.map(async path => {
+            try {
+              await cache.add(path);
+            } catch (error) {
+              console.warn('GURMAD 24: Could not cache:', path, error);
+            }
+          })
         );
       })
       .then(() => self.skipWaiting())
   );
 });
 
+// Delete old GURMAD caches and activate the new worker.
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
@@ -56,31 +60,38 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Network-first strategy for approved static app files only.
 self.addEventListener('fetch', event => {
   const request = event.request;
+
+  if (request.method !== 'GET') return;
+
   const url = new URL(request.url);
 
-  // Never intercept POST, API requests or external websites.
+  // Never cache API requests or external websites.
   if (
-    request.method !== 'GET' ||
     url.origin !== self.location.origin ||
     url.pathname.startsWith('/api/')
   ) {
     return;
   }
 
-  // Only handle approved static app files.
-  if (!SHELL_PATHS.has(url.pathname)) {
-    return;
-  }
+  // Ignore files outside the approved app shell.
+  if (!SHELL_PATHS.has(url.pathname)) return;
 
   event.respondWith(
     fetch(request)
       .then(response => {
         if (response.ok && response.type === 'basic') {
           const copy = response.clone();
-          caches.open(CACHE).then(cache => cache.put(request, copy));
+
+          caches.open(CACHE)
+            .then(cache => cache.put(request, copy))
+            .catch(error => {
+              console.warn('GURMAD 24: Cache update failed:', error);
+            });
         }
+
         return response;
       })
       .catch(async () => {
@@ -89,11 +100,19 @@ self.addEventListener('fetch', event => {
         if (cached) return cached;
 
         if (request.mode === 'navigate') {
-          return await caches.match('/index.html') ||
-            new Response('GURMAD 24 is offline. Please reconnect.', {
+          const index = await caches.match('/index.html');
+
+          if (index) return index;
+
+          return new Response(
+            'GURMAD 24 is offline. Please reconnect.',
+            {
               status: 503,
-              headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-            });
+              headers: {
+                'Content-Type': 'text/plain; charset=utf-8'
+              }
+            }
+          );
         }
 
         return new Response('Offline', { status: 503 });
