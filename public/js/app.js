@@ -38,6 +38,7 @@ function navItems() {
     ['/cards', 'card', 'Cards'],
     ['/hospitals', 'hospital', 'Hospitals'],
     ['/services', 'ambulance', 'Services'],
+    ['/me/support', 'chat', 'Support'],
     ['/emergency', 'alert', 'Emergency'],
     ['/login', 'user', 'Log in']
   ];
@@ -48,10 +49,10 @@ function navItems() {
         ['/', 'home', 'Home'],
         ['/cards', 'card', 'Cards'],
         ['/hospitals', 'hospital', 'Hospitals'],
-        ['/services', 'ambulance', 'Services'],
+        ['/me/support', 'chat', 'Support'],
         ['/me/orders', 'bag', 'Orders'],
         ['/me/appointments', 'calendar', 'Appointments'],
-        ['/me/support', 'chat', 'Support'],
+        ['/services', 'ambulance', 'Services'],
         ['/emergency', 'alert', 'Emergency'],
         ['/me/account', 'user', 'Account']
       ];

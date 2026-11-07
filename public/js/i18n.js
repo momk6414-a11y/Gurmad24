@@ -114,5 +114,9 @@ export const so = {
 "Hospitals approve their own terms":"Isbitaalladu waxay ansixiyaan shuruudahooda","Prices, services and refund rules are written and approved by each hospital.":"Qiimayaasha, adeegyada iyo xeerarka lacag-celinta waxaa qora oo ansixiya isbitaal kasta.",
 "Your data stays yours":"Xogtaadu adigaa leh","We never sell personal data. Download or delete your data any time.":"Weligeen ma iibinno xog shakhsi ah. Soo dejiso ama tirtir xogtaada wakhti kasta.",
 "No medical advice":"Talo caafimaad ma bixinno","The platform never diagnoses and never decides treatment.":"Madashu weligeed ma baadho cudurka mana go'aamiso daaweyn.",
-"Optional: ":"Ikhtiyaari: ","Skip to content":"U gudub nuxurka","Hello":"Salaan"
+"Optional: ":"Ikhtiyaari: ","Skip to content":"U gudub nuxurka","Hello":"Salaan",
+"Questions or a complaint?":"Su'aal ama cabasho?",
+"Send us a message about an order, a hospital or a provider. Our team replies inside the app.":"Noo soo dir fariin ku saabsan dalab, isbitaal ama bixiye. Kooxdayadu waxay kaaga jawaabi doontaa gudaha app-ka.",
+"You will be asked to log in first.":"Marka hore waxaa lagu weydiin doonaa inaad gasho.",
+"Send a complaint":"Dir cabasho"
 };
