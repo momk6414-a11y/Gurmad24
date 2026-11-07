@@ -107,4 +107,52 @@ h1,h2,h3,h4{letter-spacing:-.01em}
 .hc .sym{background:linear-gradient(145deg,#127a80,#0a4a52);color:#c8fff0}
 .panel{backdrop-filter:blur(2px)}
 .btn{box-shadow:0 6px 18px #29d7ae22}.btn.ghost{box-shadow:none}
-.page-head h2{letter-spacing:-.02em}
+.page-head h2{letter-spacing:-.02em}/* GURMAD 24 - Dashboard icon styling */
+.tile {
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+
+.tile .tile-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tile .tile-title svg {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--mint);
+}
+
+.tile b {
+  display: block;
+  font-size: 26px;
+  margin-top: 5px;
+}
+
+.tile small {
+  display: block;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.tile.click {
+  cursor: pointer;
+  transition: transform .18s, border-color .18s;
+}
+
+.tile.click:hover {
+  transform: translateY(-2px);
+  border-color: var(--mint);
+}
+
+.tile:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
