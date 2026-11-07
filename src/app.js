@@ -139,8 +139,17 @@ class App {
     fs.readFile(file, (err, data) => {
       if (err) return this.text(res, 404, 'Not found', 'text/plain');
       const ext = path.extname(file);
-      const noCache = ext === '.html' || path.basename(file) === 'sw.js';
-      res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': noCache ? 'no-cache' : 'public, max-age=3600' });
+      // App code and artwork always revalidate (ETag), so a deploy shows up on the next load.
+      // Binary images keep a short cache.
+      const revalidate = ['.html', '.js', '.css', '.svg', '.webmanifest'].includes(ext);
+      const etag = '"' + require('crypto').createHash('sha1').update(data).digest('hex').slice(0, 20) + '"';
+      if (revalidate && req.headers['if-none-match'] === etag) {
+        res.writeHead(304, { ETag: etag, 'Cache-Control': 'no-cache' });
+        return res.end();
+      }
+      const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': revalidate ? 'no-cache' : 'public, max-age=3600' };
+      if (revalidate) headers.ETag = etag;
+      res.writeHead(200, headers);
       res.end(req.method === 'HEAD' ? undefined : data);
     });
   }

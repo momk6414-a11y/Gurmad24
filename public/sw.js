@@ -2,7 +2,7 @@
 // GURMAD 24 - Service Worker
 // Version 5: refreshes old app cache and keeps API/personal data uncached.
 
-const CACHE = 'g24-v6';
+const CACHE = 'g24-v7';
 
 const SHELL = [
   '/',
@@ -42,7 +42,7 @@ self.addEventListener('install', event => {
         await Promise.all(
           SHELL.map(async path => {
             try {
-              await cache.add(path);
+              await cache.add(new Request(path, { cache: 'reload' }));
             } catch (error) {
               console.warn('GURMAD 24: Could not cache:', path, error);
             }
@@ -88,7 +88,7 @@ self.addEventListener('fetch', event => {
   if (!SHELL_PATHS.has(url.pathname)) return;
 
   event.respondWith(
-    fetch(request)
+    fetch(request, { cache: 'no-cache' })
       .then(response => {
         if (response.ok && response.type === 'basic') {
           const copy = response.clone();
