@@ -340,4 +340,5 @@ window.addEventListener('online', () => {
   .catch(error => {
     console.error('GURMAD 24 service worker update failed:', error);
   });
-}
+  }
+})();
