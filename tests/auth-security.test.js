@@ -1,8 +1,12 @@
 'use strict';
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const H = require('./helper');
 const S = require('../src/security');
+const { ensureAdmin } = require('../src/seed');
 
 let t;
 before(async () => { t = await H.start(); });
@@ -41,6 +45,26 @@ test('passwords are stored as salted scrypt hashes, never plain', () => {
   assert.ok(S.verifyPassword('Secret123', h)); assert.ok(!S.verifyPassword('secret123', h));
   assert.notEqual(S.hashPassword('Secret123'), h); // random salt
   const raw = JSON.stringify(t.store.data); assert.ok(!raw.includes('Passw0rd12'));
+});
+
+test('generated passwords preserve their format and admin setup does not log credentials', () => {
+  for (let i = 0; i < 10; i++) assert.match(S.randomPassword(), /^[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}7[a-zA-Z0-9]{2}$/);
+
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'g24-seed-test-'));
+  try {
+    for (const adminPassword of ['', 'ConfiguredSecret123']) {
+      const users = [];
+      const messages = [];
+      const app = { ctx: { store: { find: () => null } }, createUser: user => users.push(user) };
+      ensureAdmin(app, { adminPassword, adminEmail: 'admin-secret@example.test', dataDir }, message => messages.push(message));
+      assert.equal(users.length, 1);
+      assert.equal(messages.length, 1);
+      assert.ok(!messages[0].includes(users[0].password));
+      assert.ok(!messages[0].includes('admin-secret@example.test'));
+    }
+  } finally {
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
 });
 
 test('API security: auth required, role enforced, CSRF origin, JSON only, body limit, headers', async () => {

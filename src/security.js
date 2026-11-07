@@ -24,8 +24,8 @@ function passwordProblem(pw) {
 }
 function randomPassword() {
   const alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let s = ''; const b = crypto.randomBytes(14);
-  for (const x of b) s += alphabet[x % alphabet.length];
+  let s = '';
+  for (let i = 0; i < 14; i++) s += alphabet[crypto.randomInt(alphabet.length)];
   return s.slice(0, 6) + '-' + s.slice(6, 12) + '7' + s.slice(12);
 }
 
