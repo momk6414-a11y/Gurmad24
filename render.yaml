@@ -1,21 +1,27 @@
-# Render.com blueprint: one web service + persistent disk. Requires a paid instance type for disks.
+
+# GURMAD 24 - Render Free Demo
+# Xogta Free plan-ku waa ku-meel-gaar.
+# Ha gelin xog bukaan oo dhab ah.
 services:
   - type: web
     name: gurmad24
     runtime: node
-    plan: starter
-    buildCommand: "echo no build needed"
+    plan: free
+    buildCommand: "npm install"
     startCommand: "node server.js"
     healthCheckPath: /api/health
-    disk:
-      name: gurmad24-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
-      - { key: DATA_DIR, value: /var/data }
-      - { key: TRUST_PROXY, value: "true" }
-      - { key: COOKIE_SECURE, value: "true" }
-      - { key: DEMO_MODE, value: "true" }
-      - { key: SEED_DEMO_DATA, value: "true" }
-      - { key: ADMIN_EMAIL, sync: false }
-      - { key: ADMIN_PASSWORD, sync: false }
+      - key: DATA_DIR
+        value: /tmp/gurmad24-data
+      - key: TRUST_PROXY
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: DEMO_MODE
+        value: "true"
+      - key: SEED_DEMO_DATA
+        value: "true"
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
