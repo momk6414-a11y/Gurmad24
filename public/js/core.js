@@ -809,7 +809,7 @@ export const emptyState = (msg, action) =>
   h(
     'div',
     { class: 'empty' },
-    icon('list', 28),
+    h('img', { class: 'empty-art', src: '/img/empty.svg', alt: '', width: 160, height: 120 }),
     h('p', t(msg)),
     action || null
   );

@@ -2,7 +2,7 @@
 // GURMAD 24 - Service Worker
 // Version 5: refreshes old app cache and keeps API/personal data uncached.
 
-const CACHE = 'g24-v5';
+const CACHE = 'g24-v6';
 
 const SHELL = [
   '/',
@@ -20,8 +20,16 @@ const SHELL = [
   '/manifest.webmanifest',
   '/icon.svg',
   '/img/hero.svg',
+  '/img/empty.svg',
+  '/img/card-mint.svg',
+  '/img/card-blue.svg',
+  '/img/card-violet.svg',
+  '/img/org-hospital.svg',
+  '/img/org-lab.svg',
+  '/img/org-ambulance.svg',
   '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/icons/icon-512.png',
+  '/icons/apple-touch-icon.png'
 ];
 
 const SHELL_PATHS = new Set(SHELL);

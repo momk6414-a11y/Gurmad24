@@ -71,6 +71,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--mint)}
 .rt td .actions{margin:0}
 @media(max-width:720px){.rt thead{display:none}.rt,.rt tbody,.rt tr,.rt td{display:block;width:100%}.rt tr{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:10px;background:var(--panel2)}.rt td{display:flex;justify-content:space-between;gap:12px;border:0;padding:5px 0;text-align:right}.rt td:before{content:attr(data-l);color:var(--muted);font-size:12px;text-align:left;flex:none;max-width:45%}}
 /* misc */
+.hc .art{width:100%;height:auto;aspect-ratio:320/112;border-radius:12px;display:block}
+.empty-art{width:160px;max-width:60%;height:auto;display:block;margin:0 auto 4px}
 .empty{text-align:center;color:var(--muted);padding:26px 10px}.empty p{margin:8px 0 0}
 .loading{display:grid;gap:12px;padding:10px 0}.skel{height:18px;border-radius:8px;background:linear-gradient(90deg,var(--panel) 25%,var(--panel2) 50%,var(--panel) 75%);background-size:200% 100%;animation:sh 1.2s infinite}.skel.short{width:55%}@keyframes sh{to{background-position:-200% 0}}
 .timeline{list-style:none;margin:0;padding:0 0 0 14px;border-left:2px solid var(--line)}.timeline li{margin:0 0 12px;padding-left:12px;position:relative}.timeline li:before{content:"";position:absolute;left:-21px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--mint)}.timeline small{color:var(--muted)}

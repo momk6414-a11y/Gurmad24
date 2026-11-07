@@ -42,7 +42,7 @@ export async function home() {
 export function cardTile(c, { compare = true } = {}) {
   const sel = S.cmp.includes(c.id);
   return h('article', { class: 'hc' },
-    h('div', { class: 'sym' }, icon('card', 22)),
+    h('img', { class: 'art', src: '/img/card-' + ['mint', 'blue', 'violet'][String(c.id).split('').reduce((a, ch) => a + ch.charCodeAt(0), 0) % 3] + '.svg', alt: '', width: 320, height: 112, loading: 'lazy' }),
     h('div', { class: 'hosp' }, c.hospital ? c.hospital.name : '', verified(c.hospital && c.hospital.verified)),
     h('h4', c.name), h('div', { class: 'price' }, money(c.priceCents), h('small', { style: 'font-size:12px;color:var(--muted);font-weight:500' }, ' ' + t('{n} days', { n: c.validityDays }))),
     h('div', { class: 'meta' }, (c.included || []).slice(0, 2).join(' - ')), h('span', { class: 'badge demo' }, t('Demo price')),
@@ -127,7 +127,7 @@ export async function hospitals() {
   let tm; q.oninput = () => { clearTimeout(tm); tm = setTimeout(load, 250); }; load();
   return h('div', head('Hospital directory', 'Only administrator-verified hospitals are listed.'), h('div', { class: 'field' }, q), out);
 }
-const orgTile = o => h('article', { class: 'hc' }, h('div', { class: 'sym' }, icon(o.type === 'hospital' ? 'hospital' : o.type === 'lab' ? 'flask' : 'ambulance', 22)), h('h4', o.name), h('div', { class: 'hosp' }, o.area, verified(o.verified)),
+const orgTile = o => h('article', { class: 'hc' }, h('img', { class: 'art', src: '/img/org-' + (o.type === 'hospital' ? 'hospital' : o.type === 'lab' ? 'lab' : 'ambulance') + '.svg', alt: '', width: 320, height: 112, loading: 'lazy' }), h('h4', o.name), h('div', { class: 'hosp' }, o.area, verified(o.verified)),
   h('div', { class: 'meta' }, o.description), o.type === 'hospital' ? h('a', { class: 'btn sm', href: '#/hospitals/' + o.id }, t('View details')) : (o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : null));
 
 export async function hospitalDetail({ id }) {
