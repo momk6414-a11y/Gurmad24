@@ -12,8 +12,8 @@ function ensureAdmin(app, config, log) {
   app.createUser({ name: 'Administrator', email: config.adminEmail, password: pw, role: 'admin', lang: 'en' });
   if (generated) {
     fs.writeFileSync(path.join(config.dataDir, 'FIRST_ADMIN.txt'), `email: ${config.adminEmail}\npassword: ${pw}\n(Change it after first login, then delete this file.)\n`, { mode: 0o600 });
-    log(`\n=== FIRST ADMIN CREATED ===\n email: ${config.adminEmail}\n password: ${pw}\n (shown once; also saved in data/FIRST_ADMIN.txt)\n===========================\n`);
-  } else log(`First admin created: ${config.adminEmail}`);
+    log('First admin created; credentials saved to data/FIRST_ADMIN.txt.');
+  } else log('First admin created.');
 }
 
 function seedDemoData(app) {
