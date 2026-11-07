@@ -333,6 +333,11 @@ window.addEventListener('online', () => {
   await render();
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  }
-})();
+  navigator.serviceWorker.register('/sw.js', {
+    updateViaCache: 'none'
+  })
+  .then(registration => registration.update())
+  .catch(error => {
+    console.error('GURMAD 24 service worker update failed:', error);
+  });
+}
