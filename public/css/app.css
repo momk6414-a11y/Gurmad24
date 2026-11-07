@@ -158,3 +158,41 @@ h1,h2,h3,h4{letter-spacing:-.01em}
   outline: 3px solid var(--gold);
   outline-offset: 3px;
 }
+
+/* ---- emergency demo: responders, tracking steps, schematic map ---- */
+:root{--u-ambulance:#2f9bea;--u-police:#8379f5;--u-fire:#f2792b}
+.u-ambulance{--uc:var(--u-ambulance)}.u-police{--uc:var(--u-police)}.u-fire{--uc:var(--u-fire)}
+.svc-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.svc{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:14px;border:2px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer;min-height:92px}
+.svc svg{color:var(--uc)}
+.svc[aria-checked=true]{border-color:var(--uc);background:color-mix(in srgb,var(--uc) 16%,var(--panel2))}
+.loc-box{border:1px solid var(--line);border-radius:14px;padding:6px 14px 12px;margin:14px 0}.loc-box legend{padding:0 6px;font-weight:700;font-size:14px}
+.sos-btn{background:#d6453d;color:#fff}.sos-btn:hover{filter:brightness(1.08)}
+.trk-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin:14px 0}
+.trk-head small{display:block;color:var(--muted)}.trk-code{font-size:22px;letter-spacing:1px}
+.trk-type{display:flex;align-items:center;gap:8px;color:var(--uc);font-weight:700}.trk-type small{color:var(--muted);font-weight:500;display:inline}
+.steps{list-style:none;margin:6px 0 14px;padding:0;display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.steps li{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;text-align:center;color:var(--muted);position:relative}
+.steps li::before{content:"";position:absolute;top:13px;left:-50%;width:100%;height:3px;background:var(--line);z-index:0}.steps li:first-child::before{display:none}
+.steps li.done::before,.steps li.now::before{background:var(--mint)}
+.dotn{position:relative;z-index:1;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--panel2);border:2px solid var(--line);font-weight:700;font-size:12px}
+.steps li.done .dotn{background:var(--mint);border-color:var(--mint);color:var(--mint-ink)}
+.steps li.now .dotn{border-color:var(--mint);color:var(--mint);box-shadow:0 0 0 4px #48e0b233}.steps li.now{color:var(--ink);font-weight:700}
+.eta{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--mint);margin:6px 0}
+.unit-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0}.unit-info svg{color:var(--uc)}
+.livemap{margin:12px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel2)}
+.map{display:block;width:100%;height:auto;aspect-ratio:600/380;max-height:56vh}
+.map-bg{fill:var(--panel2)}.map-street{stroke:var(--line);stroke-width:1.2;opacity:.7}.map-avenue{stroke:var(--line);stroke-width:4;opacity:.8}
+.map-route{stroke:var(--uc);stroke-width:2.5;stroke-dasharray:3 7;stroke-linecap:round;opacity:.7;fill:none}.map-trail{stroke:var(--uc);stroke-width:4;stroke-linecap:round}
+.map-station{fill:var(--panel);stroke:var(--uc);stroke-width:3}
+.map-unit .u-body{fill:var(--uc);stroke:#fff;stroke-width:3}.u-glyph{fill:#fff}
+.map-incident .dot{fill:#e5483f;stroke:#fff;stroke-width:2}.map-incident .core{fill:#fff}.map-incident .pulse{fill:#e5483f;opacity:.35;transform-box:fill-box;transform-origin:center;animation:mpulse 1.8s ease-out infinite}
+.map-incident.done .dot{fill:var(--mint)}.map-incident.done .pulse{display:none}
+@keyframes mpulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(3.2);opacity:0}}
+@media (prefers-reduced-motion:reduce){.map-incident .pulse{animation:none}}
+.map-text{fill:var(--muted);font-size:13px;font-weight:700}.map-n{fill:var(--muted)}.map-scale{stroke:var(--muted);stroke-width:3;stroke-linecap:round}
+.map-cap,.map-empty{padding:8px 12px;font-size:12px;color:var(--muted)}
+.rtag{display:inline-flex;align-items:center;gap:6px;color:var(--uc);font-weight:600;white-space:nowrap}
+.rcount{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--panel);border-left:5px solid var(--uc)}.rcount svg{color:var(--uc)}.rcount b{font-size:24px;display:block;line-height:1}.rcount small{color:var(--muted)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;padding:4px 2px 0}
+@media (max-width:520px){.svc-pick{gap:6px}.steps li{font-size:10.5px}}

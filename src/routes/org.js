@@ -5,6 +5,7 @@ const D = require('../domain');
 const { created, csv } = require('../app');
 const { getProvider } = require('../payments');
 const { computeSubscription, commissionCents } = require('../money');
+const R = require('../responders');
 
 const ORG_ROLES = ['hospital_admin', 'provider_admin'];
 
@@ -170,8 +171,8 @@ module.exports = function (app) {
   app.get('/api/org/invoices', { auth: ORG_ROLES, summary: 'Invoices and statements issued to my organisation' }, req => ({ invoices: store.filter('invoices', d => d.orgId === req.user.orgId && d.kind !== 'receipt').sort((a, b) => b.ts.localeCompare(a.ts)) }));
 
   // ---------- Provider: incoming (simulated) emergency requests assigned to me
-  app.get('/api/org/requests', { auth: ['provider_admin'], summary: 'Simulated requests assigned to my organisation' }, req => ({
-    requests: store.filter('cases', c => c.assignedOrgId === req.user.orgId).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map(c => ({ id: c.id, code: c.code, mode: c.mode, category: c.category, area: c.area, status: c.status, updatedAt: c.updatedAt, next: D.PROVIDER_STEPS[c.status] || [] })),
+  app.get('/api/org/requests', { auth: ['provider_admin'], summary: 'Simulated requests assigned to my organisation' }, req => (R.advanceAll(store), {
+    requests: store.filter('cases', c => c.assignedOrgId === req.user.orgId).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map(c => ({ id: c.id, code: c.code, mode: c.mode, category: c.category, responder: c.responder || R.responderFor(c.category), area: c.area, note: c.note, location: c.location, track: R.trackView(store, c), status: c.status, updatedAt: c.updatedAt, next: D.PROVIDER_STEPS[c.status] || [] })),
   }));
   app.patch('/api/org/requests/:id', { auth: ['provider_admin'], summary: 'Advance an assigned simulated request (en_route / arrived / handed_over / decline)' }, req => {
     const c = store.get('cases', req.params.id); if (!c || c.assignedOrgId !== req.user.orgId) throw new HttpError(404, 'not_found');
@@ -180,7 +181,7 @@ module.exports = function (app) {
     const now = new Date().toISOString();
     c.history.push({ ts: now, status: b.status, by: 'provider:' + req.user.orgId, note: b.note });
     if (b.status === 'received') c.assignedOrgId = null; // declined -> back to the operator queue
-    c.status = b.status; c.updatedAt = now; store.save(); app.audit(req, 'case.provider_update', 'case', c.id, { status: b.status });
+    c.status = b.status; c.updatedAt = now; c.autopilot = false; /* the responder took over: stop the demo autopilot */ store.save(); app.audit(req, 'case.provider_update', 'case', c.id, { status: b.status });
     return { request: { id: c.id, code: c.code, status: c.status } };
   });
   app.get('/api/org/reports/revenue', { auth: ['provider_admin'], summary: 'Provider revenue report (platform fees charged to me)' }, req => {

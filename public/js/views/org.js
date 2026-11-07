@@ -1,7 +1,8 @@
 // Hospital portal and ambulance / lab provider portal.
 import { S, t, h, icon, GET, POST, PATCH, DEL, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, fdate, fdt, confirmBox, downloadApi, link, ApiError } from '../core.js';
 import { receiptNode } from './shared.js';
-import { APPT_CATS, CASE_CATS } from './public.js';
+import { APPT_CATS, CASE_CATS, stopPoll } from './public.js';
+import { liveMap, osmLink } from '../map.js';
 
 const head = (title, sub, right) => h('div', { class: 'page-head' }, h('div', h('h2', t(title)), sub ? h('p', t(sub)) : null), right || null);
 const refresh = () => window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -11,16 +12,18 @@ const verifyBanner = o => o.status === 'verified' ? null : h('div', { class: 'no
 
 export async function dashboard() {
   const { org } = await GET('/org'); S.org = org;
-  const wrap = h('div', head(org.name, org.type === 'hospital' ? 'Hospital portal' : org.type === 'lab' ? 'Laboratory portal' : 'Ambulance provider portal', badge(org.status)), verifyBanner(org));
+  const wrap = h('div', head(org.name, ({ hospital: 'Hospital portal', lab: 'Laboratory portal', police: 'Police station portal', fire: 'Fire station portal' }[org.type] || 'Ambulance provider portal'), badge(org.status)), verifyBanner(org));
   if (org.type === 'hospital') {
     const [sales, cards, ap, cm] = await Promise.all([GET('/org/reports/sales'), GET('/org/cards'), GET('/org/appointments'), GET('/org/complaints')]);
     wrap.append(h('div', { class: 'grid g4 keep2' }, tile('Published cards', cards.cards.filter(c => c.status === 'published').length, null, () => go('/org/cards')), tile('Orders', sales.report.orders, null, () => go('/org/sales')),
       tile('Gross sales (demo)', money(sales.report.grossCents)), tile('Net to hospital (demo)', money(sales.report.netCents)),
       tile('Appointment requests', ap.appointments.filter(a => a.status === 'requested').length, null, () => go('/org/appointments')), tile('Open complaints', cm.complaints.filter(c => c.status !== 'resolved').length, null, () => go('/org/complaints'))));
   } else {
-    const [rq, ap] = await Promise.all([org.type === 'ambulance' ? GET('/org/requests') : { requests: [] }, GET('/org/appointments')]);
-    const tg = org.type === 'ambulance' ? h('button', { class: 'btn ' + (org.available ? '' : 'ghost'), onclick: async () => { const r = await PATCH('/org/availability', { available: !org.available }); S.org = r.org; toast(t('Availability updated.')); refresh(); } }, org.available ? t('Available - tap to pause') : t('Unavailable - tap to go available')) : null;
-    wrap.append(h('div', { class: 'grid g3 keep2' }, tile('Active requests (simulated)', rq.requests.filter(r => r.next.length).length, null, org.type === 'ambulance' ? () => go('/org/requests') : null), tile('Appointment requests', ap.appointments.filter(a => a.status === 'requested').length, null, () => go('/org/appointments')), tile('Status', org.available ? t('Available') : t('Unavailable'))),
+    const resp = ['ambulance', 'police', 'fire'].includes(org.type);
+    const [rq, ap] = await Promise.all([resp ? GET('/org/requests') : { requests: [] }, resp && org.type !== 'ambulance' ? { appointments: [] } : GET('/org/appointments')]);
+    const tg = resp ? h('button', { class: 'btn ' + (org.available ? '' : 'ghost'), onclick: async () => { const r = await PATCH('/org/availability', { available: !org.available }); S.org = r.org; toast(t('Availability updated.')); refresh(); } }, org.available ? t('Available - tap to pause') : t('Unavailable - tap to go available')) : null;
+    wrap.append(h('div', { class: 'grid g3 keep2' }, tile('Active requests (simulated)', rq.requests.filter(r => r.next.length).length, null, resp ? () => go('/org/requests') : null),
+      org.type === 'police' || org.type === 'fire' ? null : tile('Appointment requests', ap.appointments.filter(a => a.status === 'requested').length, null, () => go('/org/appointments')), tile('Status', org.available ? t('Available') : t('Unavailable'))),
       tg ? h('div', { class: 'actions' }, tg) : null);
   }
   wrap.append(demoNote('Demo mode: all sales, fees and subscriptions here are sandbox values. No real money moves.'));
@@ -114,10 +117,19 @@ export async function profile() {
 
 // ---------- Provider: simulated requests
 export async function requests() {
-  const { requests: rs } = await GET('/org/requests');
+  const load = async () => (await GET('/org/requests')).requests;
   const step = (r, status) => PATCH('/org/requests/' + r.id, { status }).then(() => { toast(t('Updated.')); refresh(); }).catch(e => toast(errText(e), 'err'));
   const L = { en_route: 'Start (en route)', arrived: 'Arrived', handed_over: 'Handed over', received: 'Decline' };
-  return h('div', head('Assigned requests', 'SIMULATION: these are test records. No real patient is waiting.'), demoNote('Simulation mode: status changes here are practice only; nothing is sent to hospitals or patients.'),
-    panel(null, table([{ label: 'Code', key: 'code' }, { label: 'Type', render: r => catName(r.category) }, { label: 'Area', render: r => r.area || '-' }, { label: 'Status', render: r => badge(r.status) }, { label: 'Updated', render: r => fdt(r.updatedAt) },
+  const live = h('div'); const mapBox = h('div');
+  const draw = rs => {
+    const entries = rs.filter(r => r.track && r.track.location && r.status !== 'closed' && r.status !== 'cancelled').map(r => ({ type: r.responder, incident: r.track.location, unit: r.track.unit, station: r.track.station, done: r.status === 'handed_over' }));
+    mapBox.replaceChildren(entries.length ? panel('Live map (demo)', liveMap(entries)) : h('span'));
+    live.replaceChildren(panel(null, table([{ label: 'Code', key: 'code' }, { label: 'Type', render: r => catName(r.category) }, { label: 'Area', render: r => r.area || '-' },
+      { label: 'Location', render: r => r.location ? h('a', { href: osmLink(r.location), target: '_blank', rel: 'noopener noreferrer' }, icon('pin', 16), t('Map')) : '-' },
+      { label: 'Status', render: r => badge(r.status) }, { label: 'Updated', render: r => fdt(r.updatedAt) },
       { label: '', render: r => h('div', { class: 'actions' }, r.next.map(n => h('button', { class: 'btn sm' + (n === 'received' ? ' ghost' : ''), onclick: () => step(r, n) }, t(L[n])))) }], rs, { empty: 'No requests assigned to you.' })));
+  };
+  draw(await load());
+  S.poll = setInterval(async () => { try { draw(await load()); } catch (_) { stopPoll(); } }, 4000);
+  return h('div', head('Assigned requests', 'SIMULATION: these are test records. Nobody is waiting for real help.'), demoNote('Simulation mode: status changes here are practice only; nothing is sent to real services or people.'), mapBox, live);
 }

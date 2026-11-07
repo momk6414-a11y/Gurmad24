@@ -14,6 +14,7 @@ function build(overrides = {}) {
   for (const r of ['auth', 'public', 'patient', 'org', 'ops', 'admin']) require('./routes/' + r)(app);
   seed.ensureAdmin(app, config, log);
   if (config.seedDemoData) seed.seedDemoData(app);
+  seed.ensureResponderDemo(app);
   seed.seedDemoUsers(app, config, log);
   seed.runRetention(store, config.retentionDays);
   const timers = [];

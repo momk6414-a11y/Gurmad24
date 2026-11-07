@@ -13,7 +13,7 @@
 
 ## 🔶 Waa tijaabo / waxaa la dayacay si ammaan ah
 - **Lacag-bixin:** kaliya `sandbox`. Mobile-money/kaar **MA XIRNA** (ma jiro API credentials). Eeg `docs/PAYMENTS.md`.
-- **Gurmadka:** jilitaan keliya. Ma jiro dirista, wicitaan, SMS, GPS, isbitaal-xiriir.
+- **Gurmadka:** jilitaan keliya (ambalaas, booliis, dab-damis). Ma jiro dirid dhab ah, wicitaan, SMS, isbitaal-xiriir. Goobta waa ikhtiyaari (ogolaansho + ama aag la doorto), waxaa loo isticmaalaa khariidadda tijaabada kaliya. Cutubyada waxay u dhaqaaqaan si toos ah (autopilot tijaabo ah); hawl-wade qaata kiiska wuu joojiyaa autopilot-ka.
 - **Qiimayaasha/komishanka caadiga ah** waa tusaale — maamuluhu ha dejiyo kuwa dhabta ah.
 - Kaararka iyo isbitaallada tijaabada ah waa **xog khayaali ah**.
 

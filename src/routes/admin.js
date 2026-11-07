@@ -105,7 +105,7 @@ module.exports = function (app) {
   });
 
   // ---------- Subscription plans
-  const planSchema = { audience: v.enum(['hospital', 'ambulance', 'lab', 'any'], { required: true }), name: v.str({ min: 2, max: 60, required: true }), monthlyCents: v.int({ min: 0, max: 100000000, required: true }), annualCents: v.int({ min: 0, max: 1000000000, required: true }), features: v.list(v.enum(['analytics', 'premium_dashboard', 'priority_listing']), { max: 5 }), active: v.bool({ default: true }) };
+  const planSchema = { audience: v.enum(['hospital', 'ambulance', 'lab', 'police', 'fire', 'any'], { required: true }), name: v.str({ min: 2, max: 60, required: true }), monthlyCents: v.int({ min: 0, max: 100000000, required: true }), annualCents: v.int({ min: 0, max: 1000000000, required: true }), features: v.list(v.enum(['analytics', 'premium_dashboard', 'priority_listing']), { max: 5 }), active: v.bool({ default: true }) };
   app.get('/api/admin/plans', { auth: A, summary: 'All subscription plans' }, () => ({ plans: store.col('plans') }));
   app.post('/api/admin/plans', { auth: A, summary: 'Create a plan' }, req => {
     const b = validate(planSchema, req.body); const p = store.insert('plans', { id: store.id('pl_'), ...b, features: b.features || [], isPlaceholder: false });

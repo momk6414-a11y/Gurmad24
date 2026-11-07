@@ -2,7 +2,7 @@
 
 GURMAD 24 waa madal isku xidha **bukaannada, isbitaallada, ambalaasyada, shaybaarrada, hawlgalayaasha iyo maamulka**, oo leh **Suuq Kaararka Caafimaadka** iyo nidaam dakhli (komishan, rukumo, khidmado). Goobta tijaabada: **Gaalkacyo**. Luqado: **Soomaali + Ingiriisi**.
 
-> ⚠️ **Muhiim:** Nidaamku waa **TIJAABO**. Lacag-bixintu waa **sandbox** (lacag dhab ah ma dhaqaaqdo). Gurmadku waa **JILITAAN** (ma diro ambalaas, ma wacdo, ma isticmaalo GPS, ma baaro cudur). Ha geli xog bukaan dhab ah. Eeg `docs/STATUS.md`.
+> ⚠️ **Muhiim:** Nidaamku waa **TIJAABO**. Lacag-bixintu waa **sandbox** (lacag dhab ah ma dhaqaaqdo). Gurmadku waa **JILITAAN** (ma diro ambalaas, booliis ama dab-damis dhab ah, ma wacdo, ma baaro cudur; goobta (GPS) waa ikhtiyaari, waxay u baahan tahay ogolaansho, waxaana loo isticmaalaa khariidadda tijaabada kaliya). Ha geli xog bukaan dhab ah. Eeg `docs/STATUS.md`.
 
 ## Waxa ku jira (way shaqeeyaan — la tijaabiyey)
 | Qaybta | Waxa ay qabato |

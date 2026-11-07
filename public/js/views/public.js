@@ -1,9 +1,10 @@
 // Public + authentication screens: home, health card marketplace, hospitals, services, emergency info, login/register.
 import { S, t, h, icon, GET, POST, api, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, link, fdate, setLang } from '../core.js';
 import { receiptNode } from './shared.js';
+import { liveMap, osmLink } from '../map.js';
 
 export const APPT_CATS = [['general', 'General visit'], ['checkup', 'Check-up'], ['lab_test', 'Lab test'], ['follow_up', 'Follow-up'], ['other', 'Other']];
-export const CASE_CATS = [['general', 'General help request'], ['transport', 'Patient transport'], ['accident', 'Accident'], ['maternal', 'Maternal'], ['other', 'Other']];
+export const CASE_CATS = [['general', 'General help request'], ['transport', 'Patient transport'], ['accident', 'Accident'], ['maternal', 'Maternal'], ['other', 'Other'], ['fire', 'Fire'], ['rescue', 'Rescue'], ['crime', 'Crime or threat'], ['disturbance', 'Disturbance']];
 
 const verified = ok => ok ? h('span', { class: 'badge ok' }, icon('check', 12), ' ', t('Verified')) : null;
 const head = (title, sub, right) => h('div', { class: 'page-head' }, h('div', h('h2', t(title)), sub ? h('p', t(sub)) : null), right || null);
@@ -22,8 +23,8 @@ export async function home() {
         h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/cards' }, icon('card'), t('Browse health cards')), h('a', { class: 'btn ghost', href: '#/hospitals' }, icon('hospital'), t('Find a hospital')), S.user ? null : h('a', { class: 'btn ghost', href: '#/register' }, icon('user'), t('Create account'))),
         h('div', { class: 'stats-row' }, h('div', h('b', hs.hospitals.length), h('span', t('Verified hospitals'))), h('div', h('b', cards.cards.length), h('span', t('Health cards'))), h('div', h('b', '2'), h('span', t('Languages'))))),
       h('img', { class: 'hero2-img', src: '/img/hero.svg', alt: '', width: 560, height: 420 })),
-    h('div', { class: 'panel sos' }, h('div', { style: 'display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap' }, icon('alert', 28), h('div', { style: 'flex:1;min-width:220px' }, h('h3', t('This app does not send ambulances')),
-      h('p', { style: 'margin:6px 0 0;color:var(--muted)' }, t('Live dispatch is switched off while the service is being tested. In a real emergency go to the nearest hospital or call your local emergency services directly.'))), h('a', { class: 'btn', href: '#/emergency' }, t('Emergency information')))),
+    h('div', { class: 'panel sos' }, h('div', { style: 'display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap' }, icon('alert', 28), h('div', { style: 'flex:1;min-width:220px' }, h('h3', t('Emergency requests are a demo')),
+      h('p', { style: 'margin:6px 0 0;color:var(--muted)' }, t('Ambulance, police and fire requests are simulated while the service is being tested. In a real emergency go to the nearest hospital or call your local emergency services directly.'))), h('a', { class: 'btn', href: '#/emergency' }, icon('alert'), t('Try the emergency demo')))),
     h('div', { class: 'panel' }, h('div', { style: 'display:flex;gap:14px;align-items:center;flex-wrap:wrap' }, icon('chat', 28), h('div', { style: 'flex:1;min-width:220px' }, h('h3', t('Questions or a complaint?')),
       h('p', { style: 'margin:6px 0 0;color:var(--muted)' }, t('Send us a message about an order, a hospital or a provider. Our team replies inside the app.'), S.user ? null : ' ' + t('You will be asked to log in first.'))),
       h('a', { class: 'btn', href: '#/me/support' }, icon('chat'), t('Send a complaint')))),
@@ -156,25 +157,110 @@ export function appointmentModal(org, services = []) {
 export async function services() {
   const [r, sp] = await Promise.all([GET('/providers'), GET('/sponsored')]);
   const prov = r.providers;
-  const sec = (title, type) => { const l = prov.filter(p => p.type === type); return panel(title, l.length ? h('div', { class: 'grid g2' }, l.map(p => h('article', { class: 'hc' }, h('div', { class: 'hosp' }, h('b', p.name), verified(p.verified), type === 'ambulance' ? h('span', { class: p.available ? 'badge ok' : 'badge mute' }, p.available ? t('Available') : t('Unavailable')) : null),
+  const sec = (title, type) => { const l = prov.filter(p => p.type === type); return panel(title, l.length ? h('div', { class: 'grid g2' }, l.map(p => h('article', { class: 'hc' }, h('div', { class: 'hosp' }, h('b', p.name), verified(p.verified), (type === 'ambulance' || type === 'police' || type === 'fire') ? h('span', { class: p.available ? 'badge ok' : 'badge mute' }, p.available ? t('Available') : t('Unavailable')) : null),
     h('div', { class: 'meta' }, p.description, p.serviceAreas.length ? h('div', t('Areas: {a}', { a: p.serviceAreas.join(', ') })) : null), p.services.length ? list(p.services.map(s => s.name + ' - ' + money(s.priceCents))) : null,
     p.phone ? h('a', { class: 'tel', href: 'tel:' + p.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), p.phone) : null,
     type === 'lab' ? h('button', { class: 'btn sm', onclick: () => appointmentModal(p, p.services) }, t('Request appointment')) : null))) : emptyState('Nobody listed yet.')); };
-  return h('div', head('Healthcare services', 'Verified ambulance and laboratory providers.'), demoNote('Listings are demo data. Availability is set by each provider and is not a live guarantee.'),
-    sec('Ambulance and medical transport', 'ambulance'), sec('Laboratories and diagnostics', 'lab'),
+  return h('div', head('Healthcare services', 'Verified ambulance, police, fire and laboratory providers.'), demoNote('Listings are demo data. Availability is set by each provider and is not a live guarantee.'),
+    sec('Ambulance and medical transport', 'ambulance'), sec('Police stations', 'police'), sec('Fire stations', 'fire'), sec('Laboratories and diagnostics', 'lab'),
     sp.listings.length ? panel('Sponsored', h('div', { class: 'grid g3' }, sp.listings.map(s => h('div', { class: 'hc' }, h('span', { class: 'badge spons' }, t('SPONSORED')), h('h4', s.headline), h('div', { class: 'meta' }, s.text))))) : null);
 }
 
-// ---------- Emergency info + SIMULATED request
+// ---------- Emergency: ambulance / police / fire request (DEMO, nothing real is contacted)
+const SERVICES = [
+  ['ambulance', 'Ambulance', ['general', 'transport', 'accident', 'maternal', 'other']],
+  ['police', 'Police', ['crime', 'disturbance']],
+  ['fire', 'Fire brigade', ['fire', 'rescue']],
+];
+export const SERVICE_NAME = { ambulance: 'Ambulance', police: 'Police', fire: 'Fire brigade' };
+const STEPS = [['received', 'Received'], ['assigned', 'Unit assigned'], ['en_route', 'On the way'], ['arrived', 'Arrived'], ['handed_over', 'Help given'], ['closed', 'Closed']];
+const TRACK_KEY = 'g24-track';
+const saveTrack = v => { try { v ? sessionStorage.setItem(TRACK_KEY, JSON.stringify(v)) : sessionStorage.removeItem(TRACK_KEY); } catch (_) { /* storage may be blocked */ } };
+const loadTrack = () => { try { return JSON.parse(sessionStorage.getItem(TRACK_KEY) || 'null'); } catch (_) { return null; } };
+export const stopPoll = () => { if (S.poll) { clearInterval(S.poll); S.poll = null; } };
+const catLabel = c => t((CASE_CATS.find(x => x[0] === c) || [0, c])[1]);
+
+function trackPanel(box, tk, onNew) {
+  let busy = false;
+  const draw = tr => {
+    const idx = STEPS.findIndex(x => x[0] === tr.status);
+    const done = tr.status === 'closed' || tr.status === 'cancelled';
+    const steps = h('ol', { class: 'steps' }, STEPS.map(([k, l], i) => h('li', { class: i < idx ? 'done' : i === idx ? 'now' : '' }, h('span', { class: 'dotn' }, i < idx ? icon('check', 14) : String(i + 1)), h('span', t(l)))));
+    const ro = tr.responderOrg;
+    box.replaceChildren(
+      h('div', { class: 'note' }, icon('alert', 18), h('span', t('TEST ONLY: no real police, fire or ambulance service was contacted. This is a simulation for demonstration.'))),
+      h('div', { class: 'trk-head' }, h('div', h('small', t('Request code')), h('b', { class: 'trk-code' }, tr.code)), h('div', { class: 'trk-type u-' + tr.responder }, icon(tr.responder, 20), h('span', t(SERVICE_NAME[tr.responder])), h('small', catLabel(tr.category)))),
+      steps,
+      tr.status === 'en_route' && tr.etaMinutes ? h('p', { class: 'eta' }, icon('pin', 18), t('Arriving in about {m} min (simulated).', { m: tr.etaMinutes })) : null,
+      tr.status === 'received' ? h('p', { class: 'hint' }, t('Finding the nearest unit...')) : null,
+      ro ? h('p', { class: 'unit-info' }, icon(ro.type, 18), h('b', ro.name), ro.phone ? h('span', ' ' + ro.phone) : null) : null,
+      liveMap([{ type: tr.responder, incident: tr.location, unit: tr.unit, station: tr.station, done }]),
+      tr.unit && tr.unit.demoPlaced ? h('p', { class: 'hint' }, t('Your location is far from the demo stations, so the demo unit starts a few kilometres from you.')) : null,
+      tr.location ? h('p', { class: 'hint' }, h('a', { href: osmLink(tr.location), target: '_blank', rel: 'noopener noreferrer' }, t('Open the location in OpenStreetMap'))) : null,
+      h('div', { class: 'actions' }, h('button', { class: 'btn ghost', onclick: () => { stopPoll(); saveTrack(null); onNew(); } }, icon('plus'), t('New test request'))));
+    return done;
+  };
+  const tick = async () => {
+    if (busy) return; busy = true;
+    try { const r = await GET('/emergency/track/' + encodeURIComponent(tk.code) + '?token=' + encodeURIComponent(tk.token)); if (draw(r.track)) stopPoll(); }
+    catch (_) { stopPoll(); saveTrack(null); box.replaceChildren(emptyState('This test request is no longer available.'), h('div', { class: 'actions' }, h('button', { class: 'btn', onclick: onNew }, t('New test request')))); }
+    finally { busy = false; }
+  };
+  stopPoll(); tick(); S.poll = setInterval(tick, 2500);
+}
+
+function requestForm(box, areas) {
+  let service = 'ambulance'; let loc = null;
+  const svcBox = h('div', { class: 'svc-pick', role: 'radiogroup', 'aria-label': t('What do you need?') });
+  const catSel = h('select', { id: 'em-cat', 'aria-label': t('Request type') });
+  const fillCats = () => catSel.replaceChildren(...SERVICES.find(x => x[0] === service)[2].map(c => h('option', { value: c }, catLabel(c))));
+  const drawSvc = () => svcBox.replaceChildren(...SERVICES.map(([id, label]) => h('button', { type: 'button', class: 'svc u-' + id, role: 'radio', 'aria-checked': service === id, onclick: () => { service = id; drawSvc(); fillCats(); } }, icon(id, 30), h('b', t(label)))));
+  drawSvc(); fillCats();
+  const msg = h('p', { class: 'hint', 'aria-live': 'polite' });
+  const consent = h('input', { type: 'checkbox', id: 'em-consent' });
+  const areaSel = h('select', { id: 'em-area', 'aria-label': t('Area') }, h('option', { value: '' }, t('Choose an area')), areas.map(a => h('option', { value: a.id }, t(a.name))));
+  areaSel.addEventListener('change', () => { if (areaSel.value) { loc = null; msg.textContent = ''; } });
+  const gps = h('button', { type: 'button', class: 'btn ghost', onclick: () => {
+    if (!consent.checked) { msg.textContent = t('Tick the box to agree before sharing your location.'); return; }
+    if (!navigator.geolocation) { msg.textContent = t('This device cannot share its location. Choose an area instead.'); return; }
+    msg.textContent = t('Finding your location...');
+    navigator.geolocation.getCurrentPosition(pos => { loc = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }; areaSel.value = ''; msg.textContent = t('Location found (about {m} m).', { m: Math.round(pos.coords.accuracy) }); },
+      e => { loc = null; msg.textContent = e && e.code === 1 ? t('Location permission was denied. Choose an area instead.') : t('Could not get your location. Choose an area instead.'); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
+  } }, icon('pin'), t('Use my location'));
+  const note = h('input', { id: 'em-note', type: 'text', maxlength: 200, autocomplete: 'off' });
+  const err = h('div', { class: 'form-error', role: 'alert' });
+  const send = h('button', { type: 'submit', class: 'btn sos-btn' }, icon('alert'), t('Send test request'));
+  const field = (label, id, ctl, hint) => h('div', { class: 'field' }, h('label', { for: id }, t(label)), ctl, hint ? h('span', { class: 'hint' }, t(hint)) : null);
+  return h('form', { novalidate: true, onsubmit: async ev => {
+    ev.preventDefault(); err.textContent = '';
+    const body = { category: catSel.value, note: note.value };
+    if (loc && consent.checked) Object.assign(body, { lat: loc.lat, lng: loc.lng, accuracy: loc.accuracy, consent: true }); else if (areaSel.value) body.areaId = areaSel.value;
+    else { err.textContent = t('Share your location or choose an area first.'); return; }
+    send.disabled = true;
+    try {
+      const r = await POST('/emergency/simulate', body);
+      if (!r.case.trackToken) { box.replaceChildren(h('div', { class: 'note' }, icon('check', 18), h('span', t('Simulation recorded as {code}. Nothing was sent to anyone and no one is coming.', { code: r.case.code })))); return; }
+      const tk = { code: r.case.code, token: r.case.trackToken }; saveTrack(tk); trackPanel(box, tk, () => showForm(box, areas));
+    } catch (e) { err.textContent = errText(e); send.disabled = false; }
+  } },
+  h('div', { class: 'field' }, h('label', t('What do you need?')), svcBox),
+  field('Request type', 'em-cat', catSel),
+  h('fieldset', { class: 'loc-box' }, h('legend', t('Where are you?')),
+    h('div', { class: 'field check' }, consent, h('label', { for: 'em-consent' }, t('I agree to share my location. It is used only to draw the test map and is removed after the retention period.'))),
+    h('div', { class: 'actions tight' }, gps), msg,
+    field('Or choose an area (no GPS needed)', 'em-area', areaSel)),
+  field('Short note (no names, no medical details)', 'em-note', note), err, h('div', { class: 'actions' }, send));
+}
+function showForm(box, areas) { box.replaceChildren(requestForm(box, areas)); }
+
 export async function emergency() {
-  const hs = (await GET('/hospitals')).hospitals; let box;
-  const f = form([{ name: 'category', label: 'Request type', type: 'select', options: CASE_CATS, required: true }, { name: 'area', label: 'Area (general, not an exact address)', max: 60 }, { name: 'note', label: 'Short note (no names, no medical details)', max: 200 }],
-    { submit: 'Create simulated request', onSubmit: async v => { const r = await POST('/emergency/simulate', v); box.replaceChildren(h('div', { class: 'note' }, icon('check', 18), h('span', t('Simulation recorded as {code}. Nothing was sent to anyone and no one is coming.', { code: r.case.code })))); } });
-  box = h('div');
-  return h('div', head('Emergency information'),
-    h('div', { class: 'panel sos' }, h('h3', t('In a real emergency')), h('ul', { class: 'bul', style: 'margin-top:8px' }, h('li', t('Go to the nearest hospital or call your local emergency services directly.')), h('li', t('GURMAD 24 does NOT dispatch ambulances, track locations or call anyone at this stage.')), h('li', t('The platform never diagnoses and never gives treatment advice.')))),
-    panel('Hospital contacts (verified)', hs.length ? table([{ label: 'Hospital', key: 'name' }, { label: 'Area', key: 'area' }, { label: 'Phone', render: o => o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : '-' }], hs) : emptyState('No hospitals listed.')),
-    panel('Try the coordination dashboard (simulation)', h('div', demoNote('SIMULATION ONLY: this creates a test record that operators can see in the demo dashboard. It does not request real help.'), f, box)));
+  const [hsr, cfg] = await Promise.all([GET('/hospitals'), GET('/config')]); const hs = hsr.hospitals; const box = h('div');
+  const saved = loadTrack();
+  if (saved) trackPanel(box, saved, () => showForm(box, cfg.areas)); else showForm(box, cfg.areas);
+  return h('div', head('Emergency'),
+    h('div', { class: 'panel sos' }, h('h3', t('In a real emergency')), h('ul', { class: 'bul', style: 'margin-top:8px' }, h('li', t('Go to the nearest hospital or call your local emergency services directly.')), h('li', t('GURMAD 24 does NOT contact police, fire or ambulance services at this stage. Requests below are a demonstration.')), h('li', t('The platform never diagnoses and never gives treatment advice.')))),
+    panel('Request help (demo)', h('div', demoNote('DEMO: this creates a registered test request. The operators, police, fire and ambulance dashboards show it live, but no real help is requested.'), box)),
+    panel('Hospital contacts (verified)', hs.length ? table([{ label: 'Hospital', key: 'name' }, { label: 'Area', key: 'area' }, { label: 'Phone', render: o => o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : '-' }], hs) : emptyState('No hospitals listed.')));
 }
 
 // ---------- Auth
@@ -198,7 +284,7 @@ export function register() {
 }
 export function registerOrg() {
   return h('div', head('Register a hospital / provider', 'Your organisation will be reviewed by an administrator before it appears publicly.'), panel(null, form([
-    { name: 'orgType', label: 'Organisation type', type: 'select', options: [['hospital', 'Hospital'], ['ambulance', 'Ambulance / medical transport'], ['lab', 'Laboratory / diagnostics']], required: true },
+    { name: 'orgType', label: 'Organisation type', type: 'select', options: [['hospital', 'Hospital'], ['ambulance', 'Ambulance / medical transport'], ['lab', 'Laboratory / diagnostics'], ['police', 'Police station'], ['fire', 'Fire station']], required: true },
     { name: 'orgName', label: 'Organisation name', required: true, max: 100 }, { name: 'area', label: 'City / area', max: 60, default: 'Gaalkacyo' }, { name: 'phone', label: 'Public phone', type: 'tel', max: 30 }, { name: 'description', label: 'Short description', type: 'textarea', max: 500 },
     { name: 'name', label: 'Your full name', required: true, max: 80 }, { name: 'email', label: 'Your email', type: 'email', required: true }, { name: 'password', label: 'Password', type: 'password', required: true, hint: 'At least 8 characters with letters and numbers.', autocomplete: 'new-password' }, consent],
   { submit: 'Submit registration', onSubmit: async v => { const r = await POST('/auth/register-org', { ...v, lang: S.lang }); toast(t('Registered. Waiting for administrator verification.')); await afterAuth(r.user); } })));
@@ -206,5 +292,5 @@ export function registerOrg() {
 export function privacy() {
   return h('div', head('Privacy notice'), panel(null, h('div', h('p', t('GURMAD 24 collects the minimum data needed: your name, email, and the orders, appointment requests and support messages you create.')),
     list([t('We never sell personal data, medical records or private information.'), t('Hospitals only see your name and the phone number you give when you request an appointment with them.'), t('You can download all your data and delete your account at any time (Account page).'),
-      t('Closed emergency simulation records are anonymised after the retention period.'), t('This is a demo/test system: do not enter real medical information. Privacy and legal review is required before real use.')]))));
+      t('Closed emergency simulation records are anonymised after the retention period.'), t('If you share your location in the emergency demo, it is only used to draw the test map, and it is deleted when the record is anonymised.'), t('This is a demo/test system: do not enter real medical information. Privacy and legal review is required before real use.')]))));
 }

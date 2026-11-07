@@ -3,19 +3,20 @@ const { v, validate, HttpError } = require('../validate');
 const D = require('../domain');
 const { created } = require('../app');
 
-const CASE_CATEGORIES = ['general', 'transport', 'accident', 'maternal', 'other'];
+const R = require('../responders');
+const { CASE_CATEGORIES, createCase } = R;
 
 module.exports = function (app) {
   const { store, config } = app.ctx;
 
   app.get('/api/health', { summary: 'Service health and safety mode' }, () => ({
-    ok: true, mode: config.demoMode ? 'DEMO_SANDBOX' : 'PILOT', storage: 'persistent-json', payments: 'sandbox-only', liveDispatch: false, gps: false, schema: store.data.meta.version,
+    ok: true, mode: config.demoMode ? 'DEMO_SANDBOX' : 'PILOT', storage: 'persistent-json', payments: 'sandbox-only', liveDispatch: false, gps: 'optional-demo-consent', schema: store.data.meta.version,
   }));
 
   app.get('/api/config', { summary: 'Public client configuration and safety notices' }, () => ({
     mode: config.demoMode ? 'DEMO_SANDBOX' : 'PILOT', currency: D.settings(store).currency, languages: ['so', 'en'],
-    caseCategories: CASE_CATEGORIES, liveDispatch: false, payments: 'sandbox',
-    notices: { dispatch: 'simulation_only', cards: 'not_insurance', data: 'no_real_patient_data' },
+    caseCategories: CASE_CATEGORIES, areas: R.AREAS, responderTypes: R.RESPONDER_TYPES, liveDispatch: false, payments: 'sandbox',
+    notices: { dispatch: 'simulation_only', location: 'demo_map_only', cards: 'not_insurance', data: 'no_real_patient_data' },
   }));
 
   app.get('/api/hospitals', { summary: 'Verified hospital directory (?q=)' }, req => {
@@ -76,25 +77,41 @@ module.exports = function (app) {
     };
   });
 
-  // Simulation only: records a request; nothing is dispatched, no one is called, no GPS.
-  const caseSchema = { category: v.enum(CASE_CATEGORIES, { required: true }), area: v.str({ max: 60, default: '' }), note: v.str({ max: 200, default: '' }) };
-  app.post('/api/emergency/simulate', { summary: 'Create a SIMULATED emergency request (no real dispatch)' }, req => {
+  // Simulation only: records a request; nothing is dispatched and no real service is contacted.
+  // Location (optional, with consent) is only used to draw the demo map.
+  const caseSchema = { category: v.enum(CASE_CATEGORIES, { required: true }), area: v.str({ max: 60, default: '' }), note: v.str({ max: 200, default: '' }), areaId: v.str({ max: 20 }), consent: v.bool() };
+  const num = (x, name, lo, hi) => {
+    const n = Number(x);
+    if (!Number.isFinite(n) || n < lo || n > hi) throw new HttpError(400, 'validation_failed', { [name]: 'invalid_number' });
+    return n;
+  };
+  app.post('/api/emergency/simulate', { summary: 'Create a SIMULATED emergency request (no real dispatch). Optional location with consent.' }, req => {
     if (!app.limiter.check('sim:' + req.ip, 10)) throw new HttpError(429, 'rate_limited');
     const b = validate(caseSchema, req.body);
+    let location = null;
+    const raw = req.body || {};
+    if (raw.lat !== undefined && raw.lat !== null && raw.lat !== '') {
+      if (!b.consent) throw new HttpError(400, 'validation_failed', { consent: 'required' });
+      location = { lat: round4(num(raw.lat, 'lat', -90, 90)), lng: round4(num(raw.lng, 'lng', -180, 180)), source: 'gps' };
+      if (raw.accuracy !== undefined && raw.accuracy !== null && raw.accuracy !== '') location.accuracyM = Math.round(num(raw.accuracy, 'accuracy', 0, 100000));
+    } else if (b.areaId) {
+      const a = R.AREAS.find(x => x.id === b.areaId);
+      if (!a) throw new HttpError(400, 'validation_failed', { areaId: 'invalid_choice' });
+      location = { lat: a.lat, lng: a.lng, source: 'area' }; if (!b.area) b.area = a.name;
+    }
     const user = app.loadUser(req);
-    const c = createCase(store, { ...b, source: 'public', createdBy: user ? user.id : null });
-    return created({ case: { code: c.code, status: c.status, mode: 'SIMULATION' }, notice: 'SIMULATION_ONLY_NO_REAL_HELP_SENT' });
+    const c = createCase(store, { category: b.category, area: b.area, note: b.note, location, source: 'public', createdBy: user ? user.id : null, autopilot: config.demoMode !== false });
+    return created({ case: { code: c.code, status: c.status, mode: 'SIMULATION', responder: c.responder, trackToken: c.trackToken }, notice: 'SIMULATION_ONLY_NO_REAL_HELP_SENT' });
+  });
+  app.get('/api/emergency/track/:code', { summary: 'Live (simulated) status of a test request. Needs the token returned at creation.' }, req => {
+    const c = store.find('cases', x => x.code === req.params.code);
+    const token = String(req.query.token || '');
+    if (!c || !c.trackToken || token.length !== c.trackToken.length || !require('crypto').timingSafeEqual(Buffer.from(token), Buffer.from(c.trackToken))) throw new HttpError(404, 'not_found');
+    R.advance(store, c);
+    return { track: R.trackView(store, c) };
   });
 };
 
-function createCase(store, f) {
-  const now = new Date().toISOString();
-  const c = {
-    id: store.id('c_'), code: 'SIM-' + String(store.next('case')).padStart(6, '0'), mode: 'SIMULATION', category: f.category, area: f.area || '', note: f.note || '',
-    status: 'received', assignedOrgId: null, source: f.source, createdBy: f.createdBy || null, createdAt: now, updatedAt: now,
-    history: [{ ts: now, status: 'received', by: f.createdBy || 'public', note: '' }],
-  };
-  store.insert('cases', c); return c;
-}
+const round4 = x => Math.round(x * 1e4) / 1e4;
 module.exports.createCase = createCase;
 module.exports.CASE_CATEGORIES = CASE_CATEGORIES;

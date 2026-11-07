@@ -61,6 +61,26 @@ function seedDemoData(app) {
   return { hA, a1 };
 }
 
+// Police and fire demo stations + coordinates for all demo responders. Idempotent: also runs on data seeded earlier.
+function ensureResponderDemo(app) {
+  const { store } = app.ctx; const R = require('./responders');
+  if (!store.data.meta.seeded) return; // demo data disabled or not created: do not invent organisations
+  const now = new Date().toISOString();
+  const mk = (type, name, phone, desc) => store.find('orgs', o => o.isDemoSeed && o.type === type && o.name === name) || store.insert('orgs', {
+    id: store.id('o_'), type, name, area: 'Gaalkacyo', address: '', phone, publicEmail: '', description: desc, hours: '24/7 (demo)', serviceAreas: [], available: true,
+    status: 'verified', statusNote: 'Synthetic demo organisation', contract: { cardCommissionBps: null, labCommissionBps: null, appointmentFeeCents: null }, createdAt: now, isDemoSeed: true,
+  });
+  mk('police', 'Saldhig Booliis Tusaale (Demo)', '+000 000 0031', 'Synthetic demo police station. Not a real facility.');
+  mk('fire', 'Saldhig Dab-damis Tusaale (Demo)', '+000 000 0041', 'Synthetic demo fire station. Not a real facility.');
+  for (const type of R.RESPONDER_TYPES) {
+    store.filter('orgs', o => o.isDemoSeed && o.type === type).forEach((o, i) => {
+      const off = R.STATION_OFFSETS[type][i % R.STATION_OFFSETS[type].length];
+      if (o.lat == null) { o.lat = Math.round((R.CENTER.lat + off[0]) * 1e5) / 1e5; o.lng = Math.round((R.CENTER.lng + off[1]) * 1e5) / 1e5; }
+    });
+  }
+  store.save();
+}
+
 function seedDemoUsers(app, config, log) {
   const { store } = app.ctx;
   if (!config.demoPassword || config.demoPassword.length < 10) return;
@@ -70,15 +90,18 @@ function seedDemoUsers(app, config, log) {
   mk('Demo Operator', 'operator@demo.gurmad24.test', 'operator');
   if (hosp) mk('Demo Hospital Admin', 'hospital@demo.gurmad24.test', 'hospital_admin', hosp.id);
   if (amb) mk('Demo Ambulance Admin', 'ambulance@demo.gurmad24.test', 'provider_admin', amb.id);
-  log('Demo accounts ready: patient@ / operator@ / hospital@ / ambulance@demo.gurmad24.test (password = DEMO_PASSWORD)');
+  const pol = store.find('orgs', o => o.isDemoSeed && o.type === 'police'); const fire = store.find('orgs', o => o.isDemoSeed && o.type === 'fire');
+  if (pol) mk('Demo Police Admin', 'police@demo.gurmad24.test', 'provider_admin', pol.id);
+  if (fire) mk('Demo Fire Admin', 'fire@demo.gurmad24.test', 'provider_admin', fire.id);
+  log('Demo accounts ready: patient@ / operator@ / hospital@ / ambulance@ / police@ / fire@demo.gurmad24.test (password = DEMO_PASSWORD)');
 }
 
 // Data retention: anonymise old closed cases, drop expired sessions.
 function runRetention(store, days) {
   const cutoff = Date.now() - days * 86400000; let n = 0;
-  for (const c of store.col('cases')) if (['closed', 'cancelled', 'handed_over'].includes(c.status) && !c.anonymizedAt && new Date(c.updatedAt).getTime() < cutoff) { c.area = ''; c.note = ''; c.anonymizedAt = new Date().toISOString(); n++; }
+  for (const c of store.col('cases')) if (['closed', 'cancelled', 'handed_over'].includes(c.status) && !c.anonymizedAt && new Date(c.updatedAt).getTime() < cutoff) { c.area = ''; c.note = ''; c.location = null; c.trackToken = null; c.anonymizedAt = new Date().toISOString(); n++; }
   for (const s of store.filter('sessions', x => new Date(x.expiresAt).getTime() < Date.now())) store.remove('sessions', s.id);
   if (n) store.save(); return n;
 }
 
-module.exports = { ensureAdmin, seedDemoData, seedDemoUsers, runRetention };
+module.exports = { ensureAdmin, seedDemoData, ensureResponderDemo, seedDemoUsers, runRetention };

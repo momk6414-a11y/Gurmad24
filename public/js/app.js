@@ -73,11 +73,13 @@ function navItems() {
     case 'provider_admin':
       return [
         ['/org', 'dash', 'Dashboard'],
-        ...(org && org.type === 'ambulance' ? [['/org/requests', 'alert', 'Requests']] : []),
-        ['/org/services', 'list', 'Services'],
-        ['/org/appointments', 'calendar', 'Appointments'],
-        ['/org/sales', 'chart', 'Revenue'],
-        ['/org/subscription', 'receipt', 'Subscription'],
+        ...(org && ['ambulance', 'police', 'fire'].includes(org.type) ? [['/org/requests', 'alert', 'Requests']] : []),
+        ...(org && ['police', 'fire'].includes(org.type) ? [] : [
+          ['/org/services', 'list', 'Services'],
+          ['/org/appointments', 'calendar', 'Appointments'],
+          ['/org/sales', 'chart', 'Revenue'],
+          ['/org/subscription', 'receipt', 'Subscription']
+        ]),
         ['/org/profile', 'hospital', 'Profile'],
         ['/account', 'user', 'Account']
       ];
@@ -210,6 +212,7 @@ const currentPath = () =>
 let lastKey = '';
 
 async function render(keepScroll) {
+  if (S.poll) { clearInterval(S.poll); S.poll = null; } // live views start their own timer
   const raw = location.hash.replace(/^#/, '') || '/';
   const [path, qs] = raw.split('?');
   const query = Object.fromEntries(new URLSearchParams(qs || ''));
