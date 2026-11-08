@@ -326,27 +326,43 @@ window.addEventListener('online', () => {
   toast('Internet connection restored. Please retry any unsent actions.');
 });
 
-// Start application.
+// Start application. Paint the shell before waiting for network requests.
 (async function boot() {
   document.documentElement.lang = S.lang;
+  chrome();
+  const view = document.getElementById('view');
+  view.replaceChildren(loading());
 
   try {
-    S.config = await GET('/config');
-  } catch (_) {
-    // Continue with cached app shell when offline.
+    // Render a usable first screen immediately; public views handle API errors themselves.
+    await render();
+
+    const results = await Promise.allSettled([GET('/config'), loadMe()]);
+    if (results[0].status === 'fulfilled') S.config = results[0].value;
+    if (results[1].status === 'rejected') {
+      S.user = null;
+      S.org = null;
+    }
+    // Refresh role-aware navigation after session lookup completes.
+    await render(true);
+  } catch (error) {
+    console.error('GURMAD 24 startup failed:', error);
+    chrome();
+    view.replaceChildren(emptyState(
+      'GURMAD 24 could not finish loading. Check your connection and try again.',
+      h('button', { class: 'btn', type: 'button', onclick: () => location.reload() }, t('Try again'))
+    ));
   }
 
-  await loadMe();
-  await render();
-  mountAssistant();
+  try {
+    mountAssistant();
+  } catch (error) {
+    console.error('GURMAD 24 assistant could not start:', error);
+  }
 
   if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js', {
-    updateViaCache: 'none'
-  })
-  .then(registration => registration && registration.update && registration.update())
-  .catch(error => {
-    console.error('GURMAD 24 service worker update failed:', error);
-  });
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+      .then(registration => registration && registration.update && registration.update())
+      .catch(error => console.error('GURMAD 24 service worker update failed:', error));
   }
 })();
