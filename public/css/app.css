@@ -220,3 +220,14 @@ h1,h2,h3,h4{letter-spacing:-.01em}
 .calls{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0 6px}@media (max-width:560px){.calls{grid-template-columns:1fr}}
 .call{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;color:#fff;text-decoration:none;background:var(--c,#0f766e);min-height:64px}.call b{display:block;font-size:17px}.call small{color:rgba(255,255,255,.9);font-size:13px}
 .call.u-ambulance{--c:var(--u-ambulance,#0f766e)}.call.u-police{--c:var(--u-police,#1d4ed8)}.call.u-fire{--c:var(--u-fire,#c2410c)}
+
+.ai-fab{position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:60;width:54px;height:54px;border-radius:50%;border:0;background:var(--mint,#0f766e);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);display:grid;place-items:center;cursor:pointer}
+.ai-panel{position:fixed;right:14px;bottom:calc(148px + env(safe-area-inset-bottom));z-index:61;width:min(380px,calc(100vw - 28px));max-height:min(70vh,560px);display:flex;flex-direction:column;background:var(--panel,#fff);border:1px solid var(--line,#ddd);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.28);overflow:hidden}.ai-panel[hidden]{display:none}
+.ai-panel header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line,#ddd)}.ai-panel header b{display:flex;align-items:center;gap:6px}
+.ai-log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:140px}
+.ai-msg{max-width:92%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.4}.ai-msg p{margin:0}.ai-msg.bot{background:rgba(15,118,110,.1);align-self:flex-start}.ai-msg.me{background:var(--mint,#0f766e);color:#fff;align-self:flex-end}
+.ai-items{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}.ai-items li{font-size:13px}.ai-msg .actions{margin-top:8px}
+.ai-chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 8px}.ai-chips .chip{font-size:12px;padding:6px 10px}
+.ai-form{display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--line,#ddd)}.ai-form input{flex:1;min-width:0}.ai-note{padding:0 12px 8px}
+.btn.rec{background:#dc2626;color:#fff;border-color:#dc2626;animation:recp 1.2s infinite}@keyframes recp{50%{opacity:.7}}@media (prefers-reduced-motion:reduce){.btn.rec{animation:none}}
+.voice-box audio{width:100%;margin-top:8px}

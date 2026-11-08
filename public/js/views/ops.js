@@ -47,6 +47,15 @@ export async function dashboard({ query }) {
   return h('div', head('Coordination dashboard', 'Ambulance, police and fire requests in simulation mode.', h('button', { class: 'btn', onclick: add }, icon('plus'), t('New simulated request'))), SIM(), statsBox, mapPanel, casesBox);
 }
 
+function voicePlayer(id) {
+  const out = h('div'); const b = h('button', { class: 'btn sm ghost', onclick: async () => {
+    b.disabled = true;
+    try { const v = await GET('/ops/cases/' + id + '/voice'); const bin = atob(v.data); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      const a = h('audio', { controls: true, src: URL.createObjectURL(new Blob([u8], { type: v.mime })) }); out.replaceChildren(a); a.play().catch(() => {}); } catch (e) { toast(errText(e), 'err'); b.disabled = false; }
+  } }, icon('mic', 16), t('Listen to voice message'));
+  out.append(b); return out;
+}
+
 export async function caseDetail({ id }) {
   const [{ case: c }, { providers }] = await Promise.all([GET('/ops/cases/' + id), GET('/ops/providers')]);
   const change = body => PATCH('/ops/cases/' + id, body).then(() => { toast(t('Updated.')); refresh(); }).catch(e => toast(errText(e), 'err'));
@@ -62,6 +71,7 @@ export async function caseDetail({ id }) {
       panel('Actions', h('div', c.autopilot ? h('p', { class: 'hint' }, t('Demo autopilot is moving this case. Any action you take stops it.')) : null,
         ['received', 'assigned'].includes(c.status) ? h('div', h('div', { class: 'field' }, h('label', t('Assign responder')), sel), h('button', { class: 'btn sm', onclick: () => sel.value ? change({ assignedOrgId: sel.value }) : toast(t('Choose a provider first.'), 'err') }, t('Assign'))) : null,
         h('div', { class: 'actions' }, c.next.filter(n => n !== 'assigned').map(n => h('button', { class: 'btn sm' + (['cancelled', 'received'].includes(n) ? ' ghost' : ''), onclick: () => change({ status: n }) }, t(L[n])))), c.next.length ? null : h('p', { style: 'color:var(--muted)' }, t('This case is finished.'))))),
+    c.hasVoice ? panel('Voice message', voicePlayer(c.id), h('small', { class: 'hint' }, t('Heard only by operators. Removed after the retention period.'))) : null,
     tr && tr.location ? panel('Live map (demo)', liveMap([{ type: c.responder, incident: tr.location, unit: tr.unit, station: tr.station, done: ['handed_over', 'closed'].includes(c.status) }]), h('button', { class: 'btn sm ghost', onclick: refresh }, icon('search', 16), t('Refresh'))) : null,
     panel('History', h('ul', { class: 'timeline' }, c.history.map(x => h('li', h('b', badgeText(x.status)), ' ', h('small', fdt(x.ts) + (x.note ? ' - ' + x.note : '')))))), h('p', link('/ops', t('Back to cases'))));
 }

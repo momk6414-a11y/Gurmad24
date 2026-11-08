@@ -199,7 +199,7 @@ function trackPanel(box, tk, onNew) {
     const steps = h('ol', { class: 'steps' }, STEPS.map(([k, l], i) => h('li', { class: i < idx ? 'done' : i === idx ? 'now' : '' }, h('span', { class: 'dotn' }, i < idx ? icon('check', 14) : String(i + 1)), h('span', t(l)))));
     const ro = tr.responderOrg;
     mapEl.update(tr.location ? [{ type: tr.responder, incident: tr.location, unit: tr.unit, station: tr.station, done }] : []);
-    box.replaceChildren(
+    box.replaceChildren(...[
       h('div', { class: 'note' }, icon('alert', 18), h('span', t('TEST ONLY: no real police, fire or ambulance service was contacted. This is a simulation for demonstration.'))),
       h('div', { class: 'trk-head' }, h('div', h('small', t('Request code')), h('b', { class: 'trk-code' }, tr.code)), h('div', { class: 'trk-type u-' + tr.responder }, icon(tr.responder, 20), h('span', t(SERVICE_NAME[tr.responder])), h('small', catLabel(tr.category)))),
       steps,
@@ -209,7 +209,7 @@ function trackPanel(box, tk, onNew) {
       mapEl,
       tr.unit && tr.unit.demoPlaced ? h('p', { class: 'hint' }, t('Your location is far from the demo stations, so the demo unit starts a few kilometres from you.')) : null,
       tr.location ? h('p', { class: 'hint' }, h('a', { href: osmLink(tr.location), target: '_blank', rel: 'noopener noreferrer' }, t('Open the location in OpenStreetMap'))) : null,
-      h('div', { class: 'actions' }, h('button', { class: 'btn ghost', onclick: () => { stopPoll(); saveTrack(null); onNew(); } }, icon('plus'), t('New test request'))));
+      h('div', { class: 'actions' }, h('button', { class: 'btn ghost', onclick: () => { stopPoll(); saveTrack(null); onNew(); } }, icon('plus'), t('New test request')))].filter(Boolean));
     return done;
   };
   const tick = async () => {
@@ -221,7 +221,43 @@ function trackPanel(box, tk, onNew) {
   stopPoll(); tick(); S.poll = setInterval(tick, 2500);
 }
 
+// Voice message (max 15 s, low bitrate) recorded in the browser; sent with the test request.
+const VOICE_MAX_S = 15;
+function voiceRecorder() {
+  let rec = null, chunks = [], stream = null, timer = null, left = 0, voice = null, url = null;
+  const status = h('span', { class: 'hint', 'aria-live': 'polite' });
+  const player = h('audio', { controls: true, hidden: true });
+  const btn = h('button', { type: 'button', class: 'btn ghost' }); const del = h('button', { type: 'button', class: 'btn sm ghost', hidden: true }, t('Delete recording'));
+  const supported = !!(navigator.mediaDevices && window.MediaRecorder);
+  const draw = () => { btn.replaceChildren(icon('mic'), t(rec ? 'Stop (' + left + 's)' : voice ? 'Record again' : 'Record your voice')); btn.classList.toggle('rec', !!rec); };
+  const finish = () => { clearInterval(timer); if (stream) stream.getTracks().forEach(x => x.stop()); stream = null; };
+  const start = async () => {
+    status.textContent = '';
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (_) { status.textContent = t('Microphone permission was denied.'); return; }
+    chunks = []; const opts = { audioBitsPerSecond: 16000 };
+    try { rec = new MediaRecorder(stream, opts); } catch (_) { rec = new MediaRecorder(stream); }
+    rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    rec.onstop = async () => {
+      finish(); const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' }); rec = null; draw();
+      if (blob.size > 42000) { status.textContent = t('Recording too long. Try a shorter message.'); return; }
+      const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(',')[1] || ''); fr.readAsDataURL(blob); });
+      voice = { mime: blob.type, data: b64 }; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(blob);
+      player.src = url; player.hidden = false; del.hidden = false; status.textContent = t('Voice message ready.'); draw();
+    };
+    left = VOICE_MAX_S; rec.start(); draw();
+    timer = setInterval(() => { left--; draw(); if (left <= 0 && rec && rec.state === 'recording') rec.stop(); }, 1000);
+  };
+  btn.onclick = () => { if (rec && rec.state === 'recording') rec.stop(); else start(); };
+  del.onclick = () => { voice = null; player.hidden = true; player.removeAttribute('src'); del.hidden = true; status.textContent = ''; draw(); };
+  draw();
+  const node = h('div', { class: 'field voice-box' }, h('label', t('Voice message (optional)')), supported ? h('div', { class: 'actions tight' }, btn, del) : h('span', { class: 'hint' }, t('This device cannot record audio.')), player, status,
+    h('span', { class: 'hint' }, t('Speak up to 15 seconds. Only the operator can listen. Do not say names or medical details.')));
+  node.get = () => voice; node.reset = () => { finish(); if (rec && rec.state === 'recording') { rec.onstop = null; rec.stop(); } };
+  return node;
+}
+
 function requestForm(box, areas) {
+  const vrec = voiceRecorder();
   let service = 'ambulance'; let loc = null;
   const svcBox = h('div', { class: 'svc-pick', role: 'radiogroup', 'aria-label': t('What do you need?') });
   const catSel = h('select', { id: 'em-cat', 'aria-label': t('Request type') });
@@ -248,6 +284,7 @@ function requestForm(box, areas) {
     const body = { category: catSel.value, note: note.value };
     if (loc && consent.checked) Object.assign(body, { lat: loc.lat, lng: loc.lng, accuracy: loc.accuracy, consent: true }); else if (areaSel.value) body.areaId = areaSel.value;
     else { err.textContent = t('Share your location or choose an area first.'); return; }
+    if (vrec.get()) body.voice = vrec.get();
     send.disabled = true;
     try {
       const r = await POST('/emergency/simulate', body);
@@ -261,7 +298,7 @@ function requestForm(box, areas) {
     h('div', { class: 'field check' }, consent, h('label', { for: 'em-consent' }, t('I agree to share my location. It is used only to draw the test map and is removed after the retention period.'))),
     h('div', { class: 'actions tight' }, gps), msg,
     field('Or choose an area (no GPS needed)', 'em-area', areaSel)),
-  field('Short note (no names, no medical details)', 'em-note', note), err, h('div', { class: 'actions' }, send));
+  field('Short note (no names, no medical details)', 'em-note', note), vrec, err, h('div', { class: 'actions' }, send));
 }
 function showForm(box, areas) { box.replaceChildren(requestForm(box, areas)); }
 

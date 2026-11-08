@@ -4,6 +4,7 @@ const D = require('../domain');
 const { created } = require('../app');
 
 const R = require('../responders');
+const AI = require('../assistant');
 const { CASE_CATEGORIES, createCase } = R;
 
 module.exports = function (app) {
@@ -36,6 +37,19 @@ module.exports = function (app) {
       orders: store.col('orders').length, appointments: store.col('appointments').length,
       areas: R.AREAS.map(a => ({ id: a.id, name: a.name, lat: a.lat, lng: a.lng, active: cases.filter(c => c.location && c.location.source === 'area' && Math.abs(c.location.lat - a.lat) < 1e-6 && Math.abs(c.location.lng - a.lng) < 1e-6 && !['closed', 'cancelled', 'handed_over'].includes(c.status)).length })),
     };
+  });
+
+  app.post('/api/assistant', { summary: 'Assistant: answers questions from live system data (Somali/English). Optional LLM when ANTHROPIC_API_KEY is set.' }, async req => {
+    if (!app.limiter.check('ai:' + req.ip, 30)) throw new HttpError(429, 'rate_limited');
+    const b = validate({ message: v.str({ max: 500, required: true }), lang: v.str({ max: 2, default: 'so' }) }, req.body);
+    const out = AI.answer(store, config, b.message, b.lang);
+    if (config.anthropicKey) {
+      try {
+        const facts = out.items.map(i => `${i.name} (${i.area}) ${i.phone}`).join('\n') + '\nLocal answer: ' + out.reply;
+        out.reply = await AI.llmAnswer(config, facts, b.message); out.smart = true;
+      } catch (_) { /* keep local answer */ }
+    }
+    return out;
   });
 
   app.get('/api/hospitals', { summary: 'Verified hospital directory (?q=)' }, req => {
@@ -118,8 +132,15 @@ module.exports = function (app) {
       if (!a) throw new HttpError(400, 'validation_failed', { areaId: 'invalid_choice' });
       location = { lat: a.lat, lng: a.lng, source: 'area' }; if (!b.area) b.area = a.name;
     }
+    let voice = null;
+    if (raw.voice) {
+      const vo = raw.voice;
+      if (typeof vo.data !== 'string' || vo.data.length > 60000 || !/^[A-Za-z0-9+/=]+$/.test(vo.data) || !/^audio\/(webm|ogg|mp4|mpeg|aac|x-m4a)(;.*)?$/.test(String(vo.mime || ''))) throw new HttpError(400, 'validation_failed', { voice: 'invalid_audio' });
+      voice = { mime: String(vo.mime).split(';')[0], data: vo.data, at: new Date().toISOString() };
+    }
     const user = app.loadUser(req);
     const c = createCase(store, { category: b.category, area: b.area, note: b.note, location, source: 'public', createdBy: user ? user.id : null, autopilot: config.demoMode !== false });
+    if (voice) { c.voice = voice; store.save(); }
     return created({ case: { code: c.code, status: c.status, mode: 'SIMULATION', responder: c.responder, trackToken: c.trackToken }, notice: 'SIMULATION_ONLY_NO_REAL_HELP_SENT' });
   });
   app.get('/api/emergency/track/:code', { summary: 'Live (simulated) status of a test request. Needs the token returned at creation.' }, req => {

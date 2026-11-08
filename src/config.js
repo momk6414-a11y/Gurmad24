@@ -39,6 +39,7 @@ function load(overrides = {}) {
     demoMode: bool(env.DEMO_MODE, true),
     seedDemoData: bool(env.SEED_DEMO_DATA, true),
     demoPassword: env.DEMO_PASSWORD || '',
+    anthropicKey: env.ANTHROPIC_API_KEY || '', anthropicModel: env.ANTHROPIC_MODEL || '',
     cookieSecure: bool(env.COOKIE_SECURE, false),
     trustProxy: bool(env.TRUST_PROXY, false),
     retentionDays: Number(env.RETENTION_DAYS || 365),

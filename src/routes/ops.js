@@ -12,9 +12,9 @@ const OPS = ['operator', 'admin'];
 module.exports = function (app) {
   const { store } = app.ctx;
   const view = c => {
-    const { trackToken, sim, ...rest } = c;
+    const { trackToken, sim, voice, ...rest } = c;
     const org = c.assignedOrgId ? store.get('orgs', c.assignedOrgId) : null;
-    return { ...rest, responder: c.responder || R.responderFor(c.category), assignedOrgName: org ? org.name : null, assignedOrgType: org ? org.type : null, next: D.CASE_FLOW[c.status], track: R.trackView(store, c) };
+    return { ...rest, hasVoice: !!voice, responder: c.responder || R.responderFor(c.category), assignedOrgName: org ? org.name : null, assignedOrgType: org ? org.type : null, next: D.CASE_FLOW[c.status], track: R.trackView(store, c) };
   };
 
   app.get('/api/ops/cases', { auth: OPS, summary: 'Case list (?status=&responder=)' }, req => (R.advanceAll(store), {
@@ -29,6 +29,10 @@ module.exports = function (app) {
   });
   app.get('/api/ops/cases/:id', { auth: OPS, summary: 'Case detail with history' }, req => {
     const c = store.get('cases', req.params.id); if (!c) throw new HttpError(404, 'not_found'); R.advance(store, c); return { case: view(c) };
+  });
+  app.get('/api/ops/cases/:id/voice', { auth: OPS, summary: 'Voice note attached to a test request (operators only)' }, req => {
+    const c = store.get('cases', req.params.id); if (!c || !c.voice) throw new HttpError(404, 'not_found');
+    app.audit(req, 'case.voice.listen', 'case', c.id); return { mime: c.voice.mime, data: c.voice.data };
   });
   app.patch('/api/ops/cases/:id', { auth: OPS, summary: 'Change status / assign provider (validated state machine)' }, req => {
     const c = store.get('cases', req.params.id); if (!c) throw new HttpError(404, 'not_found');

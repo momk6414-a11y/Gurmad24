@@ -121,3 +121,28 @@ test('public overview: live aggregate counts, no personal data', async () => {
   assert.ok(Array.isArray(o.areas) && o.areas.length > 0);
   assert.equal(/trackToken|phone|email|@/.test(JSON.stringify(o)), false);
 });
+
+test('assistant answers from live data in Somali and English, never diagnoses', async () => {
+  const ask = (message, lang) => { t.app.limiter.reset(); return t.client().post('/api/assistant', { message, lang }); };
+  let r = await ask('Isbitaalka ugu dhow', 'so'); assert.equal(r.status, 200); assert.ok(r.data.items.length >= 1); assert.equal(r.data.lang, 'so');
+  r = await ask('How do I request an ambulance?', 'en'); assert.equal(r.data.lang, 'en'); assert.ok(r.data.items.some(i => i.tel) && r.data.actions.some(a => a.href === '#/emergency'));
+  r = await ask('I have chest pain and trouble breathing', 'en'); assert.match(r.data.reply, /not a doctor/i);
+  r = await ask('Kaararka ugu jaban', 'so'); assert.ok(r.data.reply.length > 10);
+  r = await ask('', 'so'); assert.equal(r.status, 400);
+});
+
+test('voice message: stored privately, only operators can listen, bad audio rejected, retention clears it', async () => {
+  const c = t.client(); t.app.limiter.reset();
+  const data = Buffer.from('OggS-test-audio-bytes').toString('base64');
+  const bad = await c.post('/api/emergency/simulate', { category: 'general', areaId: 'garowe', voice: { mime: 'text/html', data } });
+  assert.equal(bad.status, 400);
+  t.app.limiter.reset();
+  const area = (await c.get('/api/config')).data.areas[0].id;
+  const r = await c.post('/api/emergency/simulate', { category: 'general', areaId: area, voice: { mime: 'audio/webm;codecs=opus', data } });
+  assert.equal(r.status, 201);
+  assert.equal(JSON.stringify(r.data).includes(data), false);
+  const id = t.store.find('cases', x => x.code === r.data.case.code).id;
+  assert.equal((await c.get(`/api/ops/cases/${id}/voice`)).status, 401);
+  const d = await op.get(`/api/ops/cases/${id}`); assert.equal(d.data.case.hasVoice, true); assert.equal(JSON.stringify(d.data).includes(data), false);
+  const v = await op.get(`/api/ops/cases/${id}/voice`); assert.equal(v.data.mime, 'audio/webm'); assert.equal(v.data.data, data);
+});

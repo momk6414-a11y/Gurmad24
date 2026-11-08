@@ -105,7 +105,7 @@ function seedDemoUsers(app, config, log) {
 // Data retention: anonymise old closed cases, drop expired sessions.
 function runRetention(store, days) {
   const cutoff = Date.now() - days * 86400000; let n = 0;
-  for (const c of store.col('cases')) if (['closed', 'cancelled', 'handed_over'].includes(c.status) && !c.anonymizedAt && new Date(c.updatedAt).getTime() < cutoff) { c.area = ''; c.note = ''; c.location = null; c.trackToken = null; c.anonymizedAt = new Date().toISOString(); n++; }
+  for (const c of store.col('cases')) if (['closed', 'cancelled', 'handed_over'].includes(c.status) && !c.anonymizedAt && new Date(c.updatedAt).getTime() < cutoff) { c.area = ''; c.note = ''; c.location = null; delete c.voice; c.trackToken = null; c.anonymizedAt = new Date().toISOString(); n++; }
   for (const s of store.filter('sessions', x => new Date(x.expiresAt).getTime() < Date.now())) store.remove('sessions', s.id);
   if (n) store.save(); return n;
 }

@@ -6,6 +6,7 @@ import * as PT from './views/patient.js';
 import * as O from './views/org.js';
 import * as OPS from './views/ops.js';
 import * as A from './views/admin.js';
+import { mountAssistant } from './assistant.js';
 
 const ROLE_HOME = { patient: '/', hospital_admin: '/org', provider_admin: '/org', operator: '/ops', admin: '/admin' };
 const ORG = ['hospital_admin', 'provider_admin'];
@@ -337,6 +338,7 @@ window.addEventListener('online', () => {
 
   await loadMe();
   await render();
+  mountAssistant();
 
   if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js', {
