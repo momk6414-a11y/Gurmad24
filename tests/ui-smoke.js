@@ -24,6 +24,7 @@ const { chromium } = require('playwright');
   const cardId = t.store.find('cards', c => c.status === 'published').id; const hospId = t.store.find('orgs', o => o.type === 'hospital').id;
   const caseId = t.store.col('cases')[0].id;
   const guest = await session('guest', null, null, ['/', '/cards', '/cards/' + cardId, '/hospitals', '/hospitals/' + hospId, '/services', '/emergency', '/map', '/login', '/register', '/register-org', '/privacy']);
+  await guest.goto(t.base + '/#/map'); await guest.reload(); await guest.waitForSelector('.tm-locate', { timeout: 8000 }).catch(() => errors.push('map: current-location control was not rendered'));
   await guest.evaluate(() => Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition: done => done({ coords: { latitude: 11.2842, longitude: 49.1816 } }) } }));
   await guest.locator('.tm-locate').click();
   await guest.waitForSelector('.mk-user-location', { timeout: 3000 }).catch(() => errors.push('map: current-location marker was not shown'));
