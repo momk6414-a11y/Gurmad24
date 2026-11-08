@@ -16,7 +16,7 @@ function ratesFor(store, org) {
 const userView = u => ({ id: u.id, name: u.name, email: u.email, role: u.role, orgId: u.orgId || null, lang: u.lang || 'so', active: u.active, createdAt: u.createdAt });
 
 function orgPublic(o) {
-  return { id: o.id, type: o.type, name: o.name, area: o.area, address: o.address || '', phone: o.phone || '', email: o.publicEmail || '', description: o.description || '', hours: o.hours || '', verified: o.status === 'verified', available: o.type === 'hospital' ? undefined : !!o.available, serviceAreas: o.serviceAreas || [] };
+  return { id: o.id, type: o.type, name: o.name, area: o.area, address: o.address || '', phone: o.phone || '', email: o.publicEmail || '', description: o.description || '', hours: o.hours || '', verified: o.status === 'verified', available: o.type === 'hospital' ? undefined : !!o.available, serviceAreas: o.serviceAreas || [], lat: o.lat ?? null, lng: o.lng ?? null };
 }
 const orgPrivate = o => ({ ...orgPublic(o), status: o.status, statusNote: o.statusNote || '', contract: o.contract, createdAt: o.createdAt });
 

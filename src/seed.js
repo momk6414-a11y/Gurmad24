@@ -78,6 +78,12 @@ function ensureResponderDemo(app) {
       if (o.lat == null) { o.lat = Math.round((R.CENTER.lat + off[0]) * 1e5) / 1e5; o.lng = Math.round((R.CENTER.lng + off[1]) * 1e5) / 1e5; }
     });
   }
+  // Demo hospitals and the lab get positions near the centre so they show on the map.
+  const near = { hospital: [[0.004, 0.004], [-0.006, 0.008], [0.010, -0.004]], lab: [[-0.003, -0.009]] };
+  for (const type of Object.keys(near)) store.filter('orgs', o => o.isDemoSeed && o.type === type).forEach((o, i) => {
+    const off = near[type][i % near[type].length];
+    if (o.lat == null) { o.lat = Math.round((R.CENTER.lat + off[0]) * 1e5) / 1e5; o.lng = Math.round((R.CENTER.lng + off[1]) * 1e5) / 1e5; }
+  });
   store.save();
 }
 

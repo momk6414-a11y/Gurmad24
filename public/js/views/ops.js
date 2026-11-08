@@ -22,17 +22,21 @@ export async function dashboard({ query }) {
     { name: 'area', label: 'Area (general)', max: 60 }, { name: 'note', label: 'Note (no names, no medical details)', max: 200 }],
   { submit: 'Create', cancel: () => m.close(), onSubmit: async v => { await POST('/ops/cases', v); m.close(); toast(t('Simulated request created.')); refresh(); } })); };
 
-  const live = h('div');
+  const statsBox = h('div'); const casesBox = h('div');
+  const map = liveMap([], { places: true });
+  const mapPanel = panel('Live map (demo)', h('div', map, h('div', { class: 'legend' }, RESP.map(r => respTag(r)))));
   const load = async () => {
     const [st, cs, all] = await Promise.all([GET('/ops/stats'), GET('/ops/cases' + qs()), responder || status ? GET('/ops/cases') : null]);
     const everything = (all || cs).cases;
     const active = everything.filter(c => !['closed', 'cancelled'].includes(c.status) && c.track && c.track.location);
     const entries = active.map(c => ({ type: c.responder, incident: c.track.location, unit: c.track.unit, station: c.track.station, done: c.status === 'handed_over' }));
     const by = r => everything.filter(c => c.responder === r && !['closed', 'cancelled', 'handed_over'].includes(c.status)).length;
-    live.replaceChildren(
+    statsBox.replaceChildren(
       h('div', { class: 'grid g4 keep2' }, tile('Active cases', st.active), tile('Today', st.today), tile('Responders available', `${st.providersAvailable}/${st.providersTotal}`), tile('Avg. minutes to handover', st.avgMinutesToHandover === null ? '-' : st.avgMinutesToHandover)),
       h('div', { class: 'grid g3 keep2' }, RESP.map(r => h('div', { class: 'rcount u-' + r }, icon(r, 26), h('div', h('b', by(r)), h('small', t(SERVICE_NAME[r])))))),
-      panel('Live map (demo)', h('div', entries.length ? liveMap(entries) : emptyState('No active cases with a location.'), h('div', { class: 'legend' }, RESP.map(r => respTag(r))))),
+    );
+    map.update(entries);
+    casesBox.replaceChildren(
       panel('Cases', h('div', h('div', { class: 'chips' }, [['', 'All'], ...RESP.map(r => [r, SERVICE_NAME[r]])].map(([v, l]) => h('button', { class: 'chip', 'aria-pressed': responder === v, onclick: () => go('/ops' + (v ? '?responder=' + v : '') + (status ? (v ? '&' : '?') + 'status=' + status : '')) }, t(l)))),
         h('div', { class: 'chips' }, [['', 'All'], ...STATUSES.map(s => [s, s])].map(([v, l]) => h('button', { class: 'chip', 'aria-pressed': status === v, onclick: () => go('/ops' + (v ? '?status=' + v : '') + (responder ? (v ? '&' : '?') + 'responder=' + responder : '')) }, v ? badgeText(v) : t(l)))),
         table([{ label: 'Code', render: c => link('/ops/case/' + c.id, c.code) }, { label: 'Service', render: c => respTag(c.responder) }, { label: 'Type', render: c => catName(c.category) }, { label: 'Area', render: c => c.area || '-' }, { label: 'Status', render: c => badge(c.status) },
@@ -40,7 +44,7 @@ export async function dashboard({ query }) {
   };
   await load();
   S.poll = setInterval(() => load().catch(() => stopPoll()), 3000);
-  return h('div', head('Coordination dashboard', 'Ambulance, police and fire requests in simulation mode.', h('button', { class: 'btn', onclick: add }, icon('plus'), t('New simulated request'))), SIM(), live);
+  return h('div', head('Coordination dashboard', 'Ambulance, police and fire requests in simulation mode.', h('button', { class: 'btn', onclick: add }, icon('plus'), t('New simulated request'))), SIM(), statsBox, mapPanel, casesBox);
 }
 
 export async function caseDetail({ id }) {

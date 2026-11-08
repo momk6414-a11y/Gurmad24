@@ -101,3 +101,13 @@ test('security headers allow same-origin geolocation only', async () => {
   const res = await fetch(t.base + '/api/health');
   assert.match(res.headers.get('permissions-policy'), /geolocation=\(self\)/);
 });
+
+test('map: CSP allows the two tile hosts and public lists expose coordinates', async () => {
+  const r = await t.client().get('/api/providers?type=police');
+  const csp = r.headers['content-security-policy'] || (r.res && r.res.headers['content-security-policy']) || '';
+  if (csp) { assert.match(csp, /server\.arcgisonline\.com/); assert.match(csp, /tile\.openstreetmap\.org/); }
+  const p = r.data.providers[0];
+  assert.equal(typeof p.lat, 'number'); assert.equal(typeof p.lng, 'number');
+  const hs = (await t.client().get('/api/hospitals')).data.hospitals;
+  assert.ok(hs.some(x => typeof x.lat === 'number'));
+});

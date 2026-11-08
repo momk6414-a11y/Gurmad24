@@ -120,10 +120,10 @@ export async function requests() {
   const load = async () => (await GET('/org/requests')).requests;
   const step = (r, status) => PATCH('/org/requests/' + r.id, { status }).then(() => { toast(t('Updated.')); refresh(); }).catch(e => toast(errText(e), 'err'));
   const L = { en_route: 'Start (en route)', arrived: 'Arrived', handed_over: 'Handed over', received: 'Decline' };
-  const live = h('div'); const mapBox = h('div');
+  const live = h('div'); const map = liveMap([]);
   const draw = rs => {
     const entries = rs.filter(r => r.track && r.track.location && r.status !== 'closed' && r.status !== 'cancelled').map(r => ({ type: r.responder, incident: r.track.location, unit: r.track.unit, station: r.track.station, done: r.status === 'handed_over' }));
-    mapBox.replaceChildren(entries.length ? panel('Live map (demo)', liveMap(entries)) : h('span'));
+    map.update(entries);
     live.replaceChildren(panel(null, table([{ label: 'Code', key: 'code' }, { label: 'Type', render: r => catName(r.category) }, { label: 'Area', render: r => r.area || '-' },
       { label: 'Location', render: r => r.location ? h('a', { href: osmLink(r.location), target: '_blank', rel: 'noopener noreferrer' }, icon('pin', 16), t('Map')) : '-' },
       { label: 'Status', render: r => badge(r.status) }, { label: 'Updated', render: r => fdt(r.updatedAt) },
@@ -131,5 +131,5 @@ export async function requests() {
   };
   draw(await load());
   S.poll = setInterval(async () => { try { draw(await load()); } catch (_) { stopPoll(); } }, 4000);
-  return h('div', head('Assigned requests', 'SIMULATION: these are test records. Nobody is waiting for real help.'), demoNote('Simulation mode: status changes here are practice only; nothing is sent to real services or people.'), mapBox, live);
+  return h('div', head('Assigned requests', 'SIMULATION: these are test records. Nobody is waiting for real help.'), demoNote('Simulation mode: status changes here are practice only; nothing is sent to real services or people.'), panel('Live map (demo)', map), live);
 }

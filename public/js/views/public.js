@@ -1,7 +1,7 @@
 // Public + authentication screens: home, health card marketplace, hospitals, services, emergency info, login/register.
 import { S, t, h, icon, GET, POST, api, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, link, fdate, setLang } from '../core.js';
 import { receiptNode } from './shared.js';
-import { liveMap, osmLink } from '../map.js';
+import { liveMap, osmLink, PLACES } from '../map.js';
 
 export const APPT_CATS = [['general', 'General visit'], ['checkup', 'Check-up'], ['lab_test', 'Lab test'], ['follow_up', 'Follow-up'], ['other', 'Other']];
 export const CASE_CATS = [['general', 'General help request'], ['transport', 'Patient transport'], ['accident', 'Accident'], ['maternal', 'Maternal'], ['other', 'Other'], ['fire', 'Fire'], ['rescue', 'Rescue'], ['crime', 'Crime or threat'], ['disturbance', 'Disturbance']];
@@ -181,12 +181,13 @@ export const stopPoll = () => { if (S.poll) { clearInterval(S.poll); S.poll = nu
 const catLabel = c => t((CASE_CATS.find(x => x[0] === c) || [0, c])[1]);
 
 function trackPanel(box, tk, onNew) {
-  let busy = false;
+  let busy = false; const mapEl = liveMap([]);
   const draw = tr => {
     const idx = STEPS.findIndex(x => x[0] === tr.status);
     const done = tr.status === 'closed' || tr.status === 'cancelled';
     const steps = h('ol', { class: 'steps' }, STEPS.map(([k, l], i) => h('li', { class: i < idx ? 'done' : i === idx ? 'now' : '' }, h('span', { class: 'dotn' }, i < idx ? icon('check', 14) : String(i + 1)), h('span', t(l)))));
     const ro = tr.responderOrg;
+    mapEl.update(tr.location ? [{ type: tr.responder, incident: tr.location, unit: tr.unit, station: tr.station, done }] : []);
     box.replaceChildren(
       h('div', { class: 'note' }, icon('alert', 18), h('span', t('TEST ONLY: no real police, fire or ambulance service was contacted. This is a simulation for demonstration.'))),
       h('div', { class: 'trk-head' }, h('div', h('small', t('Request code')), h('b', { class: 'trk-code' }, tr.code)), h('div', { class: 'trk-type u-' + tr.responder }, icon(tr.responder, 20), h('span', t(SERVICE_NAME[tr.responder])), h('small', catLabel(tr.category)))),
@@ -194,7 +195,7 @@ function trackPanel(box, tk, onNew) {
       tr.status === 'en_route' && tr.etaMinutes ? h('p', { class: 'eta' }, icon('pin', 18), t('Arriving in about {m} min (simulated).', { m: tr.etaMinutes })) : null,
       tr.status === 'received' ? h('p', { class: 'hint' }, t('Finding the nearest unit...')) : null,
       ro ? h('p', { class: 'unit-info' }, icon(ro.type, 18), h('b', ro.name), ro.phone ? h('span', ' ' + ro.phone) : null) : null,
-      liveMap([{ type: tr.responder, incident: tr.location, unit: tr.unit, station: tr.station, done }]),
+      mapEl,
       tr.unit && tr.unit.demoPlaced ? h('p', { class: 'hint' }, t('Your location is far from the demo stations, so the demo unit starts a few kilometres from you.')) : null,
       tr.location ? h('p', { class: 'hint' }, h('a', { href: osmLink(tr.location), target: '_blank', rel: 'noopener noreferrer' }, t('Open the location in OpenStreetMap'))) : null,
       h('div', { class: 'actions' }, h('button', { class: 'btn ghost', onclick: () => { stopPoll(); saveTrack(null); onNew(); } }, icon('plus'), t('New test request'))));
@@ -261,6 +262,20 @@ export async function emergency() {
     h('div', { class: 'panel sos' }, h('h3', t('In a real emergency')), h('ul', { class: 'bul', style: 'margin-top:8px' }, h('li', t('Go to the nearest hospital or call your local emergency services directly.')), h('li', t('GURMAD 24 does NOT contact police, fire or ambulance services at this stage. Requests below are a demonstration.')), h('li', t('The platform never diagnoses and never gives treatment advice.')))),
     panel('Request help (demo)', h('div', demoNote('DEMO: this creates a registered test request. The operators, police, fire and ambulance dashboards show it live, but no real help is requested.'), box)),
     panel('Hospital contacts (verified)', hs.length ? table([{ label: 'Hospital', key: 'name' }, { label: 'Area', key: 'area' }, { label: 'Phone', render: o => o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : '-' }], hs) : emptyState('No hospitals listed.')));
+}
+
+// ---------- Puntland map (satellite / street), public
+export async function puntlandMap() {
+  const [hr, pr] = await Promise.all([GET('/hospitals'), GET('/providers')]);
+  const fac = [...hr.hospitals.map(o => ({ ...o, kind: 'hospital', type: 'hospital' })), ...pr.providers.filter(p => ['ambulance', 'police', 'fire'].includes(p.type)).map(p => ({ ...p, kind: 'station' }))].filter(o => o.lat != null && o.lng != null);
+  const map = liveMap([], { view: 'puntland', places: true, markers: fac.map(o => ({ kind: o.kind, type: o.type, lat: o.lat, lng: o.lng, label: o.name })), height: 'min(64vh, 520px)' });
+  const kindName = { hospital: 'Hospital', ambulance: 'Ambulance', police: 'Police', fire: 'Fire brigade' };
+  return h('div', head('Puntland map', 'Satellite imagery and street map of the whole region.'),
+    demoNote('Satellite pictures come from Esri and the street map from OpenStreetMap, so an internet connection is needed. Facility positions are demo data.'),
+    h('div', { class: 'chips' }, h('button', { class: 'chip', onclick: () => map.update([], { refit: true }) }, icon('pin', 16), t('Puntland')), PLACES.map(p => h('button', { class: 'chip', onclick: () => map.flyTo(p.lat, p.lng, 12) }, p.name))),
+    h('div', { class: 'panel' }, map, h('div', { class: 'legend' }, ['hospital', 'ambulance', 'police', 'fire'].map(k => h('span', { class: 'rtag u-' + k }, icon(k, 16), t(kindName[k]))))),
+    panel('Facilities (demo)', fac.length ? table([{ label: 'Name', key: 'name' }, { label: 'Type', render: o => t(kindName[o.type]) }, { label: 'Area', key: 'area' },
+      { label: '', render: o => h('button', { class: 'btn sm ghost', onclick: () => { map.flyTo(o.lat, o.lng, 14); map.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }, icon('pin', 16), t('Show on map')) }], fac) : emptyState('Nobody listed yet.')));
 }
 
 // ---------- Auth

@@ -187,5 +187,17 @@ export const so = {
 "Verified hospitals, ambulance, police and fire providers.":"Isbitaallada, ambalaaska, booliiska iyo dab-damiska la xaqiijiyay.",
 "No active cases with a location.":"Ma jiraan kiisas socda oo goob leh.",
 "No location was shared for this request.":"Goob lama wadaagin codsigan.",
-"Schematic demo map. Positions are simulated.":"Khariidad tijaabo ah oo la sawiray. Goobaha waa jilitaan."
+"Schematic demo map. Positions are simulated.":"Khariidad tijaabo ah oo la sawiray. Goobaha waa jilitaan.",
+"Satellite":"Satellite",
+"Street":"Waddooyin",
+"Map type":"Nooca khariidadda",
+"Zoom in":"Weynee",
+"Zoom out":"Yaree",
+"Puntland":"Puntland",
+"The map pictures could not load. Check your internet connection. Markers still work.":"Sawirrada khariidadda ma soo dhicin. Hubi internetkaaga. Calaamadaha weli way shaqeeyaan.",
+"Puntland map":"Khariidadda Puntland",
+"Satellite imagery and street map of the whole region.":"Sawirrada satellite-ka iyo khariidadda waddooyinka gobolka oo dhan.",
+"Satellite pictures come from Esri and the street map from OpenStreetMap, so an internet connection is needed. Facility positions are demo data.":"Sawirrada satellite-ka waxay ka yimaadaan Esri, khariidadda waddooyinkuna OpenStreetMap, sidaa darteed internet ayaa loo baahan yahay. Goobaha xarumaha waa xog tijaabo ah.",
+"Facilities (demo)":"Xarumaha (tijaabo)",
+"Show on map":"Ka tus khariidadda"
 };

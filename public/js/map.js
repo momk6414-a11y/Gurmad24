@@ -1,88 +1,163 @@
-// Schematic live map for the DEMO (no external tiles, no third-party requests).
-// Draws incident pins, response units and their routes from real lat/lng, on a generated street grid.
-// It is not a street map: the background is decorative.
-import { h, t } from './core.js';
+// Real interactive map (slippy tiles, no library): satellite imagery (Esri) or street map (OpenStreetMap).
+// Needs an internet connection for the map pictures. Markers, routes and the Puntland view are drawn by us.
+// Tiles are plain <img> requests; the CSP allows only the two hosts below.
+import { h, t, icon } from './core.js';
+
+const TILE = 256;
+const LAYERS = {
+  satellite: {
+    label: 'Satellite', max: 16,
+    url: (z, x, y) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
+    attr: 'Imagery © Esri, Maxar, Earthstar Geographics, and the GIS User Community', href: 'https://www.esri.com/',
+  },
+  street: {
+    label: 'Street', max: 18,
+    url: (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`,
+    attr: '© OpenStreetMap contributors', href: 'https://www.openstreetmap.org/copyright',
+  },
+};
+// Approximate positions (Garoowe is from Wikipedia, the others are rounded). Used for labels and quick zoom only.
+export const PLACES = [
+  { name: 'Garoowe', lat: 8.4059, lng: 48.4845 }, { name: 'Boosaaso', lat: 11.2842, lng: 49.1816 }, { name: 'Gaalkacyo', lat: 6.7697, lng: 47.4308 },
+  { name: 'Qardho', lat: 9.5, lng: 49.0833 }, { name: 'Eyl', lat: 7.98, lng: 49.8164 },
+];
+// Frame that shows the whole of Puntland. No borders are drawn: the picture comes from the map provider.
+export const PUNTLAND = [{ lat: 6.6, lng: 47.0 }, { lat: 12.1, lng: 51.6 }];
+const MIN_Z = 5;
 
 const NS = 'http://www.w3.org/2000/svg';
-const W = 600, H = 380;
-const svg = (tag, attrs = {}, ...kids) => {
-  const e = document.createElementNS(NS, tag);
-  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
-  for (const k of kids) if (k) e.append(k);
-  return e;
-};
-const fx = n => Math.round(n * 10) / 10;
-
-// Deterministic pseudo random so the street grid does not jump between refreshes.
-function rng(seed) { let s = Math.floor(seed * 1e5) % 2147483647 || 1; return () => (s = (s * 48271) % 2147483647) / 2147483647; }
-
-function makeProjection(points) {
-  const lats = points.map(p => p.lat), lngs = points.map(p => p.lng);
-  const cLat = (Math.min(...lats) + Math.max(...lats)) / 2, cLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
-  const kx = Math.cos(cLat * Math.PI / 180);
-  let spanX = Math.max((Math.max(...lngs) - Math.min(...lngs)) * kx, 0.012), spanY = Math.max(Math.max(...lats) - Math.min(...lats), 0.012);
-  if (spanX / spanY > W / H) spanY = spanX * H / W; else spanX = spanY * W / H;
-  spanX *= 1.45; spanY *= 1.45;
-  return { x: lng => W / 2 + (lng - cLng) * kx / spanX * W, y: lat => H / 2 - (lat - cLat) / spanY * H, kmPerPx: spanX * 111.32 / W, cLat, cLng };
-}
-
-function streets(seed) {
-  const r = rng(seed); const g = svg('g', { class: 'map-streets' });
-  const angle = (r() * 30 - 15) * Math.PI / 180;
-  const add = (a, spacing, cls) => {
-    const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
-    for (let o = -700; o < 700; o += spacing * (0.7 + r() * 0.7)) {
-      const x = W / 2 + nx * o, y = H / 2 + ny * o;
-      g.append(svg('line', { x1: fx(x - dx * 900), y1: fx(y - dy * 900), x2: fx(x + dx * 900), y2: fx(y + dy * 900), class: cls }));
-    }
-  };
-  add(angle, 46, 'map-street'); add(angle + Math.PI / 2 + (r() * 0.2 - 0.1), 58, 'map-street'); add(angle + 0.5, 190, 'map-avenue');
-  return g;
-}
-
-const star = (cx, cy, R) => {
-  const pts = []; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? R * 0.42 : R; pts.push(fx(cx + rr * Math.cos(a)) + ',' + fx(cy + rr * Math.sin(a))); }
-  return svg('polygon', { points: pts.join(' '), class: 'u-glyph' });
-};
-function glyph(type, cx, cy) {
-  if (type === 'police') return star(cx, cy, 6.5);
-  if (type === 'fire') return svg('path', { d: `M${cx} ${cy - 7}c1 3 4.5 4.6 4.5 8.2a4.5 4.5 0 0 1-9 0c0-2 1-3.2 2.2-4 0 1.8.8 2 1.3 2 0-2.6-1-3.6 1-6.2z`, class: 'u-glyph' });
-  return svg('path', { d: `M${cx - 2} ${cy - 6.5}h4v4.5h4.5v4h-4.5v4.5h-4v-4.5h-4.5v-4h4.5z`, class: 'u-glyph' });
-}
-
-// entries: [{ type, incident:{lat,lng}, unit?:{lat,lng}, station?:{lat,lng}, done? }]
-export function liveMap(entries, { label } = {}) {
-  const list = (entries || []).filter(e => e && e.incident);
-  const wrap = h('div', { class: 'livemap' });
-  if (!list.length) { wrap.append(h('div', { class: 'map-empty' }, t('No location was shared for this request.'))); return wrap; }
-  const pts = []; list.forEach(e => { pts.push(e.incident); if (e.unit) pts.push(e.unit); if (e.station) pts.push(e.station); });
-  const p = makeProjection(pts);
-  const root = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'map', role: 'img', 'aria-label': label || t('Live map (demo)'), preserveAspectRatio: 'xMidYMid slice' });
-  root.append(svg('rect', { width: W, height: H, class: 'map-bg' }), streets(p.cLat + p.cLng));
-  const px = o => [fx(p.x(o.lng)), fx(p.y(o.lat))];
-  for (const e of list) {
-    const [ix, iy] = px(e.incident);
-    if (e.station) { const [sx, sy] = px(e.station); root.append(svg('line', { x1: sx, y1: sy, x2: ix, y2: iy, class: 'map-route u-' + e.type })); if (e.unit) { const [ux, uy] = px(e.unit); root.append(svg('line', { x1: sx, y1: sy, x2: ux, y2: uy, class: 'map-trail u-' + e.type })); } }
-  }
-  for (const e of list) if (e.station) { const [sx, sy] = px(e.station); root.append(svg('rect', { x: sx - 6, y: sy - 6, width: 12, height: 12, rx: 3, class: 'map-station u-' + e.type })); }
-  for (const e of list) {
-    const [ix, iy] = px(e.incident);
-    root.append(svg('g', { class: 'map-incident' + (e.done ? ' done' : '') }, svg('circle', { cx: ix, cy: iy, r: 9, class: 'pulse' }), svg('circle', { cx: ix, cy: iy, r: 7, class: 'dot' }), svg('circle', { cx: ix, cy: iy, r: 2.6, class: 'core' })));
-  }
-  for (const e of list) if (e.unit) {
-    const [ux, uy] = px(e.unit);
-    root.append(svg('g', { class: 'map-unit u-' + e.type }, svg('circle', { cx: ux, cy: uy, r: 13, class: 'u-body' }), glyph(e.type, ux, uy)));
-  }
-  // compass and scale
-  const nice = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]; const km = nice.find(n => n / p.kmPerPx >= 70) || 1000; const len = km / p.kmPerPx;
-  const n = svg('text', { x: W - 24, y: 30, class: 'map-text', 'text-anchor': 'middle' }); n.textContent = 'N';
-  root.append(svg('g', {}, svg('path', { d: `M${W - 24} 36l6 14h-12z`, class: 'map-n' }), n));
-  const sc = svg('text', { x: 20 + len / 2, y: H - 22, class: 'map-text', 'text-anchor': 'middle' }); sc.textContent = km < 1 ? km * 1000 + ' m' : km + ' km';
-  root.append(svg('g', {}, svg('line', { x1: 20, y1: H - 14, x2: 20 + len, y2: H - 14, class: 'map-scale' }), sc));
-  wrap.append(root);
-  wrap.append(h('div', { class: 'map-cap' }, t('Schematic demo map. Positions are simulated.')));
-  return wrap;
-}
+const worldSize = z => TILE * 2 ** z;
+const clampLat = lat => Math.max(-85.05, Math.min(85.05, lat));
+const lng2x = (lng, z) => (lng + 180) / 360 * worldSize(z);
+const lat2y = (lat, z) => { const s = Math.sin(clampLat(lat) * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * worldSize(z); };
+const x2lng = (x, z) => x / worldSize(z) * 360 - 180;
+const y2lat = (y, z) => { const n = Math.PI - 2 * Math.PI * y / worldSize(z); return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))); };
 
 export const osmLink = loc => loc ? `https://www.openstreetmap.org/?mlat=${loc.lat}&mlon=${loc.lng}#map=16/${loc.lat}/${loc.lng}` : null;
+
+// entries: [{ type, incident:{lat,lng}, unit?, station?, done? }]
+// opts: { layer, places, markers:[{kind:'station'|'hospital', type, lat, lng, label}], view:'points'|'puntland', height }
+export function liveMap(entries, opts = {}) {
+  let layer = LAYERS[opts.layer] ? opts.layer : 'satellite';
+  const view = { lat: 8.4, lng: 49.3, z: 6 };
+  const mode = opts.view === 'puntland' ? 'puntland' : 'points';
+  let items = []; let current = entries || []; let userMoved = false; let raf = 0; let loaded = 0;
+  const tiles = new Map();
+
+  const tilePane = h('div', { class: 'tm-tiles' });
+  const lines = document.createElementNS(NS, 'svg'); lines.setAttribute('class', 'tm-lines');
+  const markPane = h('div', { class: 'tm-marks' });
+  const msg = h('div', { class: 'tm-msg', hidden: true, role: 'status' }, t('The map pictures could not load. Check your internet connection. Markers still work.'));
+  const attr = h('div', { class: 'tm-attr' });
+  const seg = h('div', { class: 'seg tm-ctl tm-layers', role: 'group', 'aria-label': t('Map type') });
+  const box = h('div', { class: 'tmap', tabindex: 0, role: 'application', 'aria-label': t('Live map (demo)') }, tilePane, lines, markPane, msg, seg,
+    h('div', { class: 'tm-ctl tm-zoom' },
+      h('button', { type: 'button', 'aria-label': t('Zoom in'), onclick: () => zoomBy(1) }, '+'),
+      h('button', { type: 'button', 'aria-label': t('Zoom out'), onclick: () => zoomBy(-1) }, '−'),
+      h('button', { type: 'button', class: 'tm-pl', onclick: () => { userMoved = true; fit(PUNTLAND, 0); } }, t('Puntland'))), attr);
+
+  const size = () => ({ w: box.clientWidth, h: box.clientHeight });
+  const maxZ = () => LAYERS[layer].max;
+  const setCenterPx = (cx, cy, z) => { view.z = z; view.lng = x2lng(cx, z); view.lat = y2lat(cy, z); };
+
+  function render() {
+    raf = 0; const { w, h: hh } = size(); if (!w || !hh) return;
+    const z = view.z; const zi = Math.min(maxZ(), Math.max(0, Math.floor(z))); const ts = TILE * 2 ** (z - zi); const n = 2 ** zi;
+    const left = lng2x(view.lng, z) - w / 2, top = lat2y(view.lat, z) - hh / 2;
+    const keep = new Set();
+    for (let ty = Math.floor(top / ts); ty <= Math.floor((top + hh) / ts); ty++) {
+      if (ty < 0 || ty >= n) continue;
+      for (let tx = Math.floor(left / ts); tx <= Math.floor((left + w) / ts); tx++) {
+        const wx = ((tx % n) + n) % n; const key = layer + '/' + zi + '/' + wx + '/' + ty; keep.add(key);
+        let img = tiles.get(key);
+        if (!img) {
+          img = document.createElement('img'); img.className = 'tm-tile'; img.alt = ''; img.draggable = false; img.decoding = 'async'; img.referrerPolicy = 'origin';
+          img.addEventListener('load', () => { loaded++; msg.hidden = true; }); img.addEventListener('error', () => { img.style.visibility = 'hidden'; });
+          img.src = LAYERS[layer].url(zi, wx, ty); tiles.set(key, img); tilePane.append(img);
+        }
+        img.style.width = img.style.height = (ts + 0.6) + 'px';
+        img.style.transform = `translate3d(${tx * ts - left}px,${ty * ts - top}px,0)`;
+      }
+    }
+    for (const [k, img] of tiles) if (!keep.has(k)) { img.remove(); tiles.delete(k); }
+    const px = o => [lng2x(o.lng, z) - left, lat2y(o.lat, z) - top];
+    for (const it of items) {
+      const [x, y] = px(it); it.el.style.transform = `translate(${x}px,${y}px)`;
+      it.el.hidden = x < -40 || y < -40 || x > w + 40 || y > hh + 40;
+    }
+    for (const ln of lines.childNodes) {
+      const d = ln.__d; const [x1, y1] = px(d.a), [x2, y2] = px(d.b);
+      ln.setAttribute('x1', x1); ln.setAttribute('y1', y1); ln.setAttribute('x2', x2); ln.setAttribute('y2', y2);
+    }
+  }
+  const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
+
+  function zoomAt(z, px, py) {
+    z = Math.max(MIN_Z, Math.min(maxZ(), z)); const { w, h: hh } = size();
+    const wx = lng2x(view.lng, view.z) - w / 2 + px, wy = lat2y(view.lat, view.z) - hh / 2 + py;
+    const lng = x2lng(wx, view.z), lat = y2lat(wy, view.z);
+    setCenterPx(lng2x(lng, z) - px + w / 2, lat2y(lat, z) - py + hh / 2, z); schedule();
+  }
+  const zoomBy = d => { userMoved = true; const { w, h: hh } = size(); zoomAt(view.z + d, w / 2, hh / 2); };
+  const panBy = (dx, dy) => { setCenterPx(lng2x(view.lng, view.z) - dx, lat2y(view.lat, view.z) - dy, view.z); schedule(); };
+
+  function fit(points, pad = 56) {
+    const { w, h: hh } = size(); const lats = points.map(p => p.lat), lngs = points.map(p => p.lng);
+    const minLat = Math.min(...lats), maxLat = Math.max(...lats), minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+    const midLat = y2lat((lat2y(minLat, 0) + lat2y(maxLat, 0)) / 2, 0), midLng = (minLng + maxLng) / 2;
+    let z = 14;
+    const spanX = (maxLng - minLng) / 360 * TILE, spanY = Math.abs(lat2y(maxLat, 0) - lat2y(minLat, 0));
+    if (w && hh && (spanX > 1e-9 || spanY > 1e-9)) z = Math.min(14, Math.log2(Math.max(40, w - 2 * pad) / Math.max(spanX, 1e-9)), Math.log2(Math.max(40, hh - 2 * pad) / Math.max(spanY, 1e-9)));
+    view.lat = midLat; view.lng = midLng; view.z = Math.max(MIN_Z, Math.min(maxZ(), z)); schedule();
+  }
+
+  function setLayer(name) {
+    layer = name; tiles.forEach(i => i.remove()); tiles.clear(); loaded = 0;
+    if (view.z > maxZ()) view.z = maxZ();
+    seg.replaceChildren(...Object.entries(LAYERS).map(([k, L]) => h('button', { type: 'button', 'aria-pressed': k === layer, onclick: () => setLayer(k) }, t(L.label))));
+    attr.replaceChildren(h('a', { href: LAYERS[layer].href, target: '_blank', rel: 'noopener noreferrer' }, LAYERS[layer].attr));
+    schedule(); clearTimeout(box.__t); box.__t = setTimeout(() => { if (!loaded) msg.hidden = false; }, 8000);
+  }
+
+  const mk = (cls, ...kids) => h('div', { class: 'mk ' + cls }, ...kids);
+  function build(list) {
+    markPane.replaceChildren(); lines.replaceChildren(); items = [];
+    const add = (o, el) => { markPane.append(el); items.push({ lat: o.lat, lng: o.lng, el }); };
+    const line = (a, b, cls) => { const l = document.createElementNS(NS, 'line'); l.setAttribute('class', cls); l.__d = { a, b }; lines.append(l); };
+    if (opts.places) PLACES.forEach(p => add(p, mk('mk-city', h('span', { class: 'cdot' }), h('span', { class: 'clbl' }, p.name))));
+    (opts.markers || []).forEach(m => add(m, mk('mk-fac u-' + (m.type || 'hospital'), icon(m.kind === 'hospital' ? 'hospital' : m.type, 14), m.label ? h('span', { class: 'clbl' }, m.label) : null)));
+    for (const e of list) if (e.station) { line(e.station, e.incident, 'tm-route u-' + e.type); if (e.unit) line(e.station, e.unit, 'tm-trail u-' + e.type); }
+    for (const e of list) if (e.station) add(e.station, mk('mk-station u-' + e.type, icon(e.type, 13)));
+    for (const e of list) add(e.incident, mk('mk-incident' + (e.done ? ' done' : ''), h('span', { class: 'pulse' }), h('span', { class: 'dot' })));
+    for (const e of list) if (e.unit) add(e.unit, mk('mk-unit u-' + e.type, icon(e.type, 18)));
+  }
+
+  const points = list => list.flatMap(e => [e.incident, e.unit, e.station].filter(Boolean));
+  box.update = (list, { refit = true } = {}) => {
+    const l = (list || []).filter(e => e && e.incident); current = l; build(l);
+    if (refit && !userMoved) { const pts = mode === 'puntland' ? [] : points(l); if (pts.length) fit(pts); else fit(PUNTLAND, 0); }
+    schedule();
+  };
+  box.flyTo = (lat, lng, z = 12) => { userMoved = true; view.lat = lat; view.lng = lng; view.z = Math.min(maxZ(), z); schedule(); };
+
+  // pointer input: drag, pinch, wheel, double click, keyboard
+  const ptrs = new Map(); let pinch = null;
+  box.addEventListener('pointerdown', e => { if (e.target.closest('.tm-ctl')) return; box.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); userMoved = true; if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); } });
+  box.addEventListener('pointermove', e => {
+    const p = ptrs.get(e.pointerId); if (!p) return; const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size === 1) panBy(dx, dy);
+    else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); const r = box.getBoundingClientRect(); if (pinch && d > 0) zoomAt(view.z + Math.log2(d / pinch), (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top); pinch = d; }
+  });
+  const end = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; };
+  box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
+  box.addEventListener('wheel', e => { e.preventDefault(); userMoved = true; const r = box.getBoundingClientRect(); zoomAt(view.z - Math.sign(e.deltaY) * 0.5, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  box.addEventListener('dblclick', e => { if (e.target.closest('.tm-ctl')) return; userMoved = true; const r = box.getBoundingClientRect(); zoomAt(view.z + 1, e.clientX - r.left, e.clientY - r.top); });
+  box.addEventListener('keydown', e => { const k = e.key; if (k === '+' || k === '=') zoomBy(1); else if (k === '-') zoomBy(-1); else if (k.startsWith('Arrow')) { e.preventDefault(); userMoved = true; panBy(k === 'ArrowLeft' ? 60 : k === 'ArrowRight' ? -60 : 0, k === 'ArrowUp' ? 60 : k === 'ArrowDown' ? -60 : 0); } });
+  if (window.ResizeObserver) new ResizeObserver(() => { if (!userMoved) box.update(current, { refit: true }); else schedule(); }).observe(box);
+
+  if (opts.height) box.style.height = opts.height;
+  setLayer(layer); box.update(current, { refit: true });
+  return box;
+}
+
 export const TYPE_ICON = { ambulance: 'ambulance', police: 'police', fire: 'fire' };
