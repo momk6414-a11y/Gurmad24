@@ -86,7 +86,7 @@ test('API security: auth required, role enforced, CSRF origin, JSON only, body l
   const res = await fetch(t.base + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: 'x=1' });
   assert.equal(res.status, 415);
   // oversized body -> clean 413
-  const big = await fetch(t.base + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'a@x.test', password: 'x'.repeat(70000) }) });
+  const big = await fetch(t.base + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'a@x.test', password: 'x'.repeat(300000) }) });
   assert.equal(big.status, 413);
   // headers
   const h = await fetch(t.base + '/api/health');

@@ -326,3 +326,12 @@ h1,h2,h3,h4{letter-spacing:-.01em}
 @media (max-width:560px){.tm-scale{bottom:46px}.tm-north{bottom:50px}}
 
 .mono.key{font-size:19px;letter-spacing:1px;line-height:1.5;user-select:all}
+
+/* iPhone / Safari */
+html{-webkit-tap-highlight-color:transparent}body{padding-bottom:env(safe-area-inset-bottom)}
+#top{padding-top:max(0px,env(safe-area-inset-top))}
+.tabs{-webkit-overflow-scrolling:touch}.tm-layers,.tm-zoom button,.btn{-webkit-appearance:none;appearance:none}
+input,select,textarea{-webkit-appearance:none;appearance:none;font-size:16px}
+button,.btn,.chip,.pm-row{-webkit-touch-callout:none}
+.tmap{touch-action:none;-webkit-user-select:none;user-select:none}
+.ai-panel{max-height:min(70vh,560px);max-height:min(70svh,560px)}

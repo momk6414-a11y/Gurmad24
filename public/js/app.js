@@ -1,6 +1,6 @@
 
 // App shell: session, navigation per role, hash router, service worker.
-import { S, t, h, icon, GET, POST, setLang, errText, loading, emptyState, toast, ApiError } from './core.js';
+import { SS, S, t, h, icon, GET, POST, setLang, errText, loading, emptyState, toast, ApiError } from './core.js';
 import * as P from './views/public.js';
 import * as PT from './views/patient.js';
 import * as O from './views/org.js';
@@ -208,13 +208,15 @@ async function logout() {
   render(true);
 }
 
+const LS_get = k => { try { return localStorage.getItem(k); } catch (_) { return null; } };
+
 async function loadMe() {
   try {
     const r = await GET('/auth/me');
     S.user = r.user;
     S.org = r.org || null;
 
-    if (S.user && S.user.lang && !localStorage.getItem('g24-lang')) {
+    if (S.user && S.user.lang && !LS_get('g24-lang')) {
       setLang(S.user.lang);
     }
   } catch (_) {
@@ -251,7 +253,7 @@ async function render(keepScroll) {
   }
 
   if (route.roles && !S.user) {
-    sessionStorage.setItem('g24-after', '#' + raw);
+    SS.set('g24-after', '#' + raw);
     location.hash = '#/login';
     return;
   }
@@ -297,7 +299,7 @@ async function render(keepScroll) {
     if (e instanceof ApiError && e.status === 401) {
       S.user = null;
       chrome();
-      sessionStorage.setItem('g24-after', '#' + raw);
+      SS.set('g24-after', '#' + raw);
       location.hash = '#/login';
       return;
     }

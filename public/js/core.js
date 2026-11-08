@@ -6,6 +6,13 @@ import { so } from './i18n.js';
 
 // ---------- Storage and application state
 
+// sessionStorage can throw (Safari private mode, blocked storage): never let that stop the app.
+export const SS = {
+  get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) { /* ignore */ } },
+  del(k) { try { sessionStorage.removeItem(k); } catch (_) { /* ignore */ } },
+};
+
 const LS = {
   get(k) {
     try {

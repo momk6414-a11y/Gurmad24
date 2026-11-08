@@ -84,7 +84,7 @@ class App {
         size += c.length;
         if (size > 1048576) return req.destroy(); // abusive stream: cut the connection
         if (over) return;
-        if (size > 65536) { over = true; chunks.length = 0; } else chunks.push(c);
+        if (size > 262144) { over = true; chunks.length = 0; } else chunks.push(c);
       });
       req.on('end', () => {
         if (over) return reject(new HttpError(413, 'payload_too_large'));

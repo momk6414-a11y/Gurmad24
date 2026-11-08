@@ -135,13 +135,13 @@ module.exports = function (app) {
     let voice = null;
     if (raw.voice) {
       const vo = raw.voice;
-      if (typeof vo.data !== 'string' || vo.data.length > 60000 || !/^[A-Za-z0-9+/=]+$/.test(vo.data) || !/^audio\/(webm|ogg|mp4|mpeg|aac|x-m4a)(;.*)?$/.test(String(vo.mime || ''))) throw new HttpError(400, 'validation_failed', { voice: 'invalid_audio' });
+      if (typeof vo.data !== 'string' || vo.data.length > 210000 || !/^[A-Za-z0-9+/=]+$/.test(vo.data) || !/^audio\/(webm|ogg|mp4|mpeg|aac|x-m4a)(;.*)?$/.test(String(vo.mime || ''))) throw new HttpError(400, 'validation_failed', { voice: 'invalid_audio' });
       voice = { mime: String(vo.mime).split(';')[0], data: vo.data, at: new Date().toISOString() };
     }
     const user = app.loadUser(req);
     const real = !!D.settings(store).realMode;
     const c = createCase(store, { category: b.category, area: b.area, note: b.note, location, source: 'public', createdBy: user ? user.id : null, autopilot: !real && config.demoMode !== false, mode: real ? 'REAL' : 'SIMULATION' });
-    if (voice) { c.voice = voice; store.save(); }
+    if (voice) { c.voice = voice; for (const old of store.col('cases').filter(x => x.voice).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1).slice(60)) delete old.voice; store.save(); }
     return created({ case: { code: c.code, status: c.status, mode: c.mode, responder: c.responder, trackToken: c.trackToken }, notice: real ? 'REAL_REQUEST_QUEUED_FOR_OPERATORS' : 'SIMULATION_ONLY_NO_REAL_HELP_SENT' });
   });
   app.get('/api/emergency/track/:code', { summary: 'Live (simulated) status of a test request. Needs the token returned at creation.' }, req => {

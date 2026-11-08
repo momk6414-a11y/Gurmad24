@@ -1,5 +1,5 @@
 // Public + authentication screens: home, health card marketplace, hospitals, services, emergency info, login/register.
-import { S, t, h, icon, GET, POST, api, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, link, fdate, setLang } from '../core.js';
+import { SS, S, t, h, icon, GET, POST, api, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, link, fdate, setLang } from '../core.js';
 import { receiptNode } from './shared.js';
 import { liveMap, osmLink, PLACES } from '../map.js';
 
@@ -115,7 +115,7 @@ export async function cardDetail({ id }) {
 }
 
 export function orderFlow(c) {
-  if (!S.user) { toast(t('Please log in to order.')); sessionStorage.setItem('g24-after', location.hash); return go('/login'); }
+  if (!S.user) { toast(t('Please log in to order.')); SS.set('g24-after', location.hash); return go('/login'); }
   if (S.user.role !== 'patient') return toast(t('Only patient accounts can order cards.'), 'err');
   let m;
   const f = form([{ name: 'acceptTerms', type: 'checkbox', label: 'I have read the terms and refund policy, and I understand this is a hospital service card, not insurance.', required: true }],
@@ -159,7 +159,7 @@ export async function hospitalDetail({ id }) {
 }
 
 export function appointmentModal(org, services = []) {
-  if (!S.user) { toast(t('Please log in first.')); sessionStorage.setItem('g24-after', location.hash); return go('/login'); }
+  if (!S.user) { toast(t('Please log in first.')); SS.set('g24-after', location.hash); return go('/login'); }
   if (S.user.role !== 'patient') return toast(t('Only patient accounts can request appointments.'), 'err');
   let m; const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
   m = modal(t('Request appointment') + ' - ' + org.name, h('div', demoNote('Do not write medical details here. Only the hospital you choose will see your name and phone.'),
@@ -190,8 +190,8 @@ const SERVICES = [
 export const SERVICE_NAME = { ambulance: 'Ambulance', police: 'Police', fire: 'Fire brigade' };
 const STEPS = [['received', 'Received'], ['assigned', 'Unit assigned'], ['en_route', 'On the way'], ['arrived', 'Arrived'], ['handed_over', 'Help given'], ['closed', 'Closed']];
 const TRACK_KEY = 'g24-track';
-const saveTrack = v => { try { v ? sessionStorage.setItem(TRACK_KEY, JSON.stringify(v)) : sessionStorage.removeItem(TRACK_KEY); } catch (_) { /* storage may be blocked */ } };
-const loadTrack = () => { try { return JSON.parse(sessionStorage.getItem(TRACK_KEY) || 'null'); } catch (_) { return null; } };
+const saveTrack = v => { try { v ? SS.set(TRACK_KEY, JSON.stringify(v)) : SS.del(TRACK_KEY); } catch (_) { /* storage may be blocked */ } };
+const loadTrack = () => { try { return JSON.parse(SS.get(TRACK_KEY) || 'null'); } catch (_) { return null; } };
 export const stopPoll = () => { if (S.poll) { clearInterval(S.poll); S.poll = null; } };
 const catLabel = c => t((CASE_CATS.find(x => x[0] === c) || [0, c])[1]);
 
@@ -245,12 +245,13 @@ function voiceRecorder() {
     rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
     rec.onstop = async () => {
       finish(); const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' }); rec = null; draw();
-      if (blob.size > 42000) { status.textContent = t('Recording too long. Try a shorter message.'); return; }
+      if (blob.size > 150000) { status.textContent = t('Recording too long. Try a shorter message.'); return; }
       const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(',')[1] || ''); fr.readAsDataURL(blob); });
       voice = { mime: blob.type, data: b64 }; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(blob);
       player.src = url; player.hidden = false; del.hidden = false; status.textContent = t('Voice message ready.'); draw();
     };
-    left = VOICE_MAX_S; rec.start(); draw();
+    const iosLike = /mp4|aac/i.test(rec.mimeType || '');
+    left = iosLike ? 10 : VOICE_MAX_S; rec.start(); draw();
     timer = setInterval(() => { left--; draw(); if (left <= 0 && rec && rec.state === 'recording') rec.stop(); }, 1000);
   };
   btn.onclick = () => { if (rec && rec.state === 'recording') rec.stop(); else start(); };
@@ -449,7 +450,7 @@ export function login() {
 export async function afterAuth(user) {
   S.user = user; S.authKnown = true; // known immediately: do not bounce back to login while the session reloads
   window.dispatchEvent(new CustomEvent('g24-auth'));
-  const after = sessionStorage.getItem('g24-after'); sessionStorage.removeItem('g24-after');
+  const after = SS.get('g24-after'); SS.del('g24-after');
   const home = { patient: '/', hospital_admin: '/org', provider_admin: '/org', operator: '/ops', admin: '/admin' }[user.role];
   go(after && user.role === 'patient' ? after.replace(/^#/, '') : home);
 }
