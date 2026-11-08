@@ -23,35 +23,54 @@ async function hotlines() {
 
 export async function home() {
   const hot = await hotlines();
-  return h('div', { class: 'legend-home' },
-    h('section', { class: 'legend-hero' },
-      h('div', { class: 'legend-copy' },
-        h('div', { class: 'eyebrow' }, 'GURMAD 24  ·  ' + t('Fast help, one tap away')),
-        h('h1', t('One network. Every emergency.')),
-        h('p', t('A connected response system for people, location and essential services.')),
-        h('div', { class: 'actions' },
-          h('a', { class: 'btn sos-cta', href: '#/emergency', onclick: e => { e.preventDefault(); go('/emergency'); } }, icon('alert'), t('Request help now')),
-          h('a', { class: 'btn ghost', href: '#/map', onclick: e => { e.preventDefault(); go('/map'); } }, icon('pin'), t('Open live map'))
+  const quickLink = (path, symbol, title, detail) => h('a', {
+    class: 'g24-home-link',
+    href: '#' + path,
+    'aria-label': t(title) + ' — ' + t(detail),
+    onclick: e => { e.preventDefault(); go(path); }
+  },
+    h('span', { class: 'g24-home-link-icon' }, icon(symbol, 22)),
+    h('span', { class: 'g24-home-link-copy' }, h('b', t(title)), h('small', t(detail)))
+  );
+
+  return h('div', { class: 'g24-home' },
+    h('section', { class: 'g24-home-hero', 'aria-labelledby': 'home-title' },
+      h('div', { class: 'g24-home-main' },
+        h('div', { class: 'g24-home-brand' },
+          h('span', { class: 'g24-home-brand-icon' }, icon('activity', 18)),
+          h('span', { class: 'eyebrow' }, 'GURMAD 24  ·  ' + t('Fast help, one tap away'))
         ),
-        h('div', { class: 'legend-proof' },
-          h('span', icon('shield', 16), t('People first')),
-          h('span', icon('activity', 16), t('One connected system')),
-          h('span', icon('globe', 16), t('Somali + English'))
+        h('h1', { id: 'home-title' }, t('One network. Every emergency.')),
+        h('p', t('A connected response system for people, location and essential services.')),
+        h('div', { class: 'g24-home-cta' },
+          h('a', { class: 'btn sos-cta', href: '#/emergency', onclick: e => { e.preventDefault(); go('/emergency'); } }, icon('alert', 19), t('Request help now')),
+          h('a', { class: 'btn ghost g24-home-map', href: '#/map', onclick: e => { e.preventDefault(); go('/map'); } }, icon('pin', 19), t('Open live map'))
+        ),
+        h('div', { class: 'g24-home-proof' },
+          h('span', icon('shield', 15), t('People first')),
+          h('span', icon('activity', 15), t('One connected system')),
+          h('span', icon('globe', 15), t('Somali + English'))
         )
       ),
-      h('div', { class: 'legend-art-wrap' },
-        h('img', { class: 'legend-art', src: '/img/hero.svg', alt: t('GURMAD 24 system map: people, GPS location, ambulance, hospitals, police, fire and support connected in one response network.'), width: 900, height: 620 })
+      h('div', { class: 'g24-home-visual' },
+        h('img', { src: '/img/hero.svg', alt: t('GURMAD 24 system map: people, GPS location, ambulance, hospitals, police, fire and support connected in one response network.'), width: 900, height: 620, fetchpriority: 'low' })
       )
     ),
-    hot,
-    h('section', { class: 'legend-actions' },
-      h('a', { class: 'legend-action', href: '#/hospitals', onclick: e => { e.preventDefault(); go('/hospitals'); } }, icon('hospital', 22), h('b', t('Hospitals')), h('span', t('Find care'))),
-      h('a', { class: 'legend-action', href: '#/services', onclick: e => { e.preventDefault(); go('/services'); } }, icon('ambulance', 22), h('b', t('Emergency services')), h('span', t('Ambulance and providers'))),
-      h('a', { class: 'legend-action', href: '#/cards', onclick: e => { e.preventDefault(); go('/cards'); } }, icon('card', 22), h('b', t('Health cards')), h('span', t('Explore healthcare'))),
-      h('a', { class: 'legend-action', href: '#/map', onclick: e => { e.preventDefault(); go('/map'); } }, icon('pin', 22), h('b', t('Live map')), h('span', t('GPS and locations')))
+    hot ? h('div', { class: 'g24-home-hotlines' }, hot) : null,
+    h('section', { class: 'g24-home-quick', 'aria-label': t('Emergency services') },
+      h('div', { class: 'g24-home-section-head' },
+        h('h2', t('Emergency services')),
+        h('span', t('One connected system'))
+      ),
+      h('div', { class: 'g24-home-grid' },
+        quickLink('/hospitals', 'hospital', 'Hospitals', 'Find care'),
+        quickLink('/services', 'ambulance', 'Emergency services', 'Ambulance and providers'),
+        quickLink('/map', 'pin', 'Live map', 'GPS and locations'),
+        quickLink('/cards', 'card', 'Health cards', 'Explore healthcare')
+      )
     ),
-    h('div', { class: 'legend-safety' },
-      icon('alert', 20),
+    h('div', { class: 'g24-home-safety' },
+      icon('alert', 18),
       h('span', t('Pilot demo only — emergency dispatch is simulated. For a real emergency, contact local emergency services directly.'))
     )
   );
