@@ -200,6 +200,8 @@ export class ApiError extends Error {
 
 export async function api(method, path, body) {
   let res;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
 
   try {
     res = await fetch('/api' + path, {
@@ -209,9 +211,12 @@ export async function api(method, path, body) {
         : {},
       body: body !== undefined ? JSON.stringify(body) : undefined,
       credentials: 'same-origin',
+      signal: controller.signal,
     });
   } catch (_) {
     throw new ApiError(0, 'offline');
+  } finally {
+    clearTimeout(timeout);
   }
 
   let data = null;
