@@ -61,8 +61,9 @@ module.exports = function (app) {
     if (Date.now() - rec.t > 15 * 60000) { rec.n = 0; rec.t = Date.now(); }
     if (rec.n >= 5) throw new HttpError(429, 'too_many_attempts');
     const u = store.find('users', x => x.email === b.email);
-    // verify against a dummy hash for unknown users to keep timing similar
-    const ok = u ? S.verifyPassword(b.password, u.passwordHash) : (S.verifyPassword(b.password, 'scrypt$00$00'), false);
+    // Always perform a real scrypt verification, even when the email is unknown.
+    const passwordOk = S.verifyPassword(b.password, u ? u.passwordHash : S.DUMMY_PASSWORD_HASH);
+    const ok = Boolean(u && passwordOk);
     if (!ok || !u.active || u.deletedAt) {
       rec.n++; fails.set(key, rec);
       app.audit(req, 'auth.login_failed', 'user', u ? u.id : null);
