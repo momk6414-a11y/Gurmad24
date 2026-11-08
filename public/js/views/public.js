@@ -379,7 +379,7 @@ export async function puntlandMap() {
     h('div',{class:'panel'},h('div',{class:'actions'},toggle,h('a',{class:'btn sm ghost',href:'#/emergency',onclick:e=>{e.preventDefault();go('/emergency');}},icon('alert',15),t('Open live dispatch test'))),map,
       h('div',{class:'legend'},['hospital','government','landmark','ambulance'].map(k=>h('span',{class:'rtag u-'+k},icon(k==='government'?'shield':k==='landmark'?'pin':k,15),t(k))))),
     selected,panel('Nearby places and facilities',list),
-    demoNote('Demo dispatch-ku waa tijaabo muuqaal ah oo keliya: ma wacayo ambalaas, boolis ama dab-damis, mana sheegayo in gaari dhab ahi socdo. Codsiga tijaabada ah ka samee Emergency, halkaas oo status-ka lagu cusboonaysiinayo.')));
+    demoNote('Demo dispatch-ku waa tijaabo muuqaal ah oo keliya: ma wacayo ambalaas, boolis ama dab-damis, mana sheegayo in gaari dhab ahi socdo. Codsiga tijaabada ah ka samee Emergency, halkaas oo status-ka lagu cusboonaysiinayo.'));
 }
 
 export async function system() {
