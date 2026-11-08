@@ -56,10 +56,10 @@ function createCase(store, f) {
   const now = new Date().toISOString();
   const responder = responderFor(f.category);
   const c = {
-    id: store.id('c_'), code: 'SIM-' + String(store.next('case')).padStart(6, '0'), mode: 'SIMULATION', category: f.category, responder,
+    id: store.id('c_'), code: 'SIM-' + String(store.next('case')).padStart(6, '0'), mode: f.mode === 'REAL' ? 'REAL' : 'SIMULATION', category: f.category, responder,
     area: f.area || '', note: f.note || '', location: f.location || null,
     status: 'received', assignedOrgId: null, source: f.source, createdBy: f.createdBy || null, createdAt: now, updatedAt: now,
-    autopilot: !!f.autopilot, trackToken: f.autopilot ? crypto.randomBytes(9).toString('base64url') : null, sim: null,
+    autopilot: !!f.autopilot, trackToken: (f.autopilot || f.mode === 'REAL') ? crypto.randomBytes(9).toString('base64url') : null, sim: null,
     history: [{ ts: now, status: 'received', by: f.createdBy || 'public', note: '' }],
   };
   store.insert('cases', c); return c;
@@ -112,7 +112,7 @@ function trackView(store, c, nowMs = Date.now()) {
     if (c.status === 'en_route') etaMinutes = Math.max(1, Math.round(c.sim.distKm * (1 - f) / T.KMH * 60));
   }
   return {
-    code: c.code, mode: 'SIMULATION', category: c.category, responder: c.responder || responderFor(c.category), status: c.status,
+    code: c.code, mode: c.mode || 'SIMULATION', category: c.category, responder: c.responder || responderFor(c.category), status: c.status,
     area: c.area, location: c.location, createdAt: c.createdAt, updatedAt: c.updatedAt,
     unit, station: c.sim && c.sim.start ? { lat: c.sim.start.lat, lng: c.sim.start.lng } : null, etaMinutes,
     responderOrg: org ? { name: org.name, type: org.type, phone: org.phone || '' } : null,

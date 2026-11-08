@@ -98,6 +98,41 @@ module.exports = function (app) {
 
   // ---------- Settings (commissions, fees) - everything configurable, nothing hard-wired
   app.get('/api/admin/settings', { auth: A, summary: 'Platform settings (commission rates in basis points)' }, () => ({ settings: D.settings(store), paymentProviders: listProviders() }));
+  // ---- Real mode: while OFF every emergency request is a simulation. Only an admin can turn it on.
+  app.put('/api/admin/real-mode', { auth: A, summary: 'Turn real (non-simulated) emergency requests on or off. Audited.' }, req => {
+    const b = validate({ enabled: v.bool({ required: true }), confirm: v.str({ max: 20, default: '' }) }, req.body);
+    if (b.enabled && b.confirm !== 'SHIDO') throw new HttpError(400, 'validation_failed', { confirm: 'type_SHIDO' });
+    D.settings(store).realMode = !!b.enabled; D.settings(store).realModeAt = new Date().toISOString(); store.save();
+    app.audit(req, b.enabled ? 'realmode.on' : 'realmode.off', 'settings', null); app.secEvent(req, b.enabled ? 'real_mode_on' : 'real_mode_off', {});
+    return { realMode: !!D.settings(store).realMode };
+  });
+
+  app.get('/api/admin/security', { auth: A, summary: 'Security overview: checks, recent security events, 2FA coverage' }, req => {
+    const cfg = app.ctx.config; const users = store.col('users').filter(u => u.active && !u.deletedAt);
+    const staff = users.filter(u => u.role !== 'patient'); const staff2fa = staff.filter(u => u.totp && u.totp.enabled).length;
+    const since = Date.now() - 24 * 3600 * 1000; const ev = store.col('audit').filter(a => a.action.startsWith('security.'));
+    const last24 = ev.filter(a => Date.parse(a.ts) >= since); const count = t => last24.filter(a => a.action === 'security.' + t).length;
+    const demoUsers = users.filter(u => /@demo\.gurmad24\.test$/.test(u.email)).length;
+    const checks = [
+      { id: 'https', ok: !!cfg.cookieSecure, text: 'Secure cookies + HSTS (HTTPS)' },
+      { id: 'proxy', ok: !!cfg.trustProxy, text: 'Real client IP behind proxy (rate limits work per user)' },
+      { id: 'headers', ok: true, text: 'CSP, frame blocking, nosniff, COOP/CORP, no-referrer' },
+      { id: 'csrf', ok: true, text: 'Same-origin check + JSON-only bodies + SameSite cookies' },
+      { id: 'passwords', ok: true, text: 'Passwords: scrypt + salt, common-password blocklist' },
+      { id: 'lockout', ok: true, text: 'Lockout: 5 failures per account, 25 per IP, per 15 min' },
+      { id: 'ratelimit', ok: true, text: 'Rate limits on login, requests, assistant and API' },
+      { id: 'audit', ok: true, text: 'Audit log of sensitive actions (including voice listening)' },
+      { id: '2fa', ok: staff.length > 0 && staff2fa === staff.length, text: `Two-step login for staff: ${staff2fa}/${staff.length}`, action: 'Enable in Account' },
+      { id: 'demo', ok: demoUsers === 0, text: `Demo accounts active: ${demoUsers}`, action: 'Set SEED_DEMO_DATA=false and remove demo users before real use' },
+      { id: 'backup', ok: !!cfg.autoBackup, text: 'Automatic data backups' },
+      { id: 'retention', ok: cfg.retentionDays <= 365, text: `Personal data retention: ${cfg.retentionDays} days` },
+    ];
+    return { checks, score: Math.round(checks.filter(c => c.ok).length / checks.length * 100), realMode: !!D.settings(store).realMode,
+      last24h: { loginFailed: count('login_failed'), locked: count('account_locked'), ipBlocked: count('ip_blocked'), rateLimited: count('rate_limited'), badOrigin: count('bad_origin'), forbidden: count('forbidden'), bad2fa: count('bad_2fa_code') },
+      activeSessions: store.col('sessions').length,
+      events: ev.slice(-40).reverse().map(a => ({ ts: a.ts, type: a.action.replace('security.', ''), ip: a.ip ? a.ip.replace(/(\d+)\.(\d+)\.\d+\.\d+/, '$1.$2.x.x') : '', meta: a.meta })) };
+  });
+
   app.put('/api/admin/settings', { auth: A, summary: 'Update commission rates / fees (100 bps = 1%)' }, req => {
     const b = validate({ cardCommissionBps: v.int({ min: 0, max: 5000 }), labCommissionBps: v.int({ min: 0, max: 5000 }), appointmentFeeCents: v.int({ min: 0, max: 1000000 }), currency: v.enum(['USD']), retentionDays: v.int({ min: 30, max: 3650 }) }, req.body, { partial: true });
     Object.assign(D.settings(store), b, { placeholderValues: false, updatedAt: new Date().toISOString() }); store.save();

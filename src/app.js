@@ -38,6 +38,9 @@ class App {
     store.insert('audit', { id: store.id('a_'), ts: new Date().toISOString(), actorId: req.user ? req.user.id : null, actorRole: req.user ? req.user.role : null, action, entity, entityId: entityId || null, ip: req.ip, meta: meta || null });
   }
 
+  // Security event (failed logins, lockouts, blocked requests...) -> audit log, shown on the admin Security page.
+  secEvent(req, type, meta) { this.audit(req, 'security.' + type, 'security', null, meta); }
+
   clientIp(req) {
     if (this.ctx.config.trustProxy) { const f = req.headers['x-forwarded-for']; if (f) return String(f).split(',')[0].trim(); }
     return req.socket.remoteAddress || 'unknown';
@@ -96,6 +99,10 @@ class App {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    res.setHeader('X-DNS-Prefetch-Control', 'off');
+    res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
     res.setHeader('Permissions-Policy', 'geolocation=(self), camera=(), microphone=(self), payment=()');
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com https://tile.openstreetmap.org; media-src 'self' blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
     if (this.ctx.config.cookieSecure) res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
@@ -110,12 +117,12 @@ class App {
     req.user = this.loadUser(req);
     if (route.auth) {
       if (!req.user) throw new HttpError(401, 'auth_required');
-      if (Array.isArray(route.auth) && !route.auth.includes(req.user.role)) throw new HttpError(403, 'forbidden');
+      if (Array.isArray(route.auth) && !route.auth.includes(req.user.role)) { this.secEvent(req, 'forbidden', { path: url.pathname }); throw new HttpError(403, 'forbidden'); }
     }
     if (!['GET', 'HEAD'].includes(req.method)) {
       // CSRF defence: same-origin only (+ SameSite=Lax cookie, JSON-only bodies)
       const origin = req.headers.origin;
-      if (origin) { try { if (new URL(origin).host !== req.headers.host) throw 0; } catch (_) { throw new HttpError(403, 'bad_origin'); } }
+      if (origin) { try { if (new URL(origin).host !== req.headers.host) throw 0; } catch (_) { this.secEvent(req, 'bad_origin', { origin: String(origin).slice(0, 80) }); throw new HttpError(403, 'bad_origin'); } }
       const ct = req.headers['content-type'] || '';
       if (req.headers['content-length'] && Number(req.headers['content-length']) > 0 && !ct.includes('application/json')) throw new HttpError(415, 'json_required');
     }
@@ -161,7 +168,7 @@ class App {
       try {
         const url = new URL(req.url, 'http://localhost');
         const lim = this.ctx.config.rateLimit;
-        if (!this.limiter.check('g:' + req.ip, lim.globalPerMin)) throw new HttpError(429, 'rate_limited');
+        if (!this.limiter.check('g:' + req.ip, lim.globalPerMin)) { if (this.limiter.check('gev:' + req.ip, 1, 60000)) this.secEvent(req, 'rate_limited', { path: url.pathname }); throw new HttpError(429, 'rate_limited'); }
         if (url.pathname.startsWith('/api/')) return await this.handleApi(req, res, url);
         if (!['GET', 'HEAD'].includes(req.method)) throw new HttpError(405, 'method_not_allowed');
         this.serveStatic(req, res, url);
