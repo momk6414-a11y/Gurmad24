@@ -233,5 +233,19 @@ export const so = {
 "Satellite imagery and street map of the whole region.":"Sawirrada satellite-ka iyo khariidadda waddooyinka gobolka oo dhan.",
 "Satellite pictures come from Esri and the street map from OpenStreetMap, so an internet connection is needed. Facility positions are demo data.":"Sawirrada satellite-ka waxay ka yimaadaan Esri, khariidadda waddooyinkuna OpenStreetMap, sidaa darteed internet ayaa loo baahan yahay. Goobaha xarumaha waa xog tijaabo ah.",
 "Facilities (demo)":"Xarumaha (tijaabo)",
-"Show on map":"Ka tus khariidadda","Show my location":"Muuji goobtayda","My location":"Goobtayda","Finding your location…":"Goobtaada ayaa la helayaa…","Your location is shown on this device only. It is not sent to GURMAD 24.":"Goobtaada qalabkan oo keliya ayaa lagu muujinayaa. Looma dirayo GURMAD 24.","Location permission was denied. Allow location access in your browser settings.":"Ogolaanshaha goobta waa la diiday. Ka oggolow gelitaanka goobta dejimaha browser-kaaga.","Your location is unavailable right now. Try again.":"Goobtaada hadda lama heli karo. Mar kale isku day.","Location request timed out. Try again.":"Codsiga goobtu wuu dhacay. Mar kale isku day.","Location is not supported by this browser.":"Browser-kani ma taageerayo goob-helidda.","Your location":"Goobtaada"
+"Show on map":"Ka tus khariidadda","Show my location":"Muuji goobtayda","My location":"Goobtayda","Finding your location…":"Goobtaada ayaa la helayaa…","Your location is shown on this device only. It is not sent to GURMAD 24.":"Goobtaada qalabkan oo keliya ayaa lagu muujinayaa. Looma dirayo GURMAD 24.","Location permission was denied. Allow location access in your browser settings.":"Ogolaanshaha goobta waa la diiday. Ka oggolow gelitaanka goobta dejimaha browser-kaaga.","Your location is unavailable right now. Try again.":"Goobtaada hadda lama heli karo. Mar kale isku day.","Location request timed out. Try again.":"Codsiga goobtu wuu dhacay. Mar kale isku day.","Location is not supported by this browser.":"Browser-kani ma taageerayo goob-helidda.","Your location":"Goobtaada",
+"One network. Every emergency.":"Hal shabakad. Gurmad kasta.",
+"A connected response system for people, location and essential services.":"Nidaam isku xira dadka, goobta iyo adeegyada muhiimka ah.",
+"Open live map":"Fur khariidadda tooska ah",
+"Emergency centre":"Xarunta gurmadka",
+"People first":"Dadku mudnaanta koowaad",
+"One connected system":"Hal nidaam oo isku xiran",
+"Somali + English":"Soomaali + Ingiriisi",
+"GURMAD 24 system map: people, GPS location, ambulance, hospitals, police, fire and support connected in one response network.":"Khariidadda nidaamka GURMAD 24: dad, GPS, ambalaas, isbitaallo, boolis, dab-damis iyo taageero oo hal shabakad ku xiran.",
+"Find care":"Hel daryeel",
+"Emergency services":"Adeegyada gurmadka",
+"Ambulance and providers":"Ambalaas iyo bixiyeyaal",
+"Live map":"Khariidad toos ah",
+"GPS and locations":"GPS iyo goobaha",
+"Pilot demo only — emergency dispatch is simulated. For a real emergency, contact local emergency services directly.":"Tijaabo hordhac ah oo keliya — dirista gurmadka waa jilitaan. Xaalad degdeg ah oo dhab ah, la xiriir adeegyada gurmadka deegaanka. "
 };
