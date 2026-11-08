@@ -9,6 +9,7 @@ const catName = c => t((CASE_CATS.find(x => x[0] === c) || [0, c])[1]);
 const STATUSES = ['received', 'assigned', 'en_route', 'arrived', 'handed_over', 'closed', 'cancelled'];
 const RESP = ['ambulance', 'police', 'fire'];
 const SIM = () => demoNote('SIMULATION MODE: no real dispatch and no calls to real services. Locations are demo data used only for the map. The platform never diagnoses or advises treatment. Live use requires medical oversight, regulatory approval, trained operators and verified providers.');
+const REALN = () => h('div', { class: 'note warn' }, icon('alert', 18), h('span', t('REAL MODE: requests here are real. Assign a responder and keep the person updated.')));
 const respTag = r => h('span', { class: 'rtag u-' + r }, icon(r, 16), t(SERVICE_NAME[r] || r));
 const badgeText = s => badge(s).textContent;
 
@@ -44,7 +45,7 @@ export async function dashboard({ query }) {
   };
   await load();
   S.poll = setInterval(() => load().catch(() => stopPoll()), 3000);
-  return h('div', head('Coordination dashboard', 'Ambulance, police and fire requests in simulation mode.', h('button', { class: 'btn', onclick: add }, icon('plus'), t('New simulated request'))), SIM(), statsBox, mapPanel, casesBox);
+  return h('div', head('Coordination dashboard', cfg.realMode ? 'Ambulance, police and fire requests (real mode is ON).' : 'Ambulance, police and fire requests in simulation mode.', h('button', { class: 'btn', onclick: add }, icon('plus'), t('New simulated request'))), cfg.realMode ? REALN() : SIM(), statsBox, mapPanel, casesBox);
 }
 
 function voicePlayer(id) {
@@ -63,9 +64,9 @@ export async function caseDetail({ id }) {
   const sel = h('select', { 'aria-label': t('Provider') }, h('option', { value: '' }, t('Choose provider')), sorted.map(p => h('option', { value: p.id, selected: p.id === c.assignedOrgId }, t(SERVICE_NAME[p.type] || p.type) + ' - ' + p.name + (p.available ? '' : ' (' + t('Unavailable') + ')'))));
   const L = { assigned: 'Assigned', received: 'Back to queue', en_route: 'En route (sim)', arrived: 'Arrived (sim)', handed_over: 'Handed over', closed: 'Closed', cancelled: 'Cancel case' };
   const tr = c.track; const loc = c.location;
-  return h('div', head(c.code, catName(c.category) + (c.area ? ' - ' + c.area : ''), badge(c.status)), SIM(),
+  return h('div', head(c.code, catName(c.category) + (c.area ? ' - ' + c.area : ''), badge(c.status)), c.mode === 'REAL' ? REALN() : SIM(),
     h('div', { class: 'grid g2' },
-      panel('Case', h('div', h('dl', { class: 'kv' }, h('dt', t('Mode')), h('dd', t('SIMULATION')), h('dt', t('Service')), h('dd', respTag(c.responder)), h('dt', t('Source')), h('dd', c.source), h('dt', t('Created')), h('dd', fdt(c.createdAt)), h('dt', t('Note')), h('dd', c.note || '-'),
+      panel('Case', h('div', h('dl', { class: 'kv' }, h('dt', t('Mode')), h('dd', t(c.mode === 'REAL' ? 'REAL' : 'SIMULATION')), h('dt', t('Service')), h('dd', respTag(c.responder)), h('dt', t('Source')), h('dd', c.source), h('dt', t('Created')), h('dd', fdt(c.createdAt)), h('dt', t('Note')), h('dd', c.note || '-'),
         h('dt', t('Location')), h('dd', loc ? h('a', { href: osmLink(loc), target: '_blank', rel: 'noopener noreferrer' }, icon('pin', 16), loc.lat + ', ' + loc.lng + (loc.source === 'gps' ? ' (GPS)' : '')) : '-'),
         h('dt', t('Provider')), h('dd', c.assignedOrgName || '-'), tr && tr.etaMinutes ? h('dt', t('ETA')) : null, tr && tr.etaMinutes ? h('dd', t('{m} min (simulated)', { m: tr.etaMinutes })) : null))),
       panel('Actions', h('div', c.autopilot ? h('p', { class: 'hint' }, t('Demo autopilot is moving this case. Any action you take stops it.')) : null,
@@ -83,4 +84,33 @@ export async function directory() {
     panel('Hospitals', table([{ label: 'Name', key: 'name' }, { label: 'Area', key: 'area' }, { label: 'Phone', render: o => o.phone || '-' }, { label: 'Hours', render: o => o.hours || '-' }], hs.hospitals, { empty: 'None.' })),
     RESP.map(r => panel(SERVICE_NAME[r] === 'Fire brigade' ? 'Fire stations' : SERVICE_NAME[r] === 'Police' ? 'Police stations' : 'Ambulance providers',
       table([{ label: 'Name', key: 'name' }, { label: 'Area', key: 'area' }, { label: 'Phone', render: o => o.phone || '-' }, { label: 'Availability', render: avail }], ps.providers.filter(p => p.type === r), { empty: 'None.' }))));
+}
+
+
+// Live picture for administrators: what is active right now and where (cases + stations + hospitals on one map).
+export async function liveBoard() {
+  const [facP, hosP] = await Promise.all([GET('/providers').catch(() => ({ providers: [] })), GET('/hospitals').catch(() => ({ hospitals: [] }))]);
+  const markers = [
+    ...hosP.hospitals.filter(x => typeof x.lat === 'number').map(x => ({ kind: 'hospital', type: 'hospital', lat: x.lat, lng: x.lng, label: x.name })),
+    ...facP.providers.filter(x => typeof x.lat === 'number' && RESP.includes(x.type)).map(x => ({ kind: 'station', type: x.type, lat: x.lat, lng: x.lng, label: x.name })),
+  ];
+  const stats = h('div'); const list = h('div');
+  const map = liveMap([], { places: true, markers, height: 'min(52vh, 420px)' });
+  const load = async () => {
+    const [st, cs] = await Promise.all([GET('/ops/stats'), GET('/ops/cases')]);
+    const active = cs.cases.filter(c => !['closed', 'cancelled', 'handed_over'].includes(c.status));
+    map.update(active.filter(c => c.track && c.track.location).map(c => ({ type: c.responder, incident: c.track.location, unit: c.track.unit, station: c.track.station, done: false })));
+    stats.replaceChildren(h('div', { class: 'grid g4 keep2' }, tile('Active cases', String(st.active)), tile('Today', String(st.today)), tile('Responders available', `${st.providersAvailable}/${st.providersTotal}`), tile('Hospitals on map', String(markers.filter(m => m.kind === 'hospital').length))));
+    list.replaceChildren(table([
+      { label: 'Code', render: c => link('/ops/case/' + c.id, c.code) }, { label: 'Service', render: c => respTag(c.responder) },
+      { label: 'Area', render: c => c.area || '-' }, { label: 'Status', render: c => badge(c.status) },
+      { label: 'Location', render: c => c.track && c.track.location ? h('a', { href: osmLink(c.track.location), target: '_blank', rel: 'noopener noreferrer' }, icon('pin', 14), ' ' + c.track.location.lat + ', ' + c.track.location.lng) : '-' },
+      { label: 'Mode', render: c => c.mode === 'REAL' ? badge('REAL') : t('Demo') }], active, { empty: 'No active requests right now.' }));
+  };
+  await load();
+  S.poll = setInterval(() => load().catch(() => stopPoll()), 4000);
+  return h('section', { class: 'live-board' },
+    h('div', { class: 'live-dot' }, h('i'), t('Live now'), ' - ', t('updates every few seconds')),
+    stats, panel('Live map (demo)', h('div', map, h('div', { class: 'legend' }, RESP.map(r => respTag(r)), h('span', { class: 'rtag u-hospital' }, icon('hospital', 16), t('Hospital'))))),
+    panel('Active requests', list));
 }

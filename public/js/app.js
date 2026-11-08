@@ -244,6 +244,12 @@ async function render(keepScroll) {
     return;
   }
 
+  if (route.roles && !S.authKnown) {
+    // Session lookup still running (page refresh): wait, do not bounce to login.
+    view.replaceChildren(loading());
+    return;
+  }
+
   if (route.roles && !S.user) {
     sessionStorage.setItem('g24-after', '#' + raw);
     location.hash = '#/login';
@@ -357,10 +363,12 @@ window.addEventListener('online', () => {
       S.user = null;
       S.org = null;
     }
+    S.authKnown = true;
     // Refresh role-aware navigation after session lookup completes.
     await render(true);
   } catch (error) {
     console.error('GURMAD 24 startup failed:', error);
+    S.authKnown = true;
     chrome();
     view.replaceChildren(emptyState(
       'GURMAD 24 could not finish loading. Check your connection and try again.',

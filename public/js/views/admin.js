@@ -1,6 +1,7 @@
 // Administration portal: verification, users/roles, finance, revenue, settings, complaints, audit.
 import { S, t, h, icon, GET, POST, PATCH, PUT, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, fdate, fdt, confirmBox, downloadApi, link, pct } from '../core.js';
 import { receiptNode } from './shared.js';
+import { liveBoard } from './ops.js';
 
 const head = (title, sub, right) => h('div', { class: 'page-head' }, h('div', h('h2', t(title)), sub ? h('p', t(sub)) : null), right || null);
 const refresh = () => window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -9,8 +10,8 @@ const roleName = x => t({ patient: 'Patient', hospital_admin: 'Hospital admin', 
 const tabs = (items, cur, base) => h('div', { class: 'chips' }, items.map(([k, l]) => h('button', { class: 'chip', 'aria-pressed': cur === k, onclick: () => go(`${base}?tab=${k}`) }, t(l))));
 
 export async function overview() {
-  const d = await GET('/admin/dashboard');
-  return h('div', head('Administration', 'Platform overview (demo / sandbox values).'),
+  const [d, live] = await Promise.all([GET('/admin/dashboard'), liveBoard().catch(() => null)]);
+  return h('div', head('Administration', 'Platform overview (demo / sandbox values).'), live,
     h('div', { class: 'grid g4 keep2' }, tile('Pending verifications', d.orgsPending, null, () => go('/admin/orgs?status=pending')), tile('Pending refunds', d.refundsPending, null, () => go('/admin/finance?tab=orders')), tile('Open complaints', d.complaintsOpen, null, () => go('/admin/complaints')), tile('Users', d.users, null, () => go('/admin/users'))),
     h('div', { class: 'grid g4 keep2' }, tile('Verified hospitals', d.hospitalsVerified), tile('Verified providers', d.providersVerified), tile('Published cards', d.cardsPublished, null, () => go('/admin/cards')), tile('Card orders', d.orders)),
     h('div', { class: 'grid g2' }, tile('Platform revenue this month', money(d.platformRevenueThisMonthCents)), tile('Platform revenue total', money(d.platformRevenueTotalCents), null, () => go('/admin/revenue'))),
