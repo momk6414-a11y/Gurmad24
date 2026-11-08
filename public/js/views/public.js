@@ -65,19 +65,25 @@ export function cardTile(c, { compare = true } = {}) {
     h('div', { class: 'hosp' }, c.hospital ? c.hospital.name : '', verified(c.hospital && c.hospital.verified)),
     h('h4', c.name), h('div', { class: 'price' }, money(c.priceCents), h('small', { style: 'font-size:12px;color:var(--muted);font-weight:500' }, ' ' + t('{n} days', { n: c.validityDays }))),
     h('div', { class: 'meta' }, (c.included || []).slice(0, 2).join(' - ')), h('div', { class: 'card-facts' }, h('span', t('{n} included services', { n: (c.included || []).length })), h('span', t('{n} exclusions', { n: (c.excluded || []).length }))), h('span', { class: 'badge demo' }, t('Demo price')),
-    h('div', { class: 'row' }, h('button', { class: 'btn sm', type: 'button', onclick: () => go('/cards/' + c.id) }, t('View details')),
-      compare ? h('button', { class: 'btn sm ghost', 'aria-pressed': sel, onclick: e => toggleCompare(c.id, e.currentTarget) }, sel ? t('Selected') : t('Compare')) : null));
+    h('div', { class: 'row' }, h('button', { class: 'btn sm', type: 'button', onclick: () => orderFlow(c) }, icon('bag', 16), t('Buy now')),
+      h('button', { class: 'btn sm ghost', type: 'button', onclick: () => go('/cards/' + c.id) }, t('View details'))),
+    compare ? h('label', { class: 'cmp-pick' }, h('input', { type: 'checkbox', checked: sel, onchange: e => toggleCompare(c.id, e.currentTarget) }), t('Compare this card')) : null);
 }
-function toggleCompare(id, btn) {
+function toggleCompare(id, box) {
   const i = S.cmp.indexOf(id);
-  if (i >= 0) S.cmp.splice(i, 1); else if (S.cmp.length >= 3) { toast(t('You can compare up to 3 cards.'), 'err'); return; } else S.cmp.push(id);
-  btn.textContent = S.cmp.includes(id) ? t('Selected') : t('Compare'); btn.setAttribute('aria-pressed', S.cmp.includes(id)); renderCompareBar();
+  if (i >= 0) S.cmp.splice(i, 1);
+  else if (S.cmp.length >= 3) { box.checked = false; toast(t('You can compare up to 3 cards.'), 'err'); return; }
+  else S.cmp.push(id);
+  renderCompareBar();
 }
 export function renderCompareBar() {
   document.getElementById('cmpBar')?.remove();
   if (!S.cmp.length) return;
-  document.body.append(h('div', { class: 'compare-bar', id: 'cmpBar' }, h('span', t('{n} selected', { n: S.cmp.length })),
-    h('span', { class: 'actions tight' }, h('button', { class: 'btn sm', disabled: S.cmp.length < 2, onclick: () => go('/compare') }, t('Compare')), h('button', { class: 'btn sm', onclick: () => { S.cmp = []; renderCompareBar(); if (location.hash.startsWith('#/cards')) location.reload(); } }, t('Clear')))));
+  const ready = S.cmp.length >= 2;
+  document.body.append(h('div', { class: 'compare-bar', id: 'cmpBar' },
+    h('span', { class: 'cb-text' }, h('b', t('{n} selected', { n: S.cmp.length })), h('small', ready ? t('Ready to compare') : t('Pick one more card'))),
+    h('span', { class: 'actions tight' }, ready ? h('button', { class: 'btn sm', onclick: () => go('/compare') }, t('Compare now')) : null,
+      h('button', { class: 'btn sm ghost', onclick: () => { S.cmp = []; renderCompareBar(); document.querySelectorAll('.cmp-pick input').forEach(x => { x.checked = false; }); } }, t('Remove all')))));
 }
 
 export async function cards() {
@@ -117,18 +123,35 @@ export async function cardDetail({ id }) {
 export function orderFlow(c) {
   if (!S.user) { toast(t('Please log in to order.')); SS.set('g24-after', location.hash); return go('/login'); }
   if (S.user.role !== 'patient') return toast(t('Only patient accounts can order cards.'), 'err');
-  let m;
-  const f = form([
-    { name: 'method', type: 'select', label: 'Payment method', required: true, default: 'evc', options: [['evc', 'EVC Plus'], ['zaad', 'Zaad'], ['edahab', 'eDahab'], ['card', 'Bank card']] },
-    { name: 'phone', label: 'Mobile money number (e.g. 61xxxxxxx)', type: 'tel', inputmode: 'numeric', autocomplete: 'tel', max: 18 },
-    { name: 'acceptTerms', type: 'checkbox', label: 'I have read the terms and refund policy, and I understand this is a hospital service card, not insurance.', required: true }],
-    { submit: 'Pay and get my digital card', cancel: () => m.close(), onSubmit: async v => {
-      const r = await POST('/orders', { cardId: c.id, acceptTerms: v.acceptTerms, method: v.method, phone: String(v.phone || '').replace(/[^\d]/g, '') });
+  const METHODS = [['evc', 'EVC Plus'], ['zaad', 'Zaad'], ['edahab', 'eDahab'], ['card', t('Bank card')]];
+  let method = 'evc', busy = false, m;
+  const phone = h('input', { type: 'tel', inputmode: 'numeric', autocomplete: 'tel', maxlength: 18, placeholder: '61 xxx xxxx', value: S.user.phone || '', 'aria-label': t('Mobile money number'), style: 'font-size:16px' });
+  const phoneRow = h('div', { class: 'field' }, h('label', t('Mobile money number')), phone);
+  const terms = h('input', { type: 'checkbox', id: 'ord_terms' });
+  const err = h('div', { class: 'form-error', role: 'alert' });
+  const pay = h('button', { class: 'btn pay-btn', type: 'button' }, t('Pay {p} and get my card', { p: money(c.priceCents) }));
+  const tiles = h('div', { class: 'pay-tiles', role: 'radiogroup', 'aria-label': t('Payment method') }, METHODS.map(([k, l]) => h('button', {
+    type: 'button', role: 'radio', 'aria-checked': k === method, class: 'pay-tile' + (k === method ? ' on' : ''), onclick: e => {
+      method = k; tiles.querySelectorAll('.pay-tile').forEach(x => { x.classList.remove('on'); x.setAttribute('aria-checked', 'false'); }); e.currentTarget.classList.add('on'); e.currentTarget.setAttribute('aria-checked', 'true'); phoneRow.style.display = k === 'card' ? 'none' : '';
+    } }, l)));
+  pay.onclick = async () => {
+    if (busy) return; err.textContent = '';
+    const digits = phone.value.replace(/[^\d]/g, '');
+    if (method !== 'card' && (digits.length < 7 || digits.length > 15)) { err.textContent = t('Enter a valid mobile number.'); phone.focus(); return; }
+    if (!terms.checked) { err.textContent = t('Please accept the terms to continue.'); return; }
+    busy = true; pay.disabled = true; pay.textContent = t('Processing...');
+    try {
+      const r = await POST('/orders', { cardId: c.id, acceptTerms: true, method, phone: digits });
       m.close(); toast(t('Your digital card is ready.'));
       const m2 = modal(t('Your digital card'), h('div', cardPass(r.order), h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/me/orders', onclick: () => m2.close() }, t('My cards')), h('button', { class: 'btn ghost', onclick: () => receiptModal(r.receipt) }, t('Receipt')))), { wide: false });
-    } });
-  m = modal(t('Order summary'), h('div', demoNote('SANDBOX: no real payment is made. This only creates a demo order and receipt.'),
-    h('dl', { class: 'kv' }, h('dt', t('Card')), h('dd', c.name), h('dt', t('Hospital')), h('dd', c.hospital.name), h('dt', t('Price')), h('dd', money(c.priceCents)), h('dt', t('Validity')), h('dd', t('{n} days from purchase', { n: c.validityDays }))), f));
+    } catch (e) { err.textContent = errText(e); busy = false; pay.disabled = false; pay.textContent = t('Pay {p} and get my card', { p: money(c.priceCents) }); }
+  };
+  m = modal(t('Buy digital card'), h('div', demoNote('SANDBOX: no real payment is made. This only creates a demo order and receipt.'),
+    h('div', { class: 'buy-sum' }, h('div', h('b', c.name), h('small', c.hospital ? c.hospital.name : '')), h('div', { class: 'buy-price' }, money(c.priceCents))),
+    h('div', { class: 'buy-meta' }, t('{n} days from purchase', { n: c.validityDays })),
+    h('h4', t('Payment method')), tiles, phoneRow,
+    h('label', { class: 'chk-row', for: 'ord_terms' }, terms, h('span', t('I have read the terms and refund policy, and I understand this is a hospital service card, not insurance.'))),
+    err, pay, h('button', { class: 'btn ghost', type: 'button', onclick: () => m.close() }, t('Cancel'))));
 }
 const receiptModal = r => { const m = modal(t('Receipt'), h('div', receiptNode(r), h('div', { class: 'actions' }, h('button', { class: 'btn', onclick: () => window.print() }, t('Print / save PDF')), h('button', { class: 'btn ghost', onclick: () => m.close() }, t('Close'))))); };
 

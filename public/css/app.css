@@ -358,3 +358,15 @@ body.has-dialog .ai-fab,body.has-dialog .ai-panel{display:none}
 .cardpass-wrap{margin:0 0 16px}
 .vc{border-left:6px solid #1fb27a}.vc.bad{border-left-color:#d64545}.vc h3{margin-top:0}
 form.row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}form.row input{flex:1;min-width:180px;font-size:16px}
+
+/* ---- easy buying ---- */
+.cmp-pick{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.88rem;color:var(--muted);cursor:pointer}.cmp-pick input{width:20px;height:20px}
+.compare-bar .cb-text{display:flex;flex-direction:column;line-height:1.2}.compare-bar .cb-text small{font-weight:500;opacity:.8}
+.compare-bar .btn.ghost{background:transparent;color:var(--mint-ink);border:1px solid currentColor}
+.pay-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 12px}
+.pay-tile{border:2px solid var(--line,#d5e1e0);background:#fff;border-radius:12px;padding:14px 8px;font-weight:700;font-size:1rem;color:inherit;cursor:pointer}
+.pay-tile.on{border-color:#0b8f6f;background:#e6f6f0;color:#075c47}
+.buy-sum{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0 2px}.buy-sum small{display:block;color:var(--muted)}
+.buy-price{font-size:1.5rem;font-weight:800;color:#0b8f6f}.buy-meta{color:var(--muted);font-size:.85rem;margin-bottom:6px}
+.chk-row{display:flex;gap:10px;align-items:flex-start;margin:10px 0;font-size:.88rem}.chk-row input{width:22px;height:22px;flex:none;margin-top:2px}
+.pay-btn{width:100%;margin:6px 0;padding:14px;font-size:1.05rem}

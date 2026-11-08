@@ -37,12 +37,12 @@ const { chromium } = require('playwright');
   await guest.waitForFunction(() => document.querySelectorAll('.pm-row').length === 0, null, { timeout: 3000 }).catch(() => errors.push('map: search did not filter the list'));
   // Marketplace cards expose a working details action.
   await guest.goto(t.base + '/#/cards'); await guest.reload();
-  await guest.locator('#view .hc button').first().click();
+  await guest.locator('#view .hc button.ghost').first().click();
   await guest.waitForFunction(() => document.querySelector('#view')?.innerText.includes('Adeegyada ku jira') || document.querySelector('#view')?.innerText.includes('Included services'), null, { timeout: 5000 }).catch(() => errors.push('cards: details action did not open the card detail page'));
 
   const pg = await session('patient', 'patient@demo.gurmad24.test', 'DemoPass12345', ['/', '/me/orders', '/me/appointments', '/me/support', '/me/account']);
   // full order flow through the UI
-  await pg.goto(t.base + '/#/cards/' + cardId); await pg.reload(); await pg.click('text=/Dalbo kaarkan/'); await pg.fill('#f_phone', '612345678'); await pg.check('#f_acceptTerms'); await pg.click('button:has-text("Bixi oo hel kaarkayga")');
+  await pg.goto(t.base + '/#/cards/' + cardId); await pg.reload(); await pg.click('text=/Dalbo kaarkan/'); await pg.click('.pay-tile >> nth=1'); await pg.fill('.modal input[type=tel]', '612345678'); await pg.check('#ord_terms'); await pg.click('.pay-btn');
   await pg.waitForSelector('.cardpass .cp-qr svg', { timeout: 8000 }).catch(() => errors.push('order flow: no digital card shown'));
   await session('hospital', 'hospital@demo.gurmad24.test', 'DemoPass12345', ['/org', '/org/cards', '/org/verify', '/org/services', '/org/appointments', '/org/sales', '/org/subscription', '/org/complaints', '/org/profile', '/account']);
   await session('ambulance', 'ambulance@demo.gurmad24.test', 'DemoPass12345', ['/org', '/org/requests', '/org/services', '/org/sales', '/org/subscription']);
