@@ -23,7 +23,12 @@ const { chromium } = require('playwright');
   }
   const cardId = t.store.find('cards', c => c.status === 'published').id; const hospId = t.store.find('orgs', o => o.type === 'hospital').id;
   const caseId = t.store.col('cases')[0].id;
-  await session('guest', null, null, ['/', '/cards', '/cards/' + cardId, '/hospitals', '/hospitals/' + hospId, '/services', '/emergency', '/login', '/register', '/register-org', '/privacy']);
+  const guest = await session('guest', null, null, ['/', '/cards', '/cards/' + cardId, '/hospitals', '/hospitals/' + hospId, '/services', '/emergency', '/map', '/login', '/register', '/register-org', '/privacy']);
+  await guest.evaluate(() => Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition: done => done({ coords: { latitude: 11.2842, longitude: 49.1816 } }) } }));
+  await guest.locator('.tm-locate').click();
+  await guest.waitForSelector('.mk-user-location', { timeout: 3000 }).catch(() => errors.push('map: current-location marker was not shown'));
+  const locationNotice = await guest.locator('.tm-loc-status').innerText().catch(() => '');
+  if (!locationNotice.includes('GURMAD 24')) errors.push('map: current-location privacy notice was not shown');
   const pg = await session('patient', 'patient@demo.gurmad24.test', 'DemoPass12345', ['/', '/me/orders', '/me/appointments', '/me/support', '/me/account']);
   // full order flow through the UI
   await pg.goto(t.base + '/#/cards/' + cardId); await pg.reload(); await pg.click('text=/Dalbo kaarkan/'); await pg.check('#f_acceptTerms'); await pg.click('button:has-text("Gudbi dalab tijaabo")');
