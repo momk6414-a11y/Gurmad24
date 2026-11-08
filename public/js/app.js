@@ -1,3 +1,4 @@
+
 // App shell: session, navigation per role, hash router, service worker.
 import { S, t, h, icon, GET, POST, setLang, errText, loading, emptyState, toast, ApiError } from './core.js';
 import * as P from './views/public.js';
@@ -8,6 +9,7 @@ import * as A from './views/admin.js';
 
 const ROLE_HOME = { patient: '/', hospital_admin: '/org', provider_admin: '/org', operator: '/ops', admin: '/admin' };
 const ORG = ['hospital_admin', 'provider_admin'];
+
 // [pattern, allowed roles (null = everyone), handler]
 const ROUTES = [
   ['/', null, P.home], ['/cards', null, P.cards], ['/cards/:id', null, P.cardDetail], ['/compare', null, P.compare], ['/hospitals', null, P.hospitals], ['/hospitals/:id', null, P.hospitalDetail],
@@ -18,76 +20,326 @@ const ROUTES = [
   ['/ops', ['operator', 'admin'], OPS.dashboard], ['/ops/case/:id', ['operator', 'admin'], OPS.caseDetail], ['/ops/directory', ['operator', 'admin'], OPS.directory],
   ['/admin', ['admin'], A.overview], ['/admin/orgs', ['admin'], A.orgs], ['/admin/users', ['admin'], A.users], ['/admin/cards', ['admin'], A.cards], ['/admin/finance', ['admin'], A.finance],
   ['/admin/revenue', ['admin'], A.revenue], ['/admin/settings', ['admin'], A.settings], ['/admin/complaints', ['admin'], A.complaints], ['/admin/audit', ['admin'], A.audit],
-].map(([p, roles, fn]) => { const keys = []; const re = new RegExp('^' + p.replace(/:(\w+)/g, (_, k) => { keys.push(k); return '([^/]+)'; }) + '$'); return { p, re, keys, roles, fn }; });
+].map(([p, roles, fn]) => {
+  const keys = [];
+  const re = new RegExp('^' + p.replace(/:(\w+)/g, (_, k) => {
+    keys.push(k);
+    return '([^/]+)';
+  }) + '$');
+  return { p, re, keys, roles, fn };
+});
 
 function navItems() {
-  const u = S.user; const org = S.org;
-  if (!u) return [['/', 'home', 'Home'], ['/cards', 'card', 'Cards'], ['/hospitals', 'hospital', 'Hospitals'], ['/services', 'ambulance', 'Services'], ['/emergency', 'alert', 'Emergency'], ['/login', 'user', 'Log in']];
+  const u = S.user;
+  const org = S.org;
+
+  if (!u) return [
+    ['/', 'home', 'Home'],
+    ['/cards', 'card', 'Cards'],
+    ['/hospitals', 'hospital', 'Hospitals'],
+    ['/services', 'ambulance', 'Services'],
+    ['/me/support', 'chat', 'Support'],
+    ['/emergency', 'alert', 'Emergency'],
+    ['/login', 'user', 'Log in']
+  ];
+
   switch (u.role) {
-    case 'patient': return [['/', 'home', 'Home'], ['/cards', 'card', 'Cards'], ['/hospitals', 'hospital', 'Hospitals'], ['/services', 'ambulance', 'Services'], ['/me/orders', 'bag', 'Orders'], ['/me/appointments', 'calendar', 'Appointments'], ['/me/support', 'chat', 'Support'], ['/emergency', 'alert', 'Emergency'], ['/me/account', 'user', 'Account']];
-    case 'hospital_admin': return [['/org', 'dash', 'Dashboard'], ['/org/cards', 'card', 'Cards'], ['/org/services', 'list', 'Services'], ['/org/appointments', 'calendar', 'Appointments'], ['/org/sales', 'chart', 'Sales'], ['/org/subscription', 'receipt', 'Subscription'], ['/org/complaints', 'chat', 'Support'], ['/org/profile', 'hospital', 'Profile'], ['/account', 'user', 'Account']];
-    case 'provider_admin': return [['/org', 'dash', 'Dashboard'], ...(org && org.type === 'ambulance' ? [['/org/requests', 'alert', 'Requests']] : []), ['/org/services', 'list', 'Services'], ['/org/appointments', 'calendar', 'Appointments'], ['/org/sales', 'chart', 'Revenue'], ['/org/subscription', 'receipt', 'Subscription'], ['/org/profile', 'hospital', 'Profile'], ['/account', 'user', 'Account']];
-    case 'operator': return [['/ops', 'alert', 'Cases'], ['/ops/directory', 'hospital', 'Directory'], ['/account', 'user', 'Account']];
-    case 'admin': return [['/admin', 'dash', 'Overview'], ['/admin/orgs', 'hospital', 'Organisations'], ['/admin/users', 'users', 'Users'], ['/admin/cards', 'card', 'Cards'], ['/admin/finance', 'receipt', 'Finance'], ['/admin/revenue', 'chart', 'Revenue'], ['/admin/settings', 'settings', 'Settings'], ['/admin/complaints', 'chat', 'Support'], ['/admin/audit', 'audit', 'Audit'], ['/ops', 'alert', 'Cases'], ['/account', 'user', 'Account']];
+    case 'patient':
+      return [
+        ['/', 'home', 'Home'],
+        ['/cards', 'card', 'Cards'],
+        ['/hospitals', 'hospital', 'Hospitals'],
+        ['/me/support', 'chat', 'Support'],
+        ['/me/orders', 'bag', 'Orders'],
+        ['/me/appointments', 'calendar', 'Appointments'],
+        ['/services', 'ambulance', 'Services'],
+        ['/emergency', 'alert', 'Emergency'],
+        ['/me/account', 'user', 'Account']
+      ];
+
+    case 'hospital_admin':
+      return [
+        ['/org', 'dash', 'Dashboard'],
+        ['/org/cards', 'card', 'Cards'],
+        ['/org/services', 'list', 'Services'],
+        ['/org/appointments', 'calendar', 'Appointments'],
+        ['/org/sales', 'chart', 'Sales'],
+        ['/org/subscription', 'receipt', 'Subscription'],
+        ['/org/complaints', 'chat', 'Support'],
+        ['/org/profile', 'hospital', 'Profile'],
+        ['/account', 'user', 'Account']
+      ];
+
+    case 'provider_admin':
+      return [
+        ['/org', 'dash', 'Dashboard'],
+        ...(org && org.type === 'ambulance' ? [['/org/requests', 'alert', 'Requests']] : []),
+        ['/org/services', 'list', 'Services'],
+        ['/org/appointments', 'calendar', 'Appointments'],
+        ['/org/sales', 'chart', 'Revenue'],
+        ['/org/subscription', 'receipt', 'Subscription'],
+        ['/org/profile', 'hospital', 'Profile'],
+        ['/account', 'user', 'Account']
+      ];
+
+    case 'operator':
+      return [
+        ['/ops', 'alert', 'Cases'],
+        ['/ops/directory', 'hospital', 'Directory'],
+        ['/account', 'user', 'Account']
+      ];
+
+    case 'admin':
+      return [
+        ['/admin', 'dash', 'Overview'],
+        ['/admin/orgs', 'hospital', 'Organisations'],
+        ['/admin/users', 'users', 'Users'],
+        ['/admin/cards', 'card', 'Cards'],
+        ['/admin/finance', 'receipt', 'Finance'],
+        ['/admin/revenue', 'chart', 'Revenue'],
+        ['/admin/settings', 'settings', 'Settings'],
+        ['/admin/complaints', 'chat', 'Support'],
+        ['/admin/audit', 'audit', 'Audit'],
+        ['/ops', 'alert', 'Cases'],
+        ['/account', 'user', 'Account']
+      ];
   }
+
   return [];
 }
 
 function chrome() {
   const view = document.getElementById('view');
+
   document.getElementById('top').replaceChildren(
-    h('a', { class: 'brand', href: '#/' }, h('img', { class: 'logo-img', src: '/icon.svg', width: 42, height: 42, alt: '' }), h('div', h('b', 'GURMAD 24'), h('small', t('Emergency Coordination & Health Marketplace')))),
+    h('a', { class: 'brand', href: '#/' },
+      h('img', { class: 'logo-img', src: '/icon.svg', width: 42, height: 42, alt: '' }),
+      h('div',
+        h('b', 'GURMAD 24'),
+        h('small', t('Emergency Coordination & Health Marketplace'))
+      )
+    ),
     h('div', { class: 'top-actions' },
-      h('div', { class: 'seg', role: 'group', 'aria-label': t('Language') }, [['so', 'SO'], ['en', 'EN']].map(([l, n]) => h('button', { 'aria-pressed': S.lang === l, onclick: () => { setLang(l); chrome(); render(true); } }, n))),
-      S.user ? h('button', { class: 'btn sm ghost', onclick: logout }, icon('logout', 16), t('Log out')) : null));
-  document.getElementById('demoBanner').textContent = t('SAFE TEST MODE: demo data, sandbox payments, no live dispatch. Not for real emergencies.');
+      h('div', { class: 'seg', role: 'group', 'aria-label': t('Language') },
+        [['so', 'SO'], ['en', 'EN']].map(([l, n]) =>
+          h('button', {
+            'aria-pressed': S.lang === l,
+            onclick: () => {
+              setLang(l);
+              chrome();
+              render(true);
+            }
+          }, n)
+        )
+      ),
+      S.user
+        ? h('button', { class: 'btn sm ghost', onclick: logout }, icon('logout', 16), t('Log out'))
+        : null
+    )
+  );
+
+  // Persistent internet status and demo safety notice.
+  const banner = document.getElementById('demoBanner');
+
+  if (banner) {
+    const demoMessage = t('SAFE TEST MODE: demo data, sandbox payments, no live dispatch. Not for real emergencies.');
+    const offlineMessage = 'OFFLINE: Internet connection is unavailable. Changes have not been sent.';
+    banner.textContent = navigator.onLine
+      ? demoMessage
+      : offlineMessage + ' ' + demoMessage;
+    banner.setAttribute('role', 'status');
+    banner.setAttribute('aria-live', 'polite');
+  }
+
   const cur = currentPath();
-  const items = navItems(); const best = items.filter(([p]) => cur === p || (p !== '/' && cur.startsWith(p + '/'))).sort((a, b) => b[0].length - a[0].length)[0];
-  document.getElementById('nav').replaceChildren(...items.map(([p, ic, label]) => h('a', { href: '#' + p, 'aria-current': best && best[0] === p ? 'page' : null }, icon(ic, 20), t(label))));
-  document.getElementById('footer').replaceChildren(h('div', t('GURMAD 24 - pilot: Gaalkacyo. Demo only: not insurance, not a medical service, not for live emergency use.')), h('a', { href: '#/privacy' }, t('Privacy notice')));
+  const items = navItems();
+
+  const best = items
+    .filter(([p]) => cur === p || (p !== '/' && cur.startsWith(p + '/')))
+    .sort((a, b) => b[0].length - a[0].length)[0];
+
+  document.getElementById('nav').replaceChildren(
+    ...items.map(([p, ic, label]) =>
+      h('a', {
+        href: '#' + p,
+        'aria-current': best && best[0] === p ? 'page' : null
+      }, icon(ic, 20), t(label))
+    )
+  );
+
+  document.getElementById('footer').replaceChildren(
+    h('div', t('GURMAD 24 - pilot: Gaalkacyo. Demo only: not insurance, not a medical service, not for live emergency use.')),
+    h('a', { href: '#/privacy' }, t('Privacy notice'))
+  );
+
   document.title = 'GURMAD 24';
   void view;
 }
 
-async function logout() { try { await POST('/auth/logout'); } catch (_) { /* ignore */ } S.user = null; S.org = null; chrome(); location.hash = '#/'; render(true); }
-async function loadMe() {
-  try { const r = await GET('/auth/me'); S.user = r.user; S.org = r.org || null; if (S.user && S.user.lang && !localStorage.getItem('g24-lang')) setLang(S.user.lang); } catch (_) { S.user = null; }
+async function logout() {
+  try {
+    await POST('/auth/logout');
+  } catch (_) {
+    // Ignore logout network errors.
+  }
+
+  S.user = null;
+  S.org = null;
+  chrome();
+  location.hash = '#/';
+  render(true);
 }
 
-const currentPath = () => (location.hash.replace(/^#/, '') || '/').split('?')[0];
+async function loadMe() {
+  try {
+    const r = await GET('/auth/me');
+    S.user = r.user;
+    S.org = r.org || null;
+
+    if (S.user && S.user.lang && !localStorage.getItem('g24-lang')) {
+      setLang(S.user.lang);
+    }
+  } catch (_) {
+    S.user = null;
+  }
+}
+
+const currentPath = () =>
+  (location.hash.replace(/^#/, '') || '/').split('?')[0];
+
 let lastKey = '';
+
 async function render(keepScroll) {
-  const raw = location.hash.replace(/^#/, '') || '/'; const [path, qs] = raw.split('?'); const query = Object.fromEntries(new URLSearchParams(qs || ''));
+  const raw = location.hash.replace(/^#/, '') || '/';
+  const [path, qs] = raw.split('?');
+  const query = Object.fromEntries(new URLSearchParams(qs || ''));
   const view = document.getElementById('view');
+
   const route = ROUTES.find(r => r.re.test(path));
   chrome();
-  if (!route) { view.replaceChildren(emptyState('Page not found.', h('a', { class: 'btn', href: '#/' }, t('Home')))); return; }
-  if (route.roles && !S.user) { sessionStorage.setItem('g24-after', '#' + raw); location.hash = '#/login'; return; }
-  if (route.roles && !route.roles.includes(S.user.role)) { view.replaceChildren(emptyState('You do not have access to this page.', h('a', { class: 'btn', href: '#' + ROLE_HOME[S.user.role] }, t('Home')))); return; }
-  if (path === '/' && S.user && S.user.role !== 'patient') { location.hash = '#' + ROLE_HOME[S.user.role]; return; }
-  const m = route.re.exec(path); const params = { query }; route.keys.forEach((k, i) => { params[k] = decodeURIComponent(m[i + 1]); });
-  const y = window.scrollY; const key = raw;
+
+  if (!route) {
+    view.replaceChildren(
+      emptyState('Page not found.', h('a', { class: 'btn', href: '#/' }, t('Home')))
+    );
+    return;
+  }
+
+  if (route.roles && !S.user) {
+    sessionStorage.setItem('g24-after', '#' + raw);
+    location.hash = '#/login';
+    return;
+  }
+
+  if (route.roles && !route.roles.includes(S.user.role)) {
+    view.replaceChildren(
+      emptyState(
+        'You do not have access to this page.',
+        h('a', { class: 'btn', href: '#' + ROLE_HOME[S.user.role] }, t('Home'))
+      )
+    );
+    return;
+  }
+
+  if (path === '/' && S.user && S.user.role !== 'patient') {
+    location.hash = '#' + ROLE_HOME[S.user.role];
+    return;
+  }
+
+  const m = route.re.exec(path);
+  const params = { query };
+
+  route.keys.forEach((k, i) => {
+    params[k] = decodeURIComponent(m[i + 1]);
+  });
+
+  const y = window.scrollY;
+  const key = raw;
+
   view.replaceChildren(loading());
+
   try {
     const node = await route.fn(params);
-    if (location.hash.replace(/^#/, '') !== raw && (location.hash.replace(/^#/, '') || '/') !== raw) return; // navigated away meanwhile
+
+    if (
+      location.hash.replace(/^#/, '') !== raw &&
+      (location.hash.replace(/^#/, '') || '/') !== raw
+    ) return;
+
     view.replaceChildren(node);
   } catch (e) {
-    if (e instanceof ApiError && e.status === 401) { S.user = null; chrome(); sessionStorage.setItem('g24-after', '#' + raw); location.hash = '#/login'; return; }
-    view.replaceChildren(emptyState(e instanceof ApiError ? errText(e) : 'Something went wrong.', h('button', { class: 'btn', onclick: () => render() }, t('Try again')))); if (!(e instanceof ApiError)) console.error(e);
+    if (e instanceof ApiError && e.status === 401) {
+      S.user = null;
+      chrome();
+      sessionStorage.setItem('g24-after', '#' + raw);
+      location.hash = '#/login';
+      return;
+    }
+
+    view.replaceChildren(
+      emptyState(
+        e instanceof ApiError ? errText(e) : 'Something went wrong.',
+        h('button', { class: 'btn', onclick: () => render() }, t('Try again'))
+      )
+    );
+
+    if (!(e instanceof ApiError)) console.error(e);
   }
-  if (keepScroll || key === lastKey) window.scrollTo(0, y); else { window.scrollTo(0, 0); view.focus({ preventScroll: true }); }
+
+  if (keepScroll || key === lastKey) {
+    window.scrollTo(0, y);
+  } else {
+    window.scrollTo(0, 0);
+    view.focus({ preventScroll: true });
+  }
+
   lastKey = key;
-  document.title = (view.querySelector('h2') ? view.querySelector('h2').textContent + ' | ' : '') + 'GURMAD 24';
+
+  document.title =
+    (view.querySelector('h2') ? view.querySelector('h2').textContent + ' | ' : '') +
+    'GURMAD 24';
 }
 
+// Navigation.
 window.addEventListener('hashchange', () => render());
-window.addEventListener('g24-auth', async () => { await loadMe(); chrome(); });
-window.addEventListener('offline', () => toast(t('You are offline. Some screens may not load.'), 'err'));
 
+// Authentication changes.
+window.addEventListener('g24-auth', async () => {
+  await loadMe();
+  chrome();
+});
+
+// Internet connection status.
+window.addEventListener('offline', () => {
+  chrome();
+  toast('Internet is disconnected. Changes have not been sent.', 'err');
+});
+
+window.addEventListener('online', () => {
+  chrome();
+  toast('Internet connection restored. Please retry any unsent actions.');
+});
+
+// Start application.
 (async function boot() {
   document.documentElement.lang = S.lang;
-  try { S.config = await GET('/config'); } catch (_) { /* offline: continue */ }
-  await loadMe(); await render();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+
+  try {
+    S.config = await GET('/config');
+  } catch (_) {
+    // Continue with cached app shell when offline.
+  }
+
+  await loadMe();
+  await render();
+
+  if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', {
+    updateViaCache: 'none'
+  })
+  .then(registration => registration.update())
+  .catch(error => {
+    console.error('GURMAD 24 service worker update failed:', error);
+  });
+  }
 })();

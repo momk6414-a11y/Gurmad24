@@ -24,6 +24,9 @@ export async function home() {
       h('img', { class: 'hero2-img', src: '/img/hero.svg', alt: '', width: 560, height: 420 })),
     h('div', { class: 'panel sos' }, h('div', { style: 'display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap' }, icon('alert', 28), h('div', { style: 'flex:1;min-width:220px' }, h('h3', t('This app does not send ambulances')),
       h('p', { style: 'margin:6px 0 0;color:var(--muted)' }, t('Live dispatch is switched off while the service is being tested. In a real emergency go to the nearest hospital or call your local emergency services directly.'))), h('a', { class: 'btn', href: '#/emergency' }, t('Emergency information')))),
+    h('div', { class: 'panel' }, h('div', { style: 'display:flex;gap:14px;align-items:center;flex-wrap:wrap' }, icon('chat', 28), h('div', { style: 'flex:1;min-width:220px' }, h('h3', t('Questions or a complaint?')),
+      h('p', { style: 'margin:6px 0 0;color:var(--muted)' }, t('Send us a message about an order, a hospital or a provider. Our team replies inside the app.'), S.user ? null : ' ' + t('You will be asked to log in first.'))),
+      h('a', { class: 'btn', href: '#/me/support' }, icon('chat'), t('Send a complaint')))),
     h('section', h('h2', { class: 'sec-title' }, t('How it works')), h('div', { class: 'grid g3' },
       step('1', 'search', 'Find', 'Browse verified hospitals and compare their health cards side by side.'), step('2', 'bag', 'Order', 'Order a card in a minute. In this demo no real money is charged.'), step('3', 'receipt', 'Use', 'Keep your receipt and show it at the hospital. Terms are those the hospital approved.'))),
     h('section', h('h2', { class: 'sec-title' }, t('Built for everyone in healthcare')), h('div', { class: 'grid g3' },
@@ -42,7 +45,7 @@ export async function home() {
 export function cardTile(c, { compare = true } = {}) {
   const sel = S.cmp.includes(c.id);
   return h('article', { class: 'hc' },
-    h('div', { class: 'sym' }, icon('card', 22)),
+    h('img', { class: 'art', src: '/img/card-' + ['mint', 'blue', 'violet'][String(c.id).split('').reduce((a, ch) => a + ch.charCodeAt(0), 0) % 3] + '.svg', alt: '', width: 320, height: 112, loading: 'lazy' }),
     h('div', { class: 'hosp' }, c.hospital ? c.hospital.name : '', verified(c.hospital && c.hospital.verified)),
     h('h4', c.name), h('div', { class: 'price' }, money(c.priceCents), h('small', { style: 'font-size:12px;color:var(--muted);font-weight:500' }, ' ' + t('{n} days', { n: c.validityDays }))),
     h('div', { class: 'meta' }, (c.included || []).slice(0, 2).join(' - ')), h('span', { class: 'badge demo' }, t('Demo price')),
@@ -127,7 +130,7 @@ export async function hospitals() {
   let tm; q.oninput = () => { clearTimeout(tm); tm = setTimeout(load, 250); }; load();
   return h('div', head('Hospital directory', 'Only administrator-verified hospitals are listed.'), h('div', { class: 'field' }, q), out);
 }
-const orgTile = o => h('article', { class: 'hc' }, h('div', { class: 'sym' }, icon(o.type === 'hospital' ? 'hospital' : o.type === 'lab' ? 'flask' : 'ambulance', 22)), h('h4', o.name), h('div', { class: 'hosp' }, o.area, verified(o.verified)),
+const orgTile = o => h('article', { class: 'hc' }, h('img', { class: 'art', src: '/img/org-' + (o.type === 'hospital' ? 'hospital' : o.type === 'lab' ? 'lab' : 'ambulance') + '.svg', alt: '', width: 320, height: 112, loading: 'lazy' }), h('h4', o.name), h('div', { class: 'hosp' }, o.area, verified(o.verified)),
   h('div', { class: 'meta' }, o.description), o.type === 'hospital' ? h('a', { class: 'btn sm', href: '#/hospitals/' + o.id }, t('View details')) : (o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : null));
 
 export async function hospitalDetail({ id }) {
