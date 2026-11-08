@@ -1,8 +1,8 @@
 
 // GURMAD 24 - Service Worker
-// Version 13: refreshes old app cache and keeps API/personal data uncached.
+// Version 14: refreshes old app cache and keeps API/personal data uncached.
 
-const CACHE = 'g24-v13';
+const CACHE = 'g24-v14';
 
 const SHELL = [
   '/',
@@ -27,6 +27,15 @@ const SHELL = [
   '/img/card-blue.svg',
   '/img/card-violet.svg',
   '/img/org-hospital.svg',
+  '/img/banner-admin.svg',
+  '/img/banner-security.svg',
+  '/img/banner-ops.svg',
+  '/img/banner-ambulance.svg',
+  '/img/banner-police.svg',
+  '/img/banner-fire.svg',
+  '/img/banner-hospital.svg',
+  '/img/banner-lab.svg',
+  '/img/banner-patient.svg',
   '/img/org-lab.svg',
   '/img/org-ambulance.svg',
   '/icons/icon-192.png',

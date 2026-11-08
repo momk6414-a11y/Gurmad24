@@ -184,6 +184,16 @@ function chrome() {
   void view;
 }
 
+// Illustrated banner on top of dashboards (decorative; art matches the section).
+function bannerFor(path) {
+  if (path.startsWith('/admin/security')) return 'security';
+  if (path.startsWith('/admin')) return 'admin';
+  if (path.startsWith('/ops')) return 'ops';
+  if (path.startsWith('/org')) return S.org && ['hospital', 'ambulance', 'police', 'fire', 'lab'].includes(S.org.type) ? S.org.type : 'hospital';
+  if (path.startsWith('/me/')) return 'patient';
+  return null;
+}
+
 async function logout() {
   try {
     await POST('/auth/logout');
@@ -275,7 +285,8 @@ async function render(keepScroll) {
       (location.hash.replace(/^#/, '') || '/') !== raw
     ) return;
 
-    view.replaceChildren(node);
+    const art = bannerFor(path);
+    view.replaceChildren(...(art ? [h('img', { class: 'page-banner', src: '/img/banner-' + art + '.svg', alt: '', width: 640, height: 160, decoding: 'async' })] : []), node);
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) {
       S.user = null;
