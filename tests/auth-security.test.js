@@ -40,6 +40,11 @@ test('wrong password is rejected and account locks after 5 failures', async () =
   assert.equal((await c.post('/api/auth/login', { email: 'a@x.test', password: 'Passw0rd12' })).status, 429);
 });
 
+test('unknown-account dummy credential is a valid salted scrypt hash', () => {
+  assert.match(S.DUMMY_PASSWORD_HASH, /^scrypt\\$[a-f0-9]{32}\\$[a-f0-9]{128}$/);
+  assert.equal(S.verifyPassword('Whatever123', S.DUMMY_PASSWORD_HASH), false);
+});
+
 test('passwords are stored as salted scrypt hashes, never plain', () => {
   const h = S.hashPassword('Secret123'); assert.match(h, /^scrypt\$/); assert.ok(!h.includes('Secret123'));
   assert.ok(S.verifyPassword('Secret123', h)); assert.ok(!S.verifyPassword('secret123', h));
