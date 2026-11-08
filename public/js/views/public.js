@@ -271,13 +271,38 @@ function requestForm(box, areas) {
   const msg = h('p', { class: 'hint', 'aria-live': 'polite' });
   const consent = h('input', { type: 'checkbox', id: 'em-consent' });
   const areaSel = h('select', { id: 'em-area', 'aria-label': t('Area') }, h('option', { value: '' }, t('Choose an area')), areas.map(a => h('option', { value: a.id }, t(a.name))));
-  areaSel.addEventListener('change', () => { if (areaSel.value) { loc = null; msg.textContent = ''; } });
+  let gpsRequest = 0;
+  const cancelGps = () => { gpsRequest++; gps.disabled = false; loc = null; };
+  consent.addEventListener('change', () => {
+    if (!consent.checked) { cancelGps(); msg.textContent = t('Location sharing is off. Choose an area or agree again to use GPS.'); }
+  });
+  areaSel.addEventListener('change', () => {
+    if (areaSel.value) { cancelGps(); msg.textContent = ''; }
+  });
   const gps = h('button', { type: 'button', class: 'btn ghost', onclick: () => {
     if (!consent.checked) { msg.textContent = t('Tick the box to agree before sharing your location.'); return; }
     if (!navigator.geolocation) { msg.textContent = t('This device cannot share its location. Choose an area instead.'); return; }
+    const request = ++gpsRequest;
+    gps.disabled = true;
     msg.textContent = t('Finding your location...');
-    navigator.geolocation.getCurrentPosition(pos => { loc = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }; areaSel.value = ''; msg.textContent = t('Location found (about {m} m).', { m: Math.round(pos.coords.accuracy) }); },
-      e => { loc = null; msg.textContent = e && e.code === 1 ? t('Location permission was denied. Choose an area instead.') : t('Could not get your location. Choose an area instead.'); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
+    try {
+      navigator.geolocation.getCurrentPosition(pos => {
+        if (request !== gpsRequest || !consent.checked) return;
+        const lat = Number(pos.coords && pos.coords.latitude), lng = Number(pos.coords && pos.coords.longitude), accuracy = Number(pos.coords && pos.coords.accuracy);
+        gps.disabled = false;
+        if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180 || !Number.isFinite(accuracy) || accuracy < 0) {
+          loc = null; msg.textContent = t('Could not get your location. Choose an area instead.'); return;
+        }
+        loc = { lat, lng, accuracy }; areaSel.value = '';
+        msg.textContent = t('Location found (about {m} m).', { m: Math.round(accuracy) });
+      }, e => {
+        if (request !== gpsRequest || !consent.checked) return;
+        gps.disabled = false; loc = null;
+        msg.textContent = e && e.code === 1 ? t('Location permission was denied. Choose an area instead.') : t('Could not get your location. Choose an area instead.');
+      }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
+    } catch (_) {
+      if (request === gpsRequest) { gps.disabled = false; loc = null; msg.textContent = t('Could not get your location. Choose an area instead.'); }
+    }
   } }, icon('pin'), t('Use my location'));
   const note = h('input', { id: 'em-note', type: 'text', maxlength: 200, autocomplete: 'off' });
   const err = h('div', { class: 'form-error', role: 'alert' });
