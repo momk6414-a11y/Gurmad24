@@ -1,4 +1,3 @@
-
 name: GURMAD 24 Tests
 
 on:
@@ -8,29 +7,15 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
-
-concurrency:
-  group: gurmad24-tests-${{ github.ref }}
-  cancel-in-progress: true
+  contents: write
 
 jobs:
   test:
-    name: Run automated tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run GURMAD 24 tests
-        run: npm test
+      - run: npm install
+      - run: npm test
