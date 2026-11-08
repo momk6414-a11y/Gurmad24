@@ -1,8 +1,8 @@
 
 // GURMAD 24 - Service Worker
-// Version 9: refreshes old app cache and keeps API/personal data uncached.
+// Version 10: refreshes old app cache and keeps API/personal data uncached.
 
-const CACHE = 'g24-v9';
+const CACHE = 'g24-v10';
 
 const SHELL = [
   '/',

@@ -19,6 +19,25 @@ module.exports = function (app) {
     notices: { dispatch: 'simulation_only', location: 'demo_map_only', cards: 'not_insurance', data: 'no_real_patient_data' },
   }));
 
+  app.get('/api/overview', { summary: 'Public live system overview: aggregate counts only, no personal data' }, () => {
+    R.advanceAll(store);
+    const cases = store.col('cases'); const today = new Date().toISOString().slice(0, 10);
+    const ok = o => o.status === 'verified'; const orgs = store.col('orgs').filter(ok);
+    const n = type => orgs.filter(o => o.type === type).length;
+    const by = k => cases.reduce((m, c) => { const r = c.responder || R.responderFor(c.category); m[r] = (m[r] || 0) + (k(c) ? 1 : 0); return m; }, {});
+    const done = cases.filter(c => c.history.some(x => x.status === 'handed_over'));
+    const mins = done.map(c => (new Date(c.history.find(x => x.status === 'handed_over').ts) - new Date(c.createdAt)) / 60000);
+    return {
+      mode: config.demoMode ? 'DEMO_SANDBOX' : 'PILOT', time: new Date().toISOString(),
+      facilities: { hospital: n('hospital'), ambulance: n('ambulance'), police: n('police'), fire: n('fire'), lab: n('lab') },
+      available: R.RESPONDER_TYPES.reduce((m, t) => { m[t] = orgs.filter(o => o.type === t && o.available).length; return m; }, {}),
+      cases: { total: cases.length, today: cases.filter(c => c.createdAt.slice(0, 10) === today).length, active: cases.filter(c => !['closed', 'cancelled', 'handed_over'].includes(c.status)).length, activeByResponder: by(c => !['closed', 'cancelled', 'handed_over'].includes(c.status)), avgMinutesToHandover: mins.length ? Math.round(mins.reduce((a, b) => a + b, 0) / mins.length * 10) / 10 : null },
+      cards: store.col('cards').filter(c => c.status === 'published').length,
+      orders: store.col('orders').length, appointments: store.col('appointments').length,
+      areas: R.AREAS.map(a => ({ id: a.id, name: a.name, lat: a.lat, lng: a.lng, active: cases.filter(c => c.location && c.location.source === 'area' && Math.abs(c.location.lat - a.lat) < 1e-6 && Math.abs(c.location.lng - a.lng) < 1e-6 && !['closed', 'cancelled', 'handed_over'].includes(c.status)).length })),
+    };
+  });
+
   app.get('/api/hospitals', { summary: 'Verified hospital directory (?q=)' }, req => {
     const q = (req.query.q || '').toLowerCase();
     return { hospitals: store.filter('orgs', o => o.type === 'hospital' && o.status === 'verified' && (!q || (o.name + ' ' + o.area).toLowerCase().includes(q))).map(D.orgPublic) };

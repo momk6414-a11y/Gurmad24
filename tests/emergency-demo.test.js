@@ -111,3 +111,13 @@ test('map: CSP allows the two tile hosts and public lists expose coordinates', a
   const hs = (await t.client().get('/api/hospitals')).data.hospitals;
   assert.ok(hs.some(x => typeof x.lat === 'number'));
 });
+
+test('public overview: live aggregate counts, no personal data', async () => {
+  const r = await t.client().get('/api/overview');
+  assert.equal(r.status, 200);
+  const o = r.data;
+  assert.ok(o.facilities.hospital >= 1 && o.facilities.police >= 1 && o.facilities.fire >= 1);
+  assert.equal(typeof o.cases.active, 'number');
+  assert.ok(Array.isArray(o.areas) && o.areas.length > 0);
+  assert.equal(/trackToken|phone|email|@/.test(JSON.stringify(o)), false);
+});

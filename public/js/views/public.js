@@ -20,7 +20,7 @@ export async function home() {
     h('section', { class: 'hero2' },
       h('div', { class: 'hero2-text' }, h('div', { class: 'eyebrow' }, t('GURMAD 24 - Gaalkacyo pilot')), h('h1', t('Clear coordination. Accessible healthcare.')),
         h('p', t('Browse hospital health cards, find verified hospitals and providers, and request appointments - in Somali or English.')),
-        h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/cards' }, icon('card'), t('Browse health cards')), h('a', { class: 'btn ghost', href: '#/hospitals' }, icon('hospital'), t('Find a hospital')), S.user ? null : h('a', { class: 'btn ghost', href: '#/register' }, icon('user'), t('Create account'))),
+        h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/cards' }, icon('card'), t('Browse health cards')), h('a', { class: 'btn ghost', href: '#/hospitals' }, icon('hospital'), t('Find a hospital')), h('a', { class: 'btn ghost', href: '#/system' }, icon('dash'), t('System overview')), S.user ? null : h('a', { class: 'btn ghost', href: '#/register' }, icon('user'), t('Create account'))),
         h('div', { class: 'stats-row' }, h('div', h('b', hs.hospitals.length), h('span', t('Verified hospitals'))), h('div', h('b', cards.cards.length), h('span', t('Health cards'))), h('div', h('b', '2'), h('span', t('Languages'))))),
       h('img', { class: 'hero2-img', src: '/img/hero.svg', alt: '', width: 560, height: 420 })),
     h('div', { class: 'panel sos' }, h('div', { style: 'display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap' }, icon('alert', 28), h('div', { style: 'flex:1;min-width:220px' }, h('h3', t('Emergency requests are a demo')),
@@ -276,6 +276,26 @@ export async function puntlandMap() {
     h('div', { class: 'panel' }, map, h('div', { class: 'legend' }, ['hospital', 'ambulance', 'police', 'fire'].map(k => h('span', { class: 'rtag u-' + k }, icon(k, 16), t(kindName[k]))))),
     panel('Facilities (demo)', fac.length ? table([{ label: 'Name', key: 'name' }, { label: 'Type', render: o => t(kindName[o.type]) }, { label: 'Area', key: 'area' },
       { label: '', render: o => h('button', { class: 'btn sm ghost', onclick: () => { map.flyTo(o.lat, o.lng, 14); map.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }, icon('pin', 16), t('Show on map')) }], fac) : emptyState('Nobody listed yet.')));
+}
+
+export async function system() {
+  const draw = o => {
+    const f = o.facilities, c = o.cases;
+    const row = (ic, label, total, avail) => h('div', { class: 'tile' }, h('span', icon(ic, 16), ' ', t(label)), h('b', total), h('small', avail === undefined ? ' ' : t('Available now') + ': ' + avail));
+    return h('div',
+      h('div', { class: 'live-dot' }, h('i'), t('System active'), ' - ', t('updates every few seconds')),
+      h('div', { class: 'grid g4 keep2' }, tile(t('Requests today'), c.today), tile(t('Active requests'), c.active), tile(t('Total requests'), c.total), tile(t('Avg minutes to arrival'), c.avgMinutesToHandover === null ? '-' : c.avgMinutesToHandover)),
+      h('h3', { class: 'sec-title' }, t('Services connected')),
+      h('div', { class: 'grid g4 keep2' }, row('hospital', 'Hospital', f.hospital), row('ambulance', 'Ambulance', f.ambulance, o.available.ambulance), row('police', 'Police', f.police, o.available.police), row('fire', 'Fire brigade', f.fire, o.available.fire)),
+      h('div', { class: 'grid g3 keep2', style: 'margin-top:14px' }, tile(t('Health cards'), o.cards), tile(t('Orders'), o.orders), tile(t('Appointments'), o.appointments)),
+      panel('Areas', table([{ label: 'Area', key: 'name' }, { label: 'Active requests', render: a => a.active }], o.areas)));
+  };
+  const box = h('div'); let o = await GET('/overview'); box.replaceChildren(draw(o));
+  stopPoll();
+  S.poll = setInterval(async () => { try { o = await GET('/overview'); box.replaceChildren(draw(o)); } catch (_) { /* keep last view */ } }, 4000);
+  return h('div', head('System overview', 'Live picture of hospitals, emergency services and requests across the region.'), box,
+    h('div', { class: 'actions', style: 'margin-top:14px' }, h('a', { class: 'btn', href: '#/map' }, icon('pin'), t('Puntland map')), h('a', { class: 'btn ghost', href: '#/emergency' }, icon('alert'), t('Try the emergency demo'))),
+    demoNote('Numbers come from the demo system. No personal data is shown.'));
 }
 
 // ---------- Auth
