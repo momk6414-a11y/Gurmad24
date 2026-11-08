@@ -30,8 +30,8 @@ export async function home() {
         h('h1', t('One network. Every emergency.')),
         h('p', t('A connected response system for people, location and essential services.')),
         h('div', { class: 'actions' },
-          h('a', { class: 'btn', href: '#/map' }, icon('pin'), t('Open live map')),
-          h('a', { class: 'btn ghost', href: '#/emergency' }, icon('alert'), t('Emergency centre'))
+          h('a', { class: 'btn', href: '#/map', onclick: e => { e.preventDefault(); go('/map'); } }, icon('pin'), t('Open live map')),
+          h('a', { class: 'btn ghost', href: '#/emergency', onclick: e => { e.preventDefault(); go('/emergency'); } }, icon('alert'), t('Emergency centre'))
         ),
         h('div', { class: 'legend-proof' },
           h('span', icon('shield', 16), t('People first')),
@@ -45,10 +45,10 @@ export async function home() {
     ),
     hot,
     h('section', { class: 'legend-actions' },
-      h('a', { class: 'legend-action', href: '#/hospitals' }, icon('hospital', 22), h('b', t('Hospitals')), h('span', t('Find care'))),
-      h('a', { class: 'legend-action', href: '#/services' }, icon('ambulance', 22), h('b', t('Emergency services')), h('span', t('Ambulance and providers'))),
-      h('a', { class: 'legend-action', href: '#/cards' }, icon('card', 22), h('b', t('Health cards')), h('span', t('Explore healthcare'))),
-      h('a', { class: 'legend-action', href: '#/map' }, icon('pin', 22), h('b', t('Live map')), h('span', t('GPS and locations')))
+      h('a', { class: 'legend-action', href: '#/hospitals', onclick: e => { e.preventDefault(); go('/hospitals'); } }, icon('hospital', 22), h('b', t('Hospitals')), h('span', t('Find care'))),
+      h('a', { class: 'legend-action', href: '#/services', onclick: e => { e.preventDefault(); go('/services'); } }, icon('ambulance', 22), h('b', t('Emergency services')), h('span', t('Ambulance and providers'))),
+      h('a', { class: 'legend-action', href: '#/cards', onclick: e => { e.preventDefault(); go('/cards'); } }, icon('card', 22), h('b', t('Health cards')), h('span', t('Explore healthcare'))),
+      h('a', { class: 'legend-action', href: '#/map', onclick: e => { e.preventDefault(); go('/map'); } }, icon('pin', 22), h('b', t('Live map')), h('span', t('GPS and locations')))
     ),
     h('div', { class: 'legend-safety' },
       icon('alert', 20),
@@ -64,8 +64,8 @@ export function cardTile(c, { compare = true } = {}) {
     h('img', { class: 'art', src: '/img/card-' + ['mint', 'blue', 'violet'][String(c.id).split('').reduce((a, ch) => a + ch.charCodeAt(0), 0) % 3] + '.svg', alt: '', width: 320, height: 112, loading: 'lazy' }),
     h('div', { class: 'hosp' }, c.hospital ? c.hospital.name : '', verified(c.hospital && c.hospital.verified)),
     h('h4', c.name), h('div', { class: 'price' }, money(c.priceCents), h('small', { style: 'font-size:12px;color:var(--muted);font-weight:500' }, ' ' + t('{n} days', { n: c.validityDays }))),
-    h('div', { class: 'meta' }, (c.included || []).slice(0, 2).join(' - ')), h('span', { class: 'badge demo' }, t('Demo price')),
-    h('div', { class: 'row' }, h('a', { class: 'btn sm', href: '#/cards/' + c.id }, t('View details')),
+    h('div', { class: 'meta' }, (c.included || []).slice(0, 2).join(' - ')), h('div', { class: 'card-facts' }, h('span', t('{n} included services', { n: (c.included || []).length })), h('span', t('{n} exclusions', { n: (c.excluded || []).length }))), h('span', { class: 'badge demo' }, t('Demo price')),
+    h('div', { class: 'row' }, h('button', { class: 'btn sm', type: 'button', onclick: () => go('/cards/' + c.id) }, t('View details')),
       compare ? h('button', { class: 'btn sm ghost', 'aria-pressed': sel, onclick: e => toggleCompare(c.id, e.currentTarget) }, sel ? t('Selected') : t('Compare')) : null));
 }
 function toggleCompare(id, btn) {
@@ -318,16 +318,43 @@ export async function emergency() {
 
 // ---------- Puntland map (satellite / street), public
 export async function puntlandMap() {
-  const [hr, pr] = await Promise.all([GET('/hospitals'), GET('/providers')]);
-  const fac = [...hr.hospitals.map(o => ({ ...o, kind: 'hospital', type: 'hospital' })), ...pr.providers.filter(p => ['ambulance', 'police', 'fire'].includes(p.type)).map(p => ({ ...p, kind: 'station' }))].filter(o => o.lat != null && o.lng != null);
-  const map = liveMap([], { view: 'puntland', places: true, markers: fac.map(o => ({ kind: o.kind, type: o.type, lat: o.lat, lng: o.lng, label: o.name })), height: 'min(64vh, 520px)' });
-  const kindName = { hospital: 'Hospital', ambulance: 'Ambulance', police: 'Police', fire: 'Fire brigade' };
-  return h('div', head('Puntland map', 'Satellite imagery and street map of the whole region.'),
-    demoNote('Satellite pictures come from Esri and the street map from OpenStreetMap, so an internet connection is needed. Facility positions are demo data.'),
-    h('div', { class: 'chips' }, h('button', { class: 'chip', onclick: () => map.update([], { refit: true }) }, icon('pin', 16), t('Puntland')), PLACES.map(p => h('button', { class: 'chip', onclick: () => map.flyTo(p.lat, p.lng, 12) }, p.name))),
-    h('div', { class: 'panel' }, map, h('div', { class: 'legend' }, ['hospital', 'ambulance', 'police', 'fire'].map(k => h('span', { class: 'rtag u-' + k }, icon(k, 16), t(kindName[k]))))),
-    panel('Facilities (demo)', fac.length ? table([{ label: 'Name', key: 'name' }, { label: 'Type', render: o => t(kindName[o.type]) }, { label: 'Area', key: 'area' },
-      { label: '', render: o => h('button', { class: 'btn sm ghost', onclick: () => { map.flyTo(o.lat, o.lng, 14); map.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }, icon('pin', 16), t('Show on map')) }], fac) : emptyState('Nobody listed yet.')));
+  // Coordinates are taken from public map/directory and humanitarian mapping references.
+  // They are directory reference points, not a live verified dispatch registry.
+  const pois = [
+    { id:'uthg', name:'University Teaching Hospital Galkayo', kind:'hospital', type:'hospital', lat:6.7706459, lng:47.4275309, detail:'Isbitaal waxbarasho iyo adeeg caafimaad. Xogta saacadaha/telefoonka waa in goobta laga xaqiijiyaa.', source:'Public place directory', phone:'+252 90 779 5719' },
+    { id:'modern', name:'Modern Hospital Galkayo', kind:'hospital', type:'hospital', lat:6.772199, lng:47.4286464, detail:'Isbitaal ku yaal Gaalkacyo; xogta directory-ga ayaa sheegaysa adeeg 24-saac ah, balse waa in la xaqiijiyaa.', source:'Public place directory', phone:'+252 5 858002' },
+    { id:'galkayo-hospital', name:'Galkayo Hospital', kind:'hospital', type:'hospital', lat:6.78333, lng:47.4333, detail:'Goob isbitaal oo ku qoran diiwaanka khariidadaha dadweynaha; booska waa qiyaas.', source:'Public place directory', phone:'+252 61 782 0040' },
+    { id:'local-gov', name:'Gaalkacyo Local Government Office', kind:'government', type:'government', lat:6.763983405, lng:47.43147466, detail:'Xafiiska Dowladda Hoose ee Gaalkacyo.', source:'African Development Bank mapping document' },
+    { id:'immigration', name:'Immigration Offices', kind:'government', type:'government', lat:6.761669548, lng:47.43203028, detail:'Xafiisyada socdaalka ee ku taxan khariidaynta Gaalkacyo.', source:'African Development Bank mapping document' },
+    { id:'university', name:'Galkayo University', kind:'landmark', type:'landmark', lat:6.752287218, lng:47.42322456, detail:'Jaamacadda Gaalkacyo — meel tixraac ah oo magaalada ku taal.', source:'African Development Bank mapping document' },
+    { id:'city', name:'Bartamaha Gaalkacyo', kind:'landmark', type:'landmark', lat:6.7697, lng:47.4308, detail:'Xarunta magaalada Gaalkacyo; goob tixraac guud.', source:'OpenStreetMap / GeoNames city coordinates' }
+  ];
+  const selected = h('div', { class:'poi-details', 'aria-live':'polite' },
+    h('b', t('Select a map marker')),
+    h('p', t('Taabo calaamad khariidadda saaran si aad u aragto faahfaahinta, nooca goobta iyo halka xogtu ka timid.')));
+  const map = liveMap([], { view:'points', center:{lat:6.7697,lng:47.4308,z:13}, markers:pois, height:'min(68vh, 620px)',
+    onMarkerClick: p => {
+      selected.replaceChildren(
+        h('div',{class:'poi-head'},h('b',p.name),h('span',{class:'badge '+(p.kind==='hospital'?'ok':'demo')},t(p.kind==='hospital'?'Hospital':p.kind==='government'?'Government':'Landmark'))),
+        h('p',p.detail),
+        h('small',t('Source: {s}',{s:p.source})),
+        p.phone?h('p',h('a',{class:'tel',href:'tel:'+p.phone.replace(/[^+\\d]/g,'')},icon('phone',16),p.phone)):null,
+        h('div',{class:'actions'},h('a',{class:'btn sm',href:'https://www.openstreetmap.org/?mlat='+p.lat+'&mlon='+p.lng+'#map=17/'+p.lat+'/'+p.lng,target:'_blank',rel:'noopener noreferrer'},icon('pin',14),t('Open directions')))
+      );
+      map.flyTo(p.lat,p.lng,15);
+    }
+  });
+  const dispatch = { type:'ambulance', station:{lat:6.772199,lng:47.4286464}, unit:{lat:6.7714,lng:47.4294}, incident:{lat:6.7697,lng:47.4308}, done:false };
+  let demoOn = false;
+  const toggle = h('button',{class:'btn sm',type:'button',onclick:()=>{demoOn=!demoOn;map.update(demoOn?[dispatch]:[],{refit:false});toggle.textContent=t(demoOn?'Hide demo dispatch':'Show demo dispatch');}},t('Show demo dispatch'));
+  const list = h('div',{class:'poi-list'},pois.map(p=>h('button',{type:'button',class:'poi-row',onclick:()=>{map.flyTo(p.lat,p.lng,15);selected.querySelector('b')?.replaceWith(h('b',p.name));selected.replaceChildren(h('b',p.name),h('p',p.detail),h('small',t('Source: {s}',{s:p.source})),p.phone?h('a',{class:'tel',href:'tel:'+p.phone.replace(/[^+\\d]/g,'')},p.phone):null);}},h('span',icon(p.kind==='hospital'?'hospital':p.kind==='government'?'shield':'pin',18)),h('span',h('b',p.name),h('small',p.kind)))));
+  return h('div',head('Gaalkacyo Earth map','Satellite toos ah iyo waddooyin; dooro calaamad si faahfaahin loo arko.'),
+    demoNote('Sawirrada satellite-ka waxay ka yimaadaan Esri, waddooyinkuna OpenStreetMap. Goobaha waa tixraacyo khariidadeed oo la soo ururiyey; xaqiiji cinwaanka iyo shaqada goobta ka hor isticmaal gurmad dhab ah.'),
+    h('div',{class:'chips'},h('button',{class:'chip',onclick:()=>map.flyTo(6.7697,47.4308,13)},'Gaalkacyo'),PLACES.map(p=>h('button',{class:'chip',onclick:()=>map.flyTo(p.lat,p.lng,12)},p.name))),
+    h('div',{class:'panel'},h('div',{class:'actions'},toggle,h('a',{class:'btn sm ghost',href:'#/emergency',onclick:e=>{e.preventDefault();go('/emergency');}},icon('alert',15),t('Open live dispatch test'))),map,
+      h('div',{class:'legend'},['hospital','government','landmark','ambulance'].map(k=>h('span',{class:'rtag u-'+k},icon(k==='government'?'shield':k==='landmark'?'pin':k,15),t(k))))),
+    selected,panel('Nearby places and facilities',list),
+    demoNote('Demo dispatch-ku waa tijaabo muuqaal ah oo keliya: ma wacayo ambalaas, boolis ama dab-damis, mana sheegayo in gaari dhab ahi socdo. Codsiga tijaabada ah ka samee Emergency, halkaas oo status-ka lagu cusboonaysiinayo.')));
 }
 
 export async function system() {

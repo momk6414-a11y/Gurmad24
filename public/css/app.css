@@ -258,3 +258,19 @@ h1,h2,h3,h4{letter-spacing:-.01em}
 .legend-safety svg{flex:none}
 @media(max-width:860px){.legend-hero{grid-template-columns:1fr;gap:8px;padding:16px}.legend-copy{padding:8px 4px 0}.legend-copy h1{max-width:520px}.legend-copy p{max-width:520px}.legend-art{max-height:none}.legend-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:420px){.legend-proof{gap:6px}.legend-proof span{font-size:10px;padding:6px 8px}.legend-action{padding:12px 10px}.legend-action b{font-size:12px}}
+
+/* Gaalkacyo Earth map POI directory and richer card summaries */
+.card-facts{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;color:var(--muted);font-size:11px}
+.card-facts span{padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:var(--bg2)}
+.mk-fac{pointer-events:auto;cursor:pointer;touch-action:manipulation}
+.mk-fac:focus-visible{outline:3px solid var(--gold);outline-offset:5px}
+.poi-details{margin:12px 0;padding:16px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,var(--panel),var(--bg2))}
+.poi-details p{margin:8px 0;color:var(--muted)}
+.poi-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.poi-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.poi-row{display:flex;align-items:center;gap:10px;text-align:left;min-width:0;padding:11px;border:1px solid var(--line);border-radius:13px;background:var(--panel);color:var(--ink);cursor:pointer}
+.poi-row:hover{border-color:var(--mint)}
+.poi-row>span:first-child{color:var(--mint);flex:none}
+.poi-row b,.poi-row small{display:block;overflow-wrap:anywhere}
+.poi-row small{color:var(--muted);font-size:11px}
+@media(max-width:560px){.poi-list{grid-template-columns:1fr}}

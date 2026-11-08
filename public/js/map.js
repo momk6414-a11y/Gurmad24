@@ -39,7 +39,7 @@ export const osmLink = loc => loc ? `https://www.openstreetmap.org/?mlat=${loc.l
 // opts: { layer, places, markers:[{kind:'station'|'hospital', type, lat, lng, label}], view:'points'|'puntland', height }
 export function liveMap(entries, opts = {}) {
   let layer = LAYERS[opts.layer] ? opts.layer : 'satellite';
-  const view = { lat: 8.4, lng: 49.3, z: 6 };
+  const view = { lat: opts.center?.lat ?? 8.4, lng: opts.center?.lng ?? 49.3, z: opts.center?.z ?? 6 };
   const mode = opts.view === 'puntland' ? 'puntland' : 'points';
   let items = []; let current = entries || []; let userMoved = false; let raf = 0; let loaded = 0; let userLocation = null; let locStatusTimer = 0;
   const tiles = new Map();
@@ -155,7 +155,13 @@ export function liveMap(entries, opts = {}) {
     const add = (o, el) => { markPane.append(el); items.push({ lat: o.lat, lng: o.lng, el }); };
     const line = (a, b, cls) => { const l = document.createElementNS(NS, 'line'); l.setAttribute('class', cls); l.__d = { a, b }; lines.append(l); };
     if (opts.places) PLACES.forEach(p => add(p, mk('mk-city', h('span', { class: 'cdot' }), h('span', { class: 'clbl' }, p.name))));
-    (opts.markers || []).forEach(m => add(m, mk('mk-fac u-' + (m.type || 'hospital'), icon(m.kind === 'hospital' ? 'hospital' : m.type, 14), m.label ? h('span', { class: 'clbl' }, m.label) : null)));
+    (opts.markers || []).forEach(m => {
+      const el = mk('mk-fac u-' + (m.type || 'hospital'), icon(m.kind === 'hospital' ? 'hospital' : m.kind === 'government' ? 'shield' : m.kind === 'landmark' ? 'pin' : (m.type || 'pin'), 14), m.label ? h('span', { class: 'clbl' }, m.label) : null);
+      el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0'); el.setAttribute('aria-label', t('Show details: {name}', { name: m.label || t('Map location') }));
+      el.addEventListener('click', () => opts.onMarkerClick?.(m));
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); opts.onMarkerClick?.(m); } });
+      add(m, el);
+    });
     if (userLocation) add(userLocation, h('div', { class: 'mk mk-user-location', role: 'img', 'aria-label': t('Your location') }));
     for (const e of list) if (e.station) { line(e.station, e.incident, 'tm-route u-' + e.type); if (e.unit) line(e.station, e.unit, 'tm-trail u-' + e.type); }
     for (const e of list) if (e.station) add(e.station, mk('mk-station u-' + e.type, icon(e.type, 13)));
@@ -166,7 +172,7 @@ export function liveMap(entries, opts = {}) {
   const points = list => list.flatMap(e => [e.incident, e.unit, e.station].filter(Boolean));
   box.update = (list, { refit = true } = {}) => {
     const l = (list || []).filter(e => e && e.incident); current = l; build(l);
-    if (refit && !userMoved) { const pts = mode === 'puntland' ? [] : points(l); if (pts.length) fit(pts); else fit(PUNTLAND, 0); }
+    if (refit && !userMoved) { const pts = mode === 'puntland' ? [] : points(l); if (pts.length) fit(pts); else if (!opts.center) fit(PUNTLAND, 0); }
     schedule();
   };
   box.flyTo = (lat, lng, z = 12) => { userMoved = true; view.lat = lat; view.lng = lng; view.z = Math.min(maxZ(), z); schedule(); };
