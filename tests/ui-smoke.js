@@ -32,13 +32,13 @@ const { chromium } = require('playwright');
   if (!locationNotice.includes('GURMAD 24')) errors.push('map: current-location privacy notice was not shown');
   // Gaalkacyo Earth map: POI markers open details and the demo dispatch draws a route.
   await guest.locator('.mk-fac').first().click();
-  await guest.waitForFunction(() => document.querySelector('.poi-details')?.innerText.includes('University Teaching Hospital'));
+  await guest.waitForFunction(() => document.querySelector('.poi-details')?.innerText.includes('University Teaching Hospital'), null, { timeout: 5000 }).catch(() => errors.push('map: marker details did not open'));
   await guest.getByRole('button', { name: /Show demo dispatch|Muuji dirista gurmadka tijaabada/i }).click();
   await guest.waitForSelector('.tm-route', { timeout: 3000 }).catch(() => errors.push('map: demo dispatch route was not drawn'));
   // Marketplace cards expose a working details action.
   await guest.goto(t.base + '/#/cards'); await guest.reload();
-  await guest.locator('#view button:has-text("View details")').first().click();
-  await guest.waitForFunction(() => document.querySelector('#view')?.innerText.includes('Included services'), { timeout: 5000 }).catch(() => errors.push('cards: details action did not open the card detail page'));
+  await guest.locator('#view .hc button').first().click();
+  await guest.waitForFunction(() => document.querySelector('#view')?.innerText.includes('Included services'), null, { timeout: 5000 }).catch(() => errors.push('cards: details action did not open the card detail page'));
 
   const pg = await session('patient', 'patient@demo.gurmad24.test', 'DemoPass12345', ['/', '/me/orders', '/me/appointments', '/me/support', '/me/account']);
   // full order flow through the UI
