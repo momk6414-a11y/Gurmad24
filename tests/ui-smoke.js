@@ -38,13 +38,13 @@ const { chromium } = require('playwright');
   // Marketplace cards expose a working details action.
   await guest.goto(t.base + '/#/cards'); await guest.reload();
   await guest.locator('#view .hc button').first().click();
-  await guest.waitForFunction(() => document.querySelector('#view')?.innerText.includes('Included services'), null, { timeout: 5000 }).catch(() => errors.push('cards: details action did not open the card detail page'));
+  await guest.waitForFunction(() => document.querySelector('#view')?.innerText.includes('Adeegyada ku jira') || document.querySelector('#view')?.innerText.includes('Included services'), null, { timeout: 5000 }).catch(() => errors.push('cards: details action did not open the card detail page'));
 
   const pg = await session('patient', 'patient@demo.gurmad24.test', 'DemoPass12345', ['/', '/me/orders', '/me/appointments', '/me/support', '/me/account']);
   // full order flow through the UI
-  await pg.goto(t.base + '/#/cards/' + cardId); await pg.reload(); await pg.click('text=/Dalbo kaarkan/'); await pg.check('#f_acceptTerms'); await pg.click('button:has-text("Gudbi dalab tijaabo")');
-  await pg.waitForSelector('.receipt', { timeout: 8000 }).catch(() => errors.push('order flow: no receipt shown'));
-  await session('hospital', 'hospital@demo.gurmad24.test', 'DemoPass12345', ['/org', '/org/cards', '/org/services', '/org/appointments', '/org/sales', '/org/subscription', '/org/complaints', '/org/profile', '/account']);
+  await pg.goto(t.base + '/#/cards/' + cardId); await pg.reload(); await pg.click('text=/Dalbo kaarkan/'); await pg.fill('#f_phone', '612345678'); await pg.check('#f_acceptTerms'); await pg.click('button:has-text("Bixi oo hel kaarkayga")');
+  await pg.waitForSelector('.cardpass .cp-qr svg', { timeout: 8000 }).catch(() => errors.push('order flow: no digital card shown'));
+  await session('hospital', 'hospital@demo.gurmad24.test', 'DemoPass12345', ['/org', '/org/cards', '/org/verify', '/org/services', '/org/appointments', '/org/sales', '/org/subscription', '/org/complaints', '/org/profile', '/account']);
   await session('ambulance', 'ambulance@demo.gurmad24.test', 'DemoPass12345', ['/org', '/org/requests', '/org/services', '/org/sales', '/org/subscription']);
   await session('operator', 'operator@demo.gurmad24.test', 'DemoPass12345', ['/ops', '/ops/case/' + caseId, '/ops/directory']);
   await session('admin', 'admin@test.local', 'AdminPass123', ['/admin', '/admin/orgs', '/admin/users', '/admin/cards', '/admin/finance', '/admin/finance?tab=orders', '/admin/finance?tab=invoices', '/admin/finance?tab=statements', '/admin/revenue', '/admin/revenue?period=year', '/admin/settings', '/admin/complaints', '/admin/audit', '/account'], { width: 1100, height: 800 });

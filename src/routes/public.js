@@ -52,6 +52,16 @@ module.exports = function (app) {
     return out;
   });
 
+  // ---- Digital card check: anyone who scans the QR code sees only whether the card is valid (no personal data beyond initials).
+  app.get('/api/verify/:code', { summary: 'Check a digital health card code (valid / expired / refunded)' }, req => {
+    if (!app.limiter.check('verify:' + req.ip, 40)) throw new HttpError(429, 'rate_limited');
+    const code = String(req.params.code || '').toUpperCase();
+    const o = /^G24-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code) ? store.find('orders', x => x.cardCode === code) : null;
+    if (!o) return { found: false };
+    const u = store.get('users', o.userId);
+    return { found: true, state: D.cardState(o), cardName: o.cardSnapshot.name, hospitalName: o.cardSnapshot.hospitalName, validUntil: o.validUntil, holder: D.initials(u && u.name), included: o.cardSnapshot.included, usedTimes: (o.redemptions || []).length, sandbox: true };
+  });
+
   app.get('/api/hospitals', { summary: 'Verified hospital directory (?q=)' }, req => {
     const q = (req.query.q || '').toLowerCase();
     return { hospitals: store.filter('orgs', o => o.type === 'hospital' && o.status === 'verified' && (!q || (o.name + ' ' + o.area).toLowerCase().includes(q))).map(D.orgPublic) };

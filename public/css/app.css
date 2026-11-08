@@ -221,8 +221,8 @@ h1,h2,h3,h4{letter-spacing:-.01em}
 .call{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;color:#fff;text-decoration:none;background:var(--c,#0f766e);min-height:64px}.call b{display:block;font-size:17px}.call small{color:rgba(255,255,255,.9);font-size:13px}
 .call.u-ambulance{--c:var(--u-ambulance,#0f766e)}.call.u-police{--c:var(--u-police,#1d4ed8)}.call.u-fire{--c:var(--u-fire,#c2410c)}
 
-.ai-fab{position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:60;width:54px;height:54px;border-radius:50%;border:0;background:var(--mint,#0f766e);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);display:grid;place-items:center;cursor:pointer}
-.ai-panel{position:fixed;right:14px;bottom:calc(148px + env(safe-area-inset-bottom));z-index:61;width:min(380px,calc(100vw - 28px));max-height:min(70vh,560px);display:flex;flex-direction:column;background:var(--panel,#fff);border:1px solid var(--line,#ddd);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.28);overflow:hidden}.ai-panel[hidden]{display:none}
+.ai-fab{position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:25;width:54px;height:54px;border-radius:50%;border:0;background:var(--mint,#0f766e);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);display:grid;place-items:center;cursor:pointer}
+.ai-panel{position:fixed;right:14px;bottom:calc(148px + env(safe-area-inset-bottom));z-index:55;width:min(380px,calc(100vw - 28px));max-height:min(70vh,560px);display:flex;flex-direction:column;background:var(--panel,#fff);border:1px solid var(--line,#ddd);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.28);overflow:hidden}.ai-panel[hidden]{display:none}
 .ai-panel header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line,#ddd)}.ai-panel header b{display:flex;align-items:center;gap:6px}
 .ai-log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:140px}
 .ai-msg{max-width:92%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.4}.ai-msg p{margin:0}.ai-msg.bot{background:rgba(15,118,110,.1);align-self:flex-start}.ai-msg.me{background:var(--mint,#0f766e);color:#fff;align-self:flex-end}
@@ -335,3 +335,26 @@ input,select,textarea{-webkit-appearance:none;appearance:none;font-size:16px}
 button,.btn,.chip,.pm-row{-webkit-touch-callout:none}
 .tmap{touch-action:none;-webkit-user-select:none;user-select:none}
 .ai-panel{max-height:min(70vh,560px);max-height:min(70svh,560px)}
+
+/* assistant never covers dialogs, and the page end stays reachable above it */
+body.has-dialog .ai-fab,body.has-dialog .ai-panel{display:none}
+#view{padding-bottom:84px}
+
+/* ---- Digital health card (wallet pass) ---- */
+.cardpass{background:linear-gradient(135deg,#0b5d4b,#0b1f33);color:#fff;border-radius:18px;padding:16px;box-shadow:0 8px 24px rgba(11,31,51,.25);max-width:480px}
+.cardpass.expired,.cardpass.refunded{filter:grayscale(.85);opacity:.8}
+.cp-top{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:.85rem;letter-spacing:.04em}
+.cp-state{background:rgba(255,255,255,.18);border-radius:999px;padding:2px 10px;font-size:.75rem}
+.cardpass.active .cp-state{background:#1fb27a}
+.cp-body{display:flex;gap:14px;align-items:center;justify-content:space-between;margin:12px 0}
+.cp-info{min-width:0}.cp-info h3{margin:0 0 4px;font-size:1.05rem;color:#fff}
+.cp-hosp{opacity:.85;font-size:.85rem}.cp-holder{margin-top:8px;font-weight:600}.cp-valid{font-size:.8rem;opacity:.85}
+.cp-code{margin-top:8px;font-size:.95rem;letter-spacing:.05em;word-break:break-all}
+.cp-qr{background:#fff;border-radius:10px;padding:4px;line-height:0;flex:none}.cp-qr svg{display:block;max-width:100%;height:auto}
+.cardpass .actions{margin:6px 0}.cardpass .btn.ghost{color:#fff;border-color:rgba(255,255,255,.5)}
+.cp-note{display:block;opacity:.7;font-size:.72rem}
+.wallet{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.wallet-item .actions{margin-top:8px;align-items:center}.muted{color:var(--muted);font-size:.85rem}
+.cardpass-wrap{margin:0 0 16px}
+.vc{border-left:6px solid #1fb27a}.vc.bad{border-left-color:#d64545}.vc h3{margin-top:0}
+form.row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}form.row input{flex:1;min-width:180px;font-size:16px}

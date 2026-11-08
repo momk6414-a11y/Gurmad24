@@ -53,6 +53,30 @@ module.exports = function (app) {
     validityDays: v.int({ min: 1, max: 1095, required: true }), eligibility: v.str({ max: 300, default: '' }),
     terms: v.str({ min: 10, max: 1500, required: true }), refundPolicy: v.str({ min: 10, max: 600, required: true }),
   };
+  // ---- Digital card desk: the issuing hospital checks a card code and records that a service was used.
+  const CODE_RE = /^G24-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+  const cardOrder = (req, code) => {
+    const hosp = hospitalOnly(req);
+    const c = String(code || '').toUpperCase().trim();
+    const o = CODE_RE.test(c) ? store.find('orders', x => x.cardCode === c) : null;
+    if (!o) throw new HttpError(404, 'card_not_found');
+    if (o.hospitalId !== hosp.id) throw new HttpError(403, 'card_of_other_hospital');
+    return o;
+  };
+  const cardDeskView = o => { const u = store.get('users', o.userId); return { code: o.cardCode, state: D.cardState(o), cardName: o.cardSnapshot.name, holderName: u ? u.name : '', validUntil: o.validUntil, included: o.cardSnapshot.included, excluded: o.cardSnapshot.excluded, redemptions: (o.redemptions || []).slice(-10).reverse().map(r => ({ at: r.at, service: r.service })) }; };
+  app.get('/api/org/cards/lookup', { auth: ['hospital_admin'], summary: 'Look up a digital card issued by my hospital' }, req => {
+    if (!app.limiter.check('lookup:' + req.user.id, 60)) throw new HttpError(429, 'rate_limited');
+    return { card: cardDeskView(cardOrder(req, req.query.code)) };
+  });
+  app.post('/api/org/cards/redeem', { auth: ['hospital_admin'], summary: 'Record that a service was provided on a valid digital card' }, req => {
+    const b = validate({ code: v.str({ required: true, max: 20 }), service: v.str({ required: true, min: 2, max: 120 }) }, req.body);
+    const o = cardOrder(req, b.code);
+    if (D.cardState(o) !== 'active') throw new HttpError(409, 'card_not_active');
+    (o.redemptions = o.redemptions || []).push({ at: new Date().toISOString(), service: b.service, by: req.user.id });
+    store.save(); app.audit(req, 'card.redeem', 'order', o.id, { service: b.service });
+    return { card: cardDeskView(o) };
+  });
+
   app.get('/api/org/cards', { auth: ['hospital_admin'], summary: 'My hospital health cards' }, req => ({ cards: store.filter('cards', c => c.hospitalId === req.user.orgId).map(c => D.cardView(store, c)) }));
   app.post('/api/org/cards', { auth: ['hospital_admin'], summary: 'Create a health card (starts as draft)' }, req => {
     const o = hospitalOnly(req); const b = validate(cardSchema, req.body);

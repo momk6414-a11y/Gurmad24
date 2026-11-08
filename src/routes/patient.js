@@ -13,7 +13,9 @@ module.exports = function (app) {
 
   // ---------- Health card orders (sandbox payment)
   app.post('/api/orders', { auth: P, summary: 'Order a health card (SANDBOX payment, no real money)' }, async req => {
-    const b = validate({ cardId: v.str({ required: true, max: 60 }), acceptTerms: v.bool({ required: true }) }, req.body);
+    const b = validate({ cardId: v.str({ required: true, max: 60 }), acceptTerms: v.bool({ required: true }), method: v.str({ max: 12, default: 'evc' }), phone: v.str({ max: 20, default: '' }) }, req.body);
+    if (!['evc', 'zaad', 'edahab', 'card'].includes(b.method)) throw new HttpError(400, 'validation_failed', { method: 'invalid' });
+    if (req.body && req.body.method && b.method !== 'card' && !/^\+?\d{7,15}$/.test(b.phone.replace(/[\s-]/g, ''))) throw new HttpError(400, 'validation_failed', { phone: 'invalid_phone' });
     if (!b.acceptTerms) throw new HttpError(400, 'validation_failed', { acceptTerms: 'required' });
     const card = store.get('cards', b.cardId); const org = card && store.get('orgs', card.hospitalId);
     if (!card || card.status !== 'published' || !org || org.status !== 'verified') throw new HttpError(404, 'card_unavailable');
@@ -25,7 +27,8 @@ module.exports = function (app) {
     const order = {
       id: store.id('or_'), code: 'DEMO-ORD-' + String(store.next('order')).padStart(6, '0'), userId: req.user.id, cardId: card.id, hospitalId: org.id,
       cardSnapshot: { name: card.name, hospitalName: org.name, priceCents: card.priceCents, validityDays: card.validityDays, included: card.included, excluded: card.excluded, terms: card.terms, refundPolicy: card.refundPolicy, eligibility: card.eligibility },
-      priceCents: card.priceCents, commissionBps, commissionCents: commission, status: 'paid_sandbox', paymentProvider: 'sandbox', providerRef: pay.providerRef,
+      priceCents: card.priceCents, commissionBps, commissionCents: commission, status: 'paid_sandbox', paymentProvider: 'sandbox', paymentMethod: b.method, payerPhone: b.method === 'card' || !b.phone ? '' : '*'.repeat(Math.max(0, b.phone.replace(/\D/g, '').length - 3)) + b.phone.replace(/\D/g, '').slice(-3), providerRef: pay.providerRef,
+      cardCode: D.newCardCode(), redemptions: [],
       createdAt: now, validUntil: new Date(Date.now() + card.validityDays * 86400000).toISOString(), refund: null,
     };
     store.insert('orders', order);
@@ -33,13 +36,14 @@ module.exports = function (app) {
     const receipt = D.issueDoc(store, 'receipt', { userId: req.user.id, orgId: org.id, refType: 'order', refId: order.id, lines: [{ desc: `${card.name} - ${org.name}`, amountCents: card.priceCents }] });
     order.receiptId = receipt.id; order.txId = tx.id; store.save();
     app.audit(req, 'order.create', 'order', order.id, { cardId: card.id, priceCents: card.priceCents });
-    return created({ order, receipt, sandbox: true, message: 'DEMO_ORDER_NO_REAL_PAYMENT' });
+    return created({ order: { ...order, cardState: 'active', holderName: req.user.name }, receipt, sandbox: true, message: 'DEMO_ORDER_NO_REAL_PAYMENT' });
   });
 
-  app.get('/api/orders', { auth: P, summary: 'My purchase history' }, req => ({ orders: store.filter('orders', o => o.userId === req.user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) }));
+  app.get('/api/orders', { auth: P, summary: 'My purchase history (each paid order is a digital card with a code)' }, req => ({ orders: store.filter('orders', o => o.userId === req.user.id).map(o => ({ ...D.ensureCardCode(store, o), cardState: D.cardState(o), holderName: req.user.name })).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) }));
   app.get('/api/orders/:id', { auth: P, summary: 'One of my orders with its receipt' }, req => {
     const o = own('orders', req.params.id, req.user.id);
-    return { order: o, receipt: store.get('invoices', o.receiptId) };
+    D.ensureCardCode(store, o);
+    return { order: { ...o, cardState: D.cardState(o), holderName: req.user.name }, receipt: store.get('invoices', o.receiptId) };
   });
   app.post('/api/orders/:id/refund-request', { auth: P, summary: 'Request a refund (decided by admin per the hospital refund policy)' }, req => {
     const o = own('orders', req.params.id, req.user.id);

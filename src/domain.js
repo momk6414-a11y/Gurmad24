@@ -75,4 +75,17 @@ const CASE_FLOW = {
 };
 const PROVIDER_STEPS = { assigned: ['en_route', 'received'], en_route: ['arrived'], arrived: ['handed_over'] };
 
-module.exports = { settings, ratesFor, userView, orgPublic, orgPrivate, cardView, recordTx, issueDoc, monthKey, activeSubscription, cardCommission, CASE_FLOW, PROVIDER_STEPS };
+// ---- Digital health card (wallet): every paid order carries a unique, unguessable card code.
+const crypto = require('crypto');
+const CARD_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function newCardCode() { const b = crypto.randomBytes(12); let s = ''; for (let i = 0; i < 12; i++) s += CARD_ALPHABET[b[i] % CARD_ALPHABET.length]; return `G24-${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8, 12)}`; }
+function cardState(o, now = Date.now()) {
+  if (o.refund && o.refund.decision === 'approve') return 'refunded';
+  if (o.status === 'refunded') return 'refunded';
+  if (new Date(o.validUntil).getTime() < now) return 'expired';
+  return 'active';
+}
+function ensureCardCode(store, o) { if (!o.cardCode) { o.cardCode = newCardCode(); o.redemptions = o.redemptions || []; store.save(); } return o; }
+function initials(name) { return String(name || '').split(/\s+/).filter(Boolean).map((w, i, a) => i === 0 ? w : w[0] + '.').slice(0, 2).join(' '); }
+
+module.exports = { newCardCode, cardState, ensureCardCode, initials, settings, ratesFor, userView, orgPublic, orgPrivate, cardView, recordTx, issueDoc, monthKey, activeSubscription, cardCommission, CASE_FLOW, PROVIDER_STEPS };

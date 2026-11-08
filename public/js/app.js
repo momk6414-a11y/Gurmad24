@@ -14,9 +14,9 @@ const ORG = ['hospital_admin', 'provider_admin'];
 // [pattern, allowed roles (null = everyone), handler]
 const ROUTES = [
   ['/', null, P.home], ['/cards', null, P.cards], ['/cards/:id', null, P.cardDetail], ['/compare', null, P.compare], ['/hospitals', null, P.hospitals], ['/hospitals/:id', null, P.hospitalDetail],
-  ['/services', null, P.services], ['/map', null, P.puntlandMap], ['/system', null, P.system], ['/emergency', null, P.emergency], ['/login', null, P.login], ['/register', null, P.register], ['/register-org', null, P.registerOrg], ['/privacy', null, P.privacy],
+  ['/services', null, P.services], ['/map', null, P.puntlandMap], ['/system', null, P.system], ['/verify/:code', null, P.verifyCard], ['/emergency', null, P.emergency], ['/login', null, P.login], ['/register', null, P.register], ['/register-org', null, P.registerOrg], ['/privacy', null, P.privacy],
   ['/me/orders', ['patient'], PT.orders], ['/me/orders/:id', ['patient'], PT.orderDetail], ['/me/appointments', ['patient'], PT.appointments], ['/me/support', ['patient'], PT.support], ['/me/account', ['patient'], PT.account], ['/account', ['hospital_admin', 'provider_admin', 'operator', 'admin'], PT.account],
-  ['/org', ORG, O.dashboard], ['/org/cards', ['hospital_admin'], O.cards], ['/org/services', ORG, O.servicesPage], ['/org/appointments', ORG, O.appointments], ['/org/sales', ORG, O.sales], ['/org/subscription', ORG, O.subscription],
+  ['/org', ORG, O.dashboard], ['/org/cards', ['hospital_admin'], O.cards], ['/org/verify', ['hospital_admin'], O.cardDesk], ['/org/services', ORG, O.servicesPage], ['/org/appointments', ORG, O.appointments], ['/org/sales', ORG, O.sales], ['/org/subscription', ORG, O.subscription],
   ['/org/complaints', ORG, O.complaints], ['/org/profile', ORG, O.profile], ['/org/requests', ['provider_admin'], O.requests],
   ['/ops', ['operator', 'admin'], OPS.dashboard], ['/ops/case/:id', ['operator', 'admin'], OPS.caseDetail], ['/ops/directory', ['operator', 'admin'], OPS.directory],
   ['/admin', ['admin'], A.overview], ['/admin/orgs', ['admin'], A.orgs], ['/admin/users', ['admin'], A.users], ['/admin/cards', ['admin'], A.cards], ['/admin/finance', ['admin'], A.finance],
@@ -52,7 +52,7 @@ function navItems() {
         ['/cards', 'card', 'Cards'],
         ['/hospitals', 'hospital', 'Hospitals'],
         ['/me/support', 'chat', 'Support'],
-        ['/me/orders', 'bag', 'Orders'],
+        ['/me/orders', 'bag', 'My cards'],
         ['/me/appointments', 'calendar', 'Appointments'],
         ['/services', 'ambulance', 'Services'],
         ['/map', 'pin', 'Map'],
@@ -64,6 +64,7 @@ function navItems() {
       return [
         ['/org', 'dash', 'Dashboard'],
         ['/org/cards', 'card', 'Cards'],
+        ['/org/verify', 'check', 'Verify card'],
         ['/org/services', 'list', 'Services'],
         ['/org/appointments', 'calendar', 'Appointments'],
         ['/org/sales', 'chart', 'Sales'],

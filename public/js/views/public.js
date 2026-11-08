@@ -1,6 +1,6 @@
 // Public + authentication screens: home, health card marketplace, hospitals, services, emergency info, login/register.
 import { SS, S, t, h, icon, GET, POST, api, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, link, fdate, setLang } from '../core.js';
-import { receiptNode } from './shared.js';
+import { receiptNode, cardPass } from './shared.js';
 import { liveMap, osmLink, PLACES } from '../map.js';
 
 export const APPT_CATS = [['general', 'General visit'], ['checkup', 'Check-up'], ['lab_test', 'Lab test'], ['follow_up', 'Follow-up'], ['other', 'Other']];
@@ -118,14 +118,29 @@ export function orderFlow(c) {
   if (!S.user) { toast(t('Please log in to order.')); SS.set('g24-after', location.hash); return go('/login'); }
   if (S.user.role !== 'patient') return toast(t('Only patient accounts can order cards.'), 'err');
   let m;
-  const f = form([{ name: 'acceptTerms', type: 'checkbox', label: 'I have read the terms and refund policy, and I understand this is a hospital service card, not insurance.', required: true }],
-    { submit: 'Place demo order', cancel: () => m.close(), onSubmit: async v => {
-      const r = await POST('/orders', { cardId: c.id, acceptTerms: v.acceptTerms });
-      m.close(); toast(t('Demo order placed. No real money was charged.'));
-      const m2 = modal(t('Order confirmation'), h('div', receiptNode(r.receipt), h('div', { class: 'actions' }, h('button', { class: 'btn', onclick: () => window.print() }, t('Print / save PDF')), h('a', { class: 'btn ghost', href: '#/me/orders', onclick: () => m2.close() }, t('My orders')))), { wide: false });
+  const f = form([
+    { name: 'method', type: 'select', label: 'Payment method', required: true, default: 'evc', options: [['evc', 'EVC Plus'], ['zaad', 'Zaad'], ['edahab', 'eDahab'], ['card', 'Bank card']] },
+    { name: 'phone', label: 'Mobile money number (e.g. 61xxxxxxx)', type: 'tel', inputmode: 'numeric', autocomplete: 'tel', max: 18 },
+    { name: 'acceptTerms', type: 'checkbox', label: 'I have read the terms and refund policy, and I understand this is a hospital service card, not insurance.', required: true }],
+    { submit: 'Pay and get my digital card', cancel: () => m.close(), onSubmit: async v => {
+      const r = await POST('/orders', { cardId: c.id, acceptTerms: v.acceptTerms, method: v.method, phone: String(v.phone || '').replace(/[^\d]/g, '') });
+      m.close(); toast(t('Your digital card is ready.'));
+      const m2 = modal(t('Your digital card'), h('div', cardPass(r.order), h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/me/orders', onclick: () => m2.close() }, t('My cards')), h('button', { class: 'btn ghost', onclick: () => receiptModal(r.receipt) }, t('Receipt')))), { wide: false });
     } });
   m = modal(t('Order summary'), h('div', demoNote('SANDBOX: no real payment is made. This only creates a demo order and receipt.'),
     h('dl', { class: 'kv' }, h('dt', t('Card')), h('dd', c.name), h('dt', t('Hospital')), h('dd', c.hospital.name), h('dt', t('Price')), h('dd', money(c.priceCents)), h('dt', t('Validity')), h('dd', t('{n} days from purchase', { n: c.validityDays }))), f));
+}
+const receiptModal = r => { const m = modal(t('Receipt'), h('div', receiptNode(r), h('div', { class: 'actions' }, h('button', { class: 'btn', onclick: () => window.print() }, t('Print / save PDF')), h('button', { class: 'btn ghost', onclick: () => m.close() }, t('Close'))))); };
+
+// Public check page opened by scanning a card QR code: shows only validity, never personal data.
+export async function verifyCard({ code }) {
+  const r = await GET('/verify/' + encodeURIComponent(code));
+  const ok = r.found && r.state === 'active';
+  return h('div', head('Check a digital card'), h('div', { class: 'panel vc ' + (ok ? 'ok' : 'bad') },
+    r.found ? h('div', h('h3', ok ? t('Card is valid') : t(r.state === 'expired' ? 'Card has expired' : 'Card was refunded')),
+      h('dl', { class: 'kv' }, h('dt', t('Card')), h('dd', r.cardName), h('dt', t('Hospital')), h('dd', r.hospitalName), h('dt', t('Holder')), h('dd', r.holder), h('dt', t('Valid until')), h('dd', fdate(r.validUntil)), h('dt', t('Code')), h('dd', h('span', { class: 'mono' }, code.toUpperCase()))),
+      r.included && r.included.length ? h('div', h('strong', t('Included services')), list(r.included)) : null, demoNote('Demo card: sandbox payment, not insurance.'))
+      : h('div', h('h3', t('Card not found')), h('p', t('Check the code and try again.')))));
 }
 
 export async function compare() {

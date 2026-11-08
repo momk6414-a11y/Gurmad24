@@ -1,6 +1,6 @@
 // Patient / public account screens.
 import { S, t, h, icon, GET, POST, PATCH, form, modal, toast, money, badge, table, panel, list, demoNote, emptyState, errText, go, fdate, fdt, download, setLang, confirmBox, link } from '../core.js';
-import { receiptNode } from './shared.js';
+import { receiptNode, cardPass, payName } from './shared.js';
 import { APPT_CATS } from './public.js';
 
 const head = (title, sub, right) => h('div', { class: 'page-head' }, h('div', h('h2', t(title)), sub ? h('p', t(sub)) : null), right || null);
@@ -8,12 +8,10 @@ const catName = c => t((APPT_CATS.find(x => x[0] === c) || [0, c])[1]);
 
 export async function orders() {
   const { orders: os } = await GET('/orders');
-  return h('div', head('My orders', 'Your health card purchase history (demo orders, no real payment).'),
-    panel(null, table([
-      { label: 'Order', key: 'code' }, { label: 'Card', render: o => o.cardSnapshot.name + ' - ' + o.cardSnapshot.hospitalName }, { label: 'Price', render: o => money(o.priceCents) },
-      { label: 'Status', render: o => badge(o.status) }, { label: 'Date', render: o => fdate(o.createdAt) }, { label: 'Valid until', render: o => fdate(o.validUntil) },
-      { label: '', render: o => h('a', { class: 'btn sm ghost', href: '#/me/orders/' + o.id }, t('Details')) }], os,
-    { empty: 'You have no orders yet.' })), os.length ? null : h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/cards' }, t('Browse health cards'))));
+  return h('div', head('My cards', 'Your digital health cards. Show the code or QR at the hospital.'),
+    os.length ? h('div', { class: 'wallet' }, os.map(o => h('div', { class: 'wallet-item' }, cardPass(o, { compact: true }),
+      h('div', { class: 'actions' }, h('a', { class: 'btn sm', href: '#/me/orders/' + o.id }, t('Open card')), h('span', { class: 'muted' }, money(o.priceCents) + ' - ' + fdate(o.createdAt)))))) : null,
+    os.length ? null : h('div', emptyState('You have no orders yet.'), h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/cards' }, t('Browse health cards')))));
 }
 
 export async function orderDetail({ id }) {
@@ -25,7 +23,8 @@ export async function orderDetail({ id }) {
   }
   const route = () => window.dispatchEvent(new HashChangeEvent('hashchange'));
   return h('div', head(o.code, o.cardSnapshot.name + ' - ' + o.cardSnapshot.hospitalName, h('span', badge(o.status))),
-    h('div', { class: 'grid g2' }, panel('Card details', h('div', h('dl', { class: 'kv' }, h('dt', t('Price')), h('dd', money(o.priceCents)), h('dt', t('Valid until')), h('dd', fdate(o.validUntil)), h('dt', t('Payment')), h('dd', t('Sandbox ({ref})', { ref: o.providerRef })),
+    h('div', { class: 'cardpass-wrap' }, cardPass(o)),
+    h('div', { class: 'grid g2' }, panel('Card details', h('div', h('dl', { class: 'kv' }, h('dt', t('Price')), h('dd', money(o.priceCents)), h('dt', t('Valid until')), h('dd', fdate(o.validUntil)), h('dt', t('Payment')), h('dd', (payName(o.paymentMethod) ? payName(o.paymentMethod) + ' ' + (o.payerPhone || '') + ' - ' : '') + t('Sandbox ({ref})', { ref: o.providerRef })),
       h('dt', t('Included services')), h('dd', list(o.cardSnapshot.included)), h('dt', t('Not included')), h('dd', list(o.cardSnapshot.excluded))),
       o.refund ? h('div', { class: 'note' }, icon('alert', 18), h('span', t('Refund: {s}', { s: o.refund.decision ? t(o.refund.decision === 'approve' ? 'approved' : 'denied') + (o.refund.note ? ' - ' + o.refund.note : '') : t('waiting for review') }))) : null,
       h('div', { class: 'actions' }, refundBtn, h('button', { class: 'btn ghost', onclick: () => window.print() }, icon('download'), t('Print / save PDF'))))),

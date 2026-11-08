@@ -133,3 +133,20 @@ export async function requests() {
   S.poll = setInterval(async () => { try { draw(await load()); } catch (_) { stopPoll(); } }, 4000);
   return h('div', head('Assigned requests', 'SIMULATION: these are test records. Nobody is waiting for real help.'), demoNote('Simulation mode: status changes here are practice only; nothing is sent to real services or people.'), panel('Live map (demo)', map), live);
 }
+
+// Card desk: verify a patient's digital card and record the service that was provided.
+export function cardDesk() {
+  const out = h('div'); const inp = h('input', { type: 'text', placeholder: 'G24-XXXX-XXXX-XXXX', autocapitalize: 'characters', autocomplete: 'off', spellcheck: 'false', 'aria-label': t('Card code'), maxlength: 20 });
+  const show = c => {
+    const ok = c.state === 'active'; let svc;
+    out.replaceChildren(h('div', { class: 'panel vc ' + (ok ? 'ok' : 'bad') }, h('h3', ok ? t('Card is valid') : t(c.state === 'expired' ? 'Card has expired' : 'Card was refunded')),
+      h('dl', { class: 'kv' }, h('dt', t('Card')), h('dd', c.cardName), h('dt', t('Holder')), h('dd', c.holderName), h('dt', t('Valid until')), h('dd', fdate(c.validUntil)), h('dt', t('Code')), h('dd', h('span', { class: 'mono' }, c.code)),
+        h('dt', t('Included services')), h('dd', list(c.included)), h('dt', t('Not included')), h('dd', list(c.excluded))),
+      ok ? h('form', { class: 'row', onsubmit: async e => { e.preventDefault(); try { const r = await POST('/org/cards/redeem', { code: c.code, service: svc.value }); toast(t('Service recorded.')); show(r.card); } catch (er) { toast(errText(er), 'err'); } } },
+        (svc = h('input', { type: 'text', required: true, minlength: 2, maxlength: 120, placeholder: t('Service provided (e.g. General check-up)') })), h('button', { class: 'btn', type: 'submit' }, t('Record service'))) : null,
+      c.redemptions.length ? h('div', h('strong', t('Recent use')), list(c.redemptions.map(r => fdt(r.at) + ' - ' + r.service))) : null));
+  };
+  const find = async e => { e.preventDefault(); try { const r = await GET('/org/cards/lookup?code=' + encodeURIComponent(inp.value.trim())); show(r.card); } catch (er) { out.replaceChildren(h('div', { class: 'note warn' }, icon('alert', 18), h('span', errText(er)))); } };
+  return h('div', head('Verify card', 'Enter the code shown on the patient\'s digital card to check it and record the service.'),
+    h('form', { class: 'row', onsubmit: find }, inp, h('button', { class: 'btn', type: 'submit' }, t('Check'))), out);
+}

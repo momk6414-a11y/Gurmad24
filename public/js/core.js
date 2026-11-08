@@ -432,7 +432,7 @@ export function modal(title, body, { wide = false } = {}) {
 
   const close = () => {
     back.remove();
-    document.body.classList.remove('noscroll');
+    document.body.classList.remove('noscroll', 'has-dialog');
 
     if (prev && prev.focus) prev.focus();
   };
@@ -474,7 +474,7 @@ export function modal(title, body, { wide = false } = {}) {
   );
 
   document.body.append(back);
-  document.body.classList.add('noscroll');
+  document.body.classList.add('noscroll', 'has-dialog');
 
   const first = box.querySelector(
     'input,select,textarea,button.btn'
