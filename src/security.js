@@ -30,6 +30,10 @@ function randomPassword() {
 }
 
 // ---- Sessions: opaque random id in httpOnly cookie; only a SHA-256 hash is stored server-side
+// A valid, process-random dummy hash keeps unknown-account logins on the same scrypt path.
+// Its random plaintext is never used for authentication and is discarded immediately.
+const DUMMY_PASSWORD_HASH = hashPassword(crypto.randomBytes(32).toString('hex'));
+
 const sha = s => crypto.createHash('sha256').update(s).digest('hex');
 function newSessionId() { return crypto.randomBytes(32).toString('base64url'); }
 
@@ -46,4 +50,4 @@ class RateLimiter {
   reset() { this.hits.clear(); }
 }
 
-module.exports = { hashPassword, verifyPassword, passwordProblem, randomPassword, sha, newSessionId, RateLimiter };
+module.exports = { hashPassword, verifyPassword, passwordProblem, randomPassword, DUMMY_PASSWORD_HASH, sha, newSessionId, RateLimiter };
