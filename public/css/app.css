@@ -283,3 +283,44 @@ h1,h2,h3,h4{letter-spacing:-.01em}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
 
 .page-banner{display:block;width:100%;height:auto;max-height:170px;object-fit:cover;object-position:right center;border-radius:20px;margin:0 0 16px;border:1px solid #1f5560}@media(max-width:560px){.page-banner{max-height:110px}}
+
+/* ===== Map: professional (GIS-style) look. Neutral controls, solid markers, no animation. ===== */
+.tmap{border-radius:10px;border:1px solid #b9c8cc;background:#d9e2e4;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.tm-overlay{pointer-events:none}
+.tm-layers{top:10px;left:10px;display:flex;padding:2px;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.35);backdrop-filter:none}
+.tm-layers button{border:0;background:transparent;color:#1d2b30;padding:7px 11px;font-size:12.5px;font-weight:600;border-radius:6px}
+.tm-layers button[aria-pressed=true]{background:#1f5f6b;color:#fff}
+.tm-zoom button{background:#fff;color:#1d2b30;border:0;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.35);width:34px;height:34px;font-size:19px}
+.tm-zoom .tm-pl,.tm-zoom .tm-locate{width:auto;height:auto;min-height:30px;padding:5px 9px;font-size:12px;font-weight:600}
+.tm-loc-status{background:#fff;color:#1d2b30;border:0;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.tm-attr{background:rgba(255,255,255,.86);color:#2b3a40}.tm-attr a{color:#1f5f6b}
+.tm-msg{background:#fff7e6;color:#6b4a10;border:1px solid #e9c77a}
+.tm-scale{position:absolute;left:10px;bottom:24px;z-index:6;display:flex;flex-direction:column;gap:2px;pointer-events:none;color:#fff;font-size:11px;font-weight:700;text-shadow:0 1px 2px #000,0 0 3px #000}
+.tm-scale-bar{display:block;height:6px;border:2px solid #fff;border-top:0;box-shadow:0 1px 2px rgba(0,0,0,.7)}
+.tm-north{position:absolute;right:11px;bottom:28px;z-index:6;width:24px;height:24px;border-radius:50%;background:#fff;color:#1d2b30;font-size:11px;font-weight:800;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.35);pointer-events:none}
+.mk-fac>svg{width:26px;height:26px;padding:5px;border-radius:50%;background:var(--uc);color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.55)}
+.mk-fac.sel>svg{width:34px;height:34px;padding:7px;box-shadow:0 0 0 3px #fff,0 2px 8px rgba(0,0,0,.65)}
+.mk-fac .clbl{background:#fff;color:#1d2b30;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.mk-station>svg{width:20px;height:20px;padding:3px;border-radius:50%;background:var(--uc);color:#fff;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.55)}
+.mk-unit>svg{width:26px;height:26px;padding:4px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.55)}
+.mk-incident .dot{width:14px;height:14px;border:2.5px solid #fff;background:#d92d20;box-shadow:0 0 0 5px rgba(217,45,32,.28),0 1px 4px rgba(0,0,0,.5)}
+.mk-incident .pulse{display:none}.mk-incident.done .dot{background:#16875f;box-shadow:0 0 0 5px rgba(22,135,95,.25),0 1px 4px rgba(0,0,0,.5)}
+.tm-route{stroke-dasharray:none;stroke-width:2;opacity:.85}.tm-trail{stroke-width:3.5}
+.mk-cluster{pointer-events:auto;cursor:pointer;touch-action:manipulation}
+.mk-cluster span{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#1f5f6b;color:#fff;font-weight:800;font-size:13px;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)}
+.mk-city .clbl{font-size:12px}
+.u-government{--uc:#64748b}.u-landmark{--uc:#a16207}
+/* Puntland map page */
+.pm-tools{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 10px}.pm-tools input{flex:1 1 220px;min-width:0}.pm-tools select{flex:0 0 auto}
+.pm-tools+.chips .chip{display:inline-flex;align-items:center;gap:6px}.cdot-t{width:10px;height:10px;border-radius:50%;background:var(--uc,#64748b);display:inline-block}
+.pm{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start;margin-top:12px}
+.pm-map .tmap{height:min(72vh,640px)}.pm-map .legend{margin-top:8px}
+.pm-side{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pm-list{max-height:min(46vh,420px);overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);margin-top:6px}
+.pm-row{display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:10px 12px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font:inherit}
+.pm-row:last-child{border-bottom:0}.pm-row[aria-current=true]{background:rgba(31,95,107,.12)}.pm-row:hover{background:rgba(31,95,107,.07)}
+.pm-txt{display:flex;flex-direction:column;min-width:0}.pm-txt small{color:var(--muted)}
+.pm-dot{flex:none;width:30px;height:30px;border-radius:50%;background:var(--uc,#64748b);color:#fff;display:grid;place-items:center}
+.pm-card-h{display:flex;gap:10px;align-items:center;margin-bottom:8px}.pm-card-h small{display:block;color:var(--muted)}.pm-card p{margin:6px 0}
+@media (max-width:900px){.pm{grid-template-columns:1fr}.pm-map .tmap{height:56vh}.pm-list{max-height:none}}
+@media (max-width:560px){.tm-scale{bottom:46px}.tm-north{bottom:50px}}

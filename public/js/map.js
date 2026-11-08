@@ -4,7 +4,14 @@
 import { h, t, icon } from './core.js';
 
 const TILE = 256;
+const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services';
 const LAYERS = {
+  hybrid: {
+    label: 'Hybrid', max: 16,
+    url: (z, x, y) => `${ESRI}/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
+    overlay: (z, x, y) => `${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/${z}/${y}/${x}`,
+    attr: 'Imagery © Esri, Maxar, Earthstar Geographics, and the GIS User Community', href: 'https://www.esri.com/',
+  },
   satellite: {
     label: 'Satellite', max: 16,
     url: (z, x, y) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
@@ -38,13 +45,17 @@ export const osmLink = loc => loc ? `https://www.openstreetmap.org/?mlat=${loc.l
 // entries: [{ type, incident:{lat,lng}, unit?, station?, done? }]
 // opts: { layer, places, markers:[{kind:'station'|'hospital', type, lat, lng, label}], view:'points'|'puntland', height }
 export function liveMap(entries, opts = {}) {
-  let layer = LAYERS[opts.layer] ? opts.layer : 'satellite';
+  let layer = LAYERS[opts.layer] ? opts.layer : 'hybrid';
   const view = { lat: opts.center?.lat ?? 8.4, lng: opts.center?.lng ?? 49.3, z: opts.center?.z ?? 6 };
   const mode = opts.view === 'puntland' ? 'puntland' : 'points';
   let items = []; let current = entries || []; let userMoved = false; let raf = 0; let loaded = 0; let userLocation = null; let locStatusTimer = 0;
   const tiles = new Map();
 
   const tilePane = h('div', { class: 'tm-tiles' });
+  const overlayPane = h('div', { class: 'tm-tiles tm-overlay' }); const overlayTiles = new Map();
+  const scale = h('div', { class: 'tm-scale', 'aria-hidden': 'true' }, h('span', { class: 'tm-scale-bar' }), h('span', { class: 'tm-scale-txt' }));
+  const north = h('div', { class: 'tm-north', 'aria-hidden': 'true' }, 'N');
+  const clusterPool = [];
   const lines = document.createElementNS(NS, 'svg'); lines.setAttribute('class', 'tm-lines');
   const markPane = h('div', { class: 'tm-marks' });
   const msg = h('div', { class: 'tm-msg', hidden: true, role: 'status' }, t('The map pictures could not load. Check your internet connection. Markers still work.'));
@@ -52,7 +63,7 @@ export function liveMap(entries, opts = {}) {
   const locStatus = h('div', { class: 'tm-loc-status', hidden: true, role: 'status', 'aria-live': 'polite' });
   const locateBtn = h('button', { type: 'button', class: 'tm-locate', 'aria-label': t('Show my location'), onclick: () => locateMe() }, t('My location'));
   const seg = h('div', { class: 'seg tm-ctl tm-layers', role: 'group', 'aria-label': t('Map type') });
-  const box = h('div', { class: 'tmap', tabindex: 0, role: 'application', 'aria-label': t('Live map (demo)') }, tilePane, lines, markPane, msg, locStatus, seg,
+  const box = h('div', { class: 'tmap', tabindex: 0, role: 'application', 'aria-label': t('Live map (demo)') }, tilePane, overlayPane, lines, markPane, msg, locStatus, seg, scale, north,
     h('div', { class: 'tm-ctl tm-zoom' },
       h('button', { type: 'button', 'aria-label': t('Zoom in'), onclick: () => zoomBy(1) }, '+'),
       h('button', { type: 'button', 'aria-label': t('Zoom out'), onclick: () => zoomBy(-1) }, '−'),
@@ -67,27 +78,52 @@ export function liveMap(entries, opts = {}) {
     raf = 0; const { w, h: hh } = size(); if (!w || !hh) return;
     const z = view.z; const zi = Math.min(maxZ(), Math.max(0, Math.floor(z))); const ts = TILE * 2 ** (z - zi); const n = 2 ** zi;
     const left = lng2x(view.lng, z) - w / 2, top = lat2y(view.lat, z) - hh / 2;
-    const keep = new Set();
+    const keep = new Set(); const keepO = new Set();
     for (let ty = Math.floor(top / ts); ty <= Math.floor((top + hh) / ts); ty++) {
       if (ty < 0 || ty >= n) continue;
       for (let tx = Math.floor(left / ts); tx <= Math.floor((left + w) / ts); tx++) {
-        const wx = ((tx % n) + n) % n; const key = layer + '/' + zi + '/' + wx + '/' + ty; keep.add(key);
-        let img = tiles.get(key);
-        if (!img) {
-          img = document.createElement('img'); img.className = 'tm-tile'; img.alt = ''; img.draggable = false; img.decoding = 'async'; img.referrerPolicy = 'origin';
-          img.addEventListener('load', () => { loaded++; msg.hidden = true; }); img.addEventListener('error', () => { img.style.visibility = 'hidden'; });
-          img.src = LAYERS[layer].url(zi, wx, ty); tiles.set(key, img); tilePane.append(img);
-        }
-        img.style.width = img.style.height = (ts + 0.6) + 'px';
-        img.style.transform = `translate3d(${tx * ts - left}px,${ty * ts - top}px,0)`;
+        const wx = ((tx % n) + n) % n;
+        const place = (map, pane, set, key, url, onload) => {
+          set.add(key); let img = map.get(key);
+          if (!img) {
+            img = document.createElement('img'); img.className = 'tm-tile'; img.alt = ''; img.draggable = false; img.decoding = 'async'; img.referrerPolicy = 'origin';
+            if (onload) img.addEventListener('load', onload);
+            img.addEventListener('error', () => { img.style.visibility = 'hidden'; });
+            img.src = url; map.set(key, img); pane.append(img);
+          }
+          img.style.width = img.style.height = (ts + 0.6) + 'px';
+          img.style.transform = `translate3d(${tx * ts - left}px,${ty * ts - top}px,0)`;
+        };
+        place(tiles, tilePane, keep, layer + '/' + zi + '/' + wx + '/' + ty, LAYERS[layer].url(zi, wx, ty), () => { loaded++; msg.hidden = true; });
+        if (LAYERS[layer].overlay) place(overlayTiles, overlayPane, keepO, layer + '/o/' + zi + '/' + wx + '/' + ty, LAYERS[layer].overlay(zi, wx, ty));
       }
     }
     for (const [k, img] of tiles) if (!keep.has(k)) { img.remove(); tiles.delete(k); }
+    for (const [k, img] of overlayTiles) if (!keepO.has(k)) { img.remove(); overlayTiles.delete(k); }
     const px = o => [lng2x(o.lng, z) - left, lat2y(o.lat, z) - top];
     for (const it of items) {
-      const [x, y] = px(it); it.el.style.transform = `translate(${x}px,${y}px)`;
+      const [x, y] = px(it); it.x = x; it.y = y; it.el.style.transform = `translate(${x}px,${y}px)`;
       it.el.hidden = x < -40 || y < -40 || x > w + 40 || y > hh + 40;
     }
+    // Facilities that overlap on screen are grouped into one numbered marker (zoom in to separate them).
+    const facs = items.filter(i => i.fac && !i.el.hidden); const groups = [];
+    if (opts.cluster !== false && z < 12.5) for (const f of facs) { const g = groups.find(q => Math.hypot(q.x - f.x, q.y - f.y) < 34); if (g) { g.m.push(f); g.x = g.m.reduce((a, b) => a + b.x, 0) / g.m.length; g.y = g.m.reduce((a, b) => a + b.y, 0) / g.m.length; } else groups.push({ x: f.x, y: f.y, m: [f] }); }
+    let ci = 0;
+    for (const g of groups) if (g.m.length > 1) {
+      g.m.forEach(f => { f.el.hidden = true; });
+      let c = clusterPool[ci++]; if (!c) { c = h('div', { class: 'mk mk-cluster', role: 'button', tabindex: 0 }); markPane.append(c); clusterPool.push(c); }
+      c.hidden = false; c.replaceChildren(h('span', String(g.m.length))); c.setAttribute('aria-label', t('{n} places - zoom in', { n: g.m.length }));
+      c.style.transform = `translate(${g.x}px,${g.y}px)`;
+      const lat = g.m.reduce((a, b) => a + b.lat, 0) / g.m.length, lng = g.m.reduce((a, b) => a + b.lng, 0) / g.m.length;
+      c.onclick = () => box.flyTo(lat, lng, Math.min(maxZ(), view.z + 2));
+      c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.onclick(); } };
+    }
+    for (; ci < clusterPool.length; ci++) clusterPool[ci].hidden = true;
+    // scale bar
+    const mpp = 156543.03392 * Math.cos(view.lat * Math.PI / 180) / 2 ** z;
+    const steps = [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000];
+    const dist = [...steps].reverse().find(d => d / mpp <= 110) || steps[0];
+    scale.firstChild.style.width = Math.max(18, dist / mpp) + 'px'; scale.lastChild.textContent = dist >= 1000 ? (dist / 1000) + ' km' : dist + ' m';
     for (const ln of lines.childNodes) {
       const d = ln.__d; const [x1, y1] = px(d.a), [x2, y2] = px(d.b);
       ln.setAttribute('x1', x1); ln.setAttribute('y1', y1); ln.setAttribute('x2', x2); ln.setAttribute('y2', y2);
@@ -142,7 +178,7 @@ export function liveMap(entries, opts = {}) {
   }
 
   function setLayer(name) {
-    layer = name; tiles.forEach(i => i.remove()); tiles.clear(); loaded = 0;
+    layer = name; tiles.forEach(i => i.remove()); tiles.clear(); overlayTiles.forEach(i => i.remove()); overlayTiles.clear(); loaded = 0;
     if (view.z > maxZ()) view.z = maxZ();
     seg.replaceChildren(...Object.entries(LAYERS).map(([k, L]) => h('button', { type: 'button', 'aria-pressed': k === layer, onclick: () => setLayer(k) }, t(L.label))));
     attr.replaceChildren(h('a', { href: LAYERS[layer].href, target: '_blank', rel: 'noopener noreferrer' }, LAYERS[layer].attr));
@@ -160,7 +196,7 @@ export function liveMap(entries, opts = {}) {
       el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0'); el.setAttribute('aria-label', t('Show details: {name}', { name: m.label || t('Map location') }));
       el.addEventListener('click', () => opts.onMarkerClick?.(m));
       el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); opts.onMarkerClick?.(m); } });
-      add(m, el);
+      el.__m = m; add(m, el); items[items.length - 1].fac = true; items[items.length - 1].m = m;
     });
     if (userLocation) add(userLocation, h('div', { class: 'mk mk-user-location', role: 'img', 'aria-label': t('Your location') }));
     for (const e of list) if (e.station) { line(e.station, e.incident, 'tm-route u-' + e.type); if (e.unit) line(e.station, e.unit, 'tm-trail u-' + e.type); }
@@ -175,6 +211,7 @@ export function liveMap(entries, opts = {}) {
     if (refit && !userMoved) { const pts = mode === 'puntland' ? [] : points(l); if (pts.length) fit(pts); else if (!opts.center) fit(PUNTLAND, 0); }
     schedule();
   };
+  box.select = id => items.forEach(it => { if (it.fac) it.el.classList.toggle('sel', !!id && it.m && it.m.id === id); });
   box.flyTo = (lat, lng, z = 12) => { userMoved = true; view.lat = lat; view.lng = lng; view.z = Math.min(maxZ(), z); schedule(); };
 
   // pointer input: drag, pinch, wheel, double click, keyboard

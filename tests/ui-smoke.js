@@ -30,11 +30,11 @@ const { chromium } = require('playwright');
   await guest.waitForSelector('.mk-user-location', { timeout: 3000 }).catch(() => errors.push('map: current-location marker was not shown'));
   const locationNotice = await guest.locator('.tm-loc-status').innerText().catch(() => '');
   if (!locationNotice.includes('GURMAD 24')) errors.push('map: current-location privacy notice was not shown');
-  // Gaalkacyo Earth map: POI markers open details and the demo dispatch draws a route.
-  await guest.locator('.mk-fac').first().click();
-  await guest.waitForFunction(() => document.querySelector('.poi-details')?.innerText.includes('University Teaching Hospital'), null, { timeout: 5000 }).catch(() => errors.push('map: marker details did not open'));
-  await guest.getByRole('button', { name: /Show demo dispatch|Muuji dirista gurmadka tijaabada/i }).click();
-  await guest.waitForSelector('.tm-route', { timeout: 3000 }).catch(() => errors.push('map: demo dispatch route was not drawn'));
+  // Puntland map: list selection opens place details with a call link and directions.
+  await guest.locator('.pm-row').first().click();
+  await guest.waitForSelector('.pm-card a[href^="tel:"]', { timeout: 5000 }).catch(() => errors.push('map: place details did not open'));
+  await guest.fill('.pm-tools input', 'zzzz-no-match');
+  await guest.waitForFunction(() => document.querySelectorAll('.pm-row').length === 0, null, { timeout: 3000 }).catch(() => errors.push('map: search did not filter the list'));
   // Marketplace cards expose a working details action.
   await guest.goto(t.base + '/#/cards'); await guest.reload();
   await guest.locator('#view .hc button').first().click();

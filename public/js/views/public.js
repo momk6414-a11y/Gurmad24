@@ -343,11 +343,16 @@ export async function emergency() {
     panel('Hospital contacts (verified)', hs.length ? table([{ label: 'Hospital', key: 'name' }, { label: 'Area', key: 'area' }, { label: 'Phone', render: o => o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : '-' }], hs) : emptyState('No hospitals listed.')));
 }
 
-// ---------- Puntland map (satellite / street), public
+// ---------- Puntland map: registered facilities on real imagery. Search, filters, details. Public.
 export async function puntlandMap() {
-  // Coordinates are taken from public map/directory and humanitarian mapping references.
-  // They are directory reference points, not a live verified dispatch registry.
-  const pois = [
+  const [hs, ps] = await Promise.all([GET('/hospitals').catch(() => ({ hospitals: [] })), GET('/providers').catch(() => ({ providers: [] }))]);
+  const TYPES = [['hospital', 'Hospital'], ['ambulance', 'Ambulance'], ['police', 'Police'], ['fire', 'Fire brigade']];
+  const facilities = [
+    ...hs.hospitals.map(o => ({ id: o.id, type: 'hospital', kind: 'hospital', name: o.name, area: o.area, phone: o.phone, address: o.address, hours: o.hours, available: true, lat: o.lat, lng: o.lng })),
+    ...ps.providers.filter(p => ['ambulance', 'police', 'fire'].includes(p.type)).map(p => ({ id: p.id, type: p.type, kind: 'station', name: p.name, area: p.area, phone: p.phone, address: p.address, hours: p.hours, available: p.available, lat: p.lat, lng: p.lng })),
+  ];
+  // Reference points (Gaalkacyo) from public map references: hidden by default, never a dispatch registry.
+  const refs = [
     { id:'uthg', name:'University Teaching Hospital Galkayo', kind:'hospital', type:'hospital', lat:6.7706459, lng:47.4275309, detail:'Isbitaal waxbarasho iyo adeeg caafimaad. Xogta saacadaha/telefoonka waa in goobta laga xaqiijiyaa.', source:'Public place directory', phone:'+252 90 779 5719' },
     { id:'modern', name:'Modern Hospital Galkayo', kind:'hospital', type:'hospital', lat:6.772199, lng:47.4286464, detail:'Isbitaal ku yaal Gaalkacyo; xogta directory-ga ayaa sheegaysa adeeg 24-saac ah, balse waa in la xaqiijiyaa.', source:'Public place directory', phone:'+252 5 858002' },
     { id:'galkayo-hospital', name:'Galkayo Hospital', kind:'hospital', type:'hospital', lat:6.78333, lng:47.4333, detail:'Goob isbitaal oo ku qoran diiwaanka khariidadaha dadweynaha; booska waa qiyaas.', source:'Public place directory', phone:'+252 61 782 0040' },
@@ -356,34 +361,58 @@ export async function puntlandMap() {
     { id:'university', name:'Galkayo University', kind:'landmark', type:'landmark', lat:6.752287218, lng:47.42322456, detail:'Jaamacadda Gaalkacyo — meel tixraac ah oo magaalada ku taal.', source:'African Development Bank mapping document' },
     { id:'city', name:'Bartamaha Gaalkacyo', kind:'landmark', type:'landmark', lat:6.7697, lng:47.4308, detail:'Xarunta magaalada Gaalkacyo; goob tixraac guud.', source:'OpenStreetMap / GeoNames city coordinates' }
   ];
-  const selected = h('div', { class:'poi-details', 'aria-live':'polite' },
-    h('b', t('Select a map marker')),
-    h('p', t('Taabo calaamad khariidadda saaran si aad u aragto faahfaahinta, nooca goobta iyo halka xogtu ka timid.')));
-  const map = liveMap([], { view:'points', center:{lat:6.7697,lng:47.4308,z:13}, markers:pois, height:'min(68vh, 620px)',
-    onMarkerClick: p => {
-      selected.replaceChildren(
-        h('div',{class:'poi-head'},h('b',p.name),h('span',{class:'badge '+(p.kind==='hospital'?'ok':'demo')},t(p.kind==='hospital'?'Hospital':p.kind==='government'?'Government':'Landmark'))),
-        h('p',p.detail),
-        h('small',t('Source: {s}',{s:p.source})),
-        p.phone?h('p',h('a',{class:'tel',href:'tel:'+p.phone.replace(/[^+\\d]/g,'')},icon('phone',16),p.phone)):null,
-        h('div',{class:'actions'},h('a',{class:'btn sm',href:'https://www.openstreetmap.org/?mlat='+p.lat+'&mlon='+p.lng+'#map=17/'+p.lat+'/'+p.lng,target:'_blank',rel:'noopener noreferrer'},icon('pin',14),t('Open directions')))
-      );
-      map.flyTo(p.lat,p.lng,15);
-    }
-  });
-  const dispatch = { type:'ambulance', station:{lat:6.772199,lng:47.4286464}, unit:{lat:6.7714,lng:47.4294}, incident:{lat:6.7697,lng:47.4308}, done:false };
-  let demoOn = false;
-  const toggle = h('button',{class:'btn sm',type:'button',onclick:()=>{demoOn=!demoOn;map.update(demoOn?[dispatch]:[],{refit:false});toggle.textContent=t(demoOn?'Hide demo dispatch':'Show demo dispatch');}},t('Show demo dispatch'));
-  const list = h('div',{class:'poi-list'},pois.map(p=>h('button',{type:'button',class:'poi-row',onclick:()=>{map.flyTo(p.lat,p.lng,15);selected.querySelector('b')?.replaceWith(h('b',p.name));selected.replaceChildren(h('b',p.name),h('p',p.detail),h('small',t('Source: {s}',{s:p.source})),p.phone?h('a',{class:'tel',href:'tel:'+p.phone.replace(/[^+\\d]/g,'')},p.phone):null);}},h('span',icon(p.kind==='hospital'?'hospital':p.kind==='government'?'shield':'pin',18)),h('span',h('b',p.name),h('small',p.kind)))));
-  return h('div',head('Gaalkacyo Earth map','Satellite toos ah iyo waddooyin; dooro calaamad si faahfaahin loo arko.'),
-    demoNote('Sawirrada satellite-ka waxay ka yimaadaan Esri, waddooyinkuna OpenStreetMap. Goobaha waa tixraacyo khariidadeed oo la soo ururiyey; xaqiiji cinwaanka iyo shaqada goobta ka hor isticmaal gurmad dhab ah.'),
-    h('div',{class:'chips'},h('button',{class:'chip',onclick:()=>map.flyTo(6.7697,47.4308,13)},'Gaalkacyo'),PLACES.map(p=>h('button',{class:'chip',onclick:()=>map.flyTo(p.lat,p.lng,12)},p.name))),
-    h('div',{class:'panel'},h('div',{class:'actions'},toggle,h('a',{class:'btn sm ghost',href:'#/emergency',onclick:e=>{e.preventDefault();go('/emergency');}},icon('alert',15),t('Open live dispatch test'))),map,
-      h('div',{class:'legend'},['hospital','government','landmark','ambulance'].map(k=>h('span',{class:'rtag u-'+k},icon(k==='government'?'shield':k==='landmark'?'pin':k,15),t(k))))),
-    selected,panel('Nearby places and facilities',list),
-    demoNote('Demo dispatch-ku waa tijaabo muuqaal ah oo keliya: ma wacayo ambalaas, boolis ama dab-damis, mana sheegayo in gaari dhab ahi socdo. Codsiga tijaabada ah ka samee Emergency, halkaas oo status-ka lagu cusboonaysiinayo.'));
+  refs.forEach(r => { r.reference = true; });
+  const active = new Set(TYPES.map(x => x[0])); let showRefs = false; let query = ''; let selected = null;
+  const hasPos = x => typeof x.lat === 'number' && typeof x.lng === 'number';
+  const mopts = { view: 'puntland', markers: [], cluster: true, height: 'min(70vh, 620px)', onMarkerClick: m => choose(m) };
+  const map = liveMap([], mopts);
+  const card = h('div'); const listBox = h('div', { class: 'pm-list', role: 'list' }); const count = h('small', { class: 'hint', 'aria-live': 'polite' }); const chips = h('div', { class: 'chips' });
+  const visible = () => {
+    const q = query.trim().toLowerCase();
+    const all = [...facilities.filter(f => active.has(f.type)), ...(showRefs ? refs : [])];
+    return all.filter(f => !q || (f.name + ' ' + (f.area || '')).toLowerCase().includes(q));
+  };
+  const typeLabel = x => x.reference ? (x.kind === 'hospital' ? 'Hospital' : x.kind === 'government' ? 'Government' : 'Landmark') : (TYPES.find(y => y[0] === x.type) || [0, x.type])[1];
+  const typeIcon = x => x.type === 'hospital' ? 'hospital' : x.type === 'government' ? 'shield' : x.type === 'landmark' ? 'pin' : x.type;
+  function detail() {
+    const x = selected;
+    if (!x) { card.replaceChildren(h('p', { class: 'hint' }, t('Select a place on the map or in the list to see its details.'))); return; }
+    const tel = x.phone ? x.phone.replace(/[^+\d]/g, '') : '';
+    card.replaceChildren(h('div', { class: 'pm-card u-' + x.type },
+      h('div', { class: 'pm-card-h' }, h('span', { class: 'pm-dot' }, icon(typeIcon(x), 16)), h('div', h('b', x.name), h('small', t(typeLabel(x)) + (x.area ? ' - ' + x.area : '')))),
+      x.reference ? h('p', x.detail) : null,
+      x.reference ? h('small', { class: 'hint' }, t('Source: {s}', { s: x.source })) : null,
+      x.address ? h('p', icon('pin', 14), ' ', x.address) : null,
+      x.hours ? h('p', icon('clock', 14), ' ', x.hours) : null,
+      !x.reference && x.type !== 'hospital' ? h('p', x.available ? t('Available now') : t('Not available now')) : null,
+      h('div', { class: 'actions' },
+        tel ? h('a', { class: 'btn sm', href: 'tel:' + tel }, icon('phone', 15), t('Call') + ' ' + x.phone) : null,
+        hasPos(x) ? h('a', { class: 'btn sm ghost', href: osmLink(x), target: '_blank', rel: 'noopener noreferrer' }, icon('pin', 15), t('Get directions')) : null),
+      !hasPos(x) ? h('small', { class: 'hint' }, t('This place has no map position yet.')) : null));
+  }
+  function choose(x) { selected = x; map.select(x.id); detail(); if (hasPos(x)) map.flyTo(x.lat, x.lng, 14); drawList(); }
+  function drawList() {
+    const v = visible(); count.textContent = t('{n} places', { n: v.length });
+    listBox.replaceChildren(...(v.length ? v.map(x => h('button', { type: 'button', role: 'listitem', class: 'pm-row u-' + x.type, 'aria-current': selected && selected.id === x.id ? 'true' : null, onclick: () => choose(x) },
+      h('span', { class: 'pm-dot' }, icon(typeIcon(x), 14)), h('span', { class: 'pm-txt' }, h('b', x.name), h('small', t(typeLabel(x)) + (x.area ? ' - ' + x.area : '') + (hasPos(x) ? '' : ' - ' + t('no map position')))))) : [h('p', { class: 'hint', style: 'padding:12px' }, t('No places match.'))]));
+  }
+  function drawMap() { mopts.markers = visible().filter(hasPos).map(x => ({ ...x, label: x.name })); map.update([], { refit: false }); map.select(selected && selected.id); }
+  function drawChips() {
+    chips.replaceChildren(...TYPES.map(([k, l]) => h('button', { type: 'button', class: 'chip u-' + k, 'aria-pressed': active.has(k), onclick: () => { if (active.has(k)) active.delete(k); else active.add(k); refresh(); } }, h('span', { class: 'cdot-t' }), t(l) + ' (' + facilities.filter(f => f.type === k).length + ')')),
+      h('button', { type: 'button', class: 'chip', 'aria-pressed': showRefs, onclick: () => { showRefs = !showRefs; refresh(); } }, t('Reference places') + ' (' + refs.length + ')'));
+  }
+  function refresh() { drawChips(); drawMap(); drawList(); }
+  const search = h('input', { type: 'search', placeholder: t('Search places'), 'aria-label': t('Search places'), oninput: e => { query = e.target.value; drawMap(); drawList(); } });
+  const region = h('select', { 'aria-label': t('Go to'), onchange: e => { const v = e.target.value; if (v === '') map.querySelector('.tm-pl').click(); else { const pl = PLACES[Number(v)]; map.flyTo(pl.lat, pl.lng, 12); } } },
+    h('option', { value: '' }, t('All Puntland')), PLACES.map((pl, i) => h('option', { value: String(i) }, pl.name)));
+  refresh(); detail();
+  return h('div', head('Puntland map', 'Hospitals, ambulance, police and fire stations registered with GURMAD 24, on real satellite imagery.'),
+    h('div', { class: 'pm-tools' }, search, region), chips,
+    h('div', { class: 'pm' },
+      h('div', { class: 'pm-map' }, map, h('div', { class: 'legend' }, TYPES.map(([k, l]) => h('span', { class: 'rtag u-' + k }, icon(k, 15), t(l))))),
+      h('aside', { class: 'pm-side' }, panel('Selected place', card), h('div', count, listBox))),
+    h('small', { class: 'hint' }, t('Places come from the GURMAD 24 register. Imagery: Esri and partners; streets: OpenStreetMap. Confirm a place before travelling; this map is not a live dispatch tool.')));
 }
-
 export async function system() {
   const draw = o => {
     const f = o.facilities, c = o.cases;
