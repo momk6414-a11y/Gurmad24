@@ -20,7 +20,7 @@ const ROUTES = [
   ['/org/complaints', ORG, O.complaints], ['/org/profile', ORG, O.profile], ['/org/requests', ['provider_admin'], O.requests],
   ['/ops', ['operator', 'admin'], OPS.dashboard], ['/ops/case/:id', ['operator', 'admin'], OPS.caseDetail], ['/ops/directory', ['operator', 'admin'], OPS.directory],
   ['/admin', ['admin'], A.overview], ['/admin/orgs', ['admin'], A.orgs], ['/admin/users', ['admin'], A.users], ['/admin/cards', ['admin'], A.cards], ['/admin/finance', ['admin'], A.finance],
-  ['/admin/revenue', ['admin'], A.revenue], ['/admin/settings', ['admin'], A.settings], ['/admin/complaints', ['admin'], A.complaints], ['/admin/audit', ['admin'], A.audit],
+  ['/admin/revenue', ['admin'], A.revenue], ['/admin/settings', ['admin'], A.settings], ['/admin/complaints', ['admin'], A.complaints], ['/admin/audit', ['admin'], A.audit], ['/admin/security', ['admin'], A.security],
 ].map(([p, roles, fn]) => {
   const keys = [];
   const re = new RegExp('^' + p.replace(/:(\w+)/g, (_, k) => {
@@ -104,6 +104,7 @@ function navItems() {
         ['/admin/revenue', 'chart', 'Revenue'],
         ['/admin/settings', 'settings', 'Settings'],
         ['/admin/complaints', 'chat', 'Support'],
+        ['/admin/security', 'shield', 'Security'],
         ['/admin/audit', 'audit', 'Audit'],
         ['/ops', 'alert', 'Cases'],
         ['/account', 'user', 'Account']
@@ -149,9 +150,11 @@ function chrome() {
   if (banner) {
     const demoMessage = t('SAFE TEST MODE: demo data, sandbox payments, no live dispatch. Not for real emergencies.');
     const offlineMessage = 'OFFLINE: Internet connection is unavailable. Changes have not been sent.';
-    banner.textContent = navigator.onLine
-      ? demoMessage
-      : offlineMessage + ' ' + demoMessage;
+    const real = !!(S.config && S.config.realMode);
+    banner.classList.toggle('real', real);
+    const realMessage = t('REAL MODE: requests go to operators. In a life-threatening emergency also call the emergency number.');
+    const main = real ? realMessage : demoMessage;
+    banner.textContent = navigator.onLine ? main : offlineMessage + ' ' + main;
     banner.setAttribute('role', 'status');
     banner.setAttribute('aria-live', 'polite');
   }

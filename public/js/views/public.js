@@ -26,12 +26,12 @@ export async function home() {
   return h('div', { class: 'legend-home' },
     h('section', { class: 'legend-hero' },
       h('div', { class: 'legend-copy' },
-        h('div', { class: 'eyebrow' }, 'GURMAD 24  /  THE LEGEND'),
+        h('div', { class: 'eyebrow' }, 'GURMAD 24  ·  ' + t('Fast help, one tap away')),
         h('h1', t('One network. Every emergency.')),
         h('p', t('A connected response system for people, location and essential services.')),
         h('div', { class: 'actions' },
-          h('a', { class: 'btn', href: '#/map', onclick: e => { e.preventDefault(); go('/map'); } }, icon('pin'), t('Open live map')),
-          h('a', { class: 'btn ghost', href: '#/emergency', onclick: e => { e.preventDefault(); go('/emergency'); } }, icon('alert'), t('Emergency centre'))
+          h('a', { class: 'btn sos-cta', href: '#/emergency', onclick: e => { e.preventDefault(); go('/emergency'); } }, icon('alert'), t('Request help now')),
+          h('a', { class: 'btn ghost', href: '#/map', onclick: e => { e.preventDefault(); go('/map'); } }, icon('pin'), t('Open live map'))
         ),
         h('div', { class: 'legend-proof' },
           h('span', icon('shield', 16), t('People first')),
@@ -204,7 +204,9 @@ function trackPanel(box, tk, onNew) {
     const ro = tr.responderOrg;
     mapEl.update(tr.location ? [{ type: tr.responder, incident: tr.location, unit: tr.unit, station: tr.station, done }] : []);
     box.replaceChildren(...[
-      h('div', { class: 'note' }, icon('alert', 18), h('span', t('TEST ONLY: no real police, fire or ambulance service was contacted. This is a simulation for demonstration.'))),
+      tr.mode === 'REAL'
+        ? h('div', { class: 'note warn' }, icon('alert', 18), h('span', t('REAL REQUEST: your request is waiting for an operator. If it is urgent, also call the emergency number above.')))
+        : h('div', { class: 'note' }, icon('alert', 18), h('span', t('TEST ONLY: no real police, fire or ambulance service was contacted. This is a simulation for demonstration.'))),
       h('div', { class: 'trk-head' }, h('div', h('small', t('Request code')), h('b', { class: 'trk-code' }, tr.code)), h('div', { class: 'trk-type u-' + tr.responder }, icon(tr.responder, 20), h('span', t(SERVICE_NAME[tr.responder])), h('small', catLabel(tr.category)))),
       steps,
       tr.status === 'en_route' && tr.etaMinutes ? h('p', { class: 'eta' }, icon('pin', 18), t('Arriving in about {m} min (simulated).', { m: tr.etaMinutes })) : null,
@@ -404,8 +406,15 @@ export async function system() {
 
 // ---------- Auth
 export function login() {
-  return h('div', head('Log in'), h('div', { class: 'grid g2' }, panel(null, form([{ name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'username' }, { name: 'password', label: 'Password', type: 'password', required: true, autocomplete: 'current-password' }],
-    { submit: 'Log in', onSubmit: async v => { const r = await POST('/auth/login', v); await afterAuth(r.user); } })),
+  const box = h('div'); let needCode = false;
+  const draw = () => box.replaceChildren(form([{ name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'username' }, { name: 'password', label: 'Password', type: 'password', required: true, autocomplete: 'current-password' },
+    ...(needCode ? [{ name: 'code', label: 'Authenticator code (6 digits)', required: true, max: 12, inputmode: 'numeric', autocomplete: 'one-time-code' }] : [])],
+    { submit: 'Log in', onSubmit: async v => {
+      try { const r = await POST('/auth/login', v); await afterAuth(r.user); }
+      catch (e) { if (e && e.code === 'two_factor_required' && !needCode) { needCode = true; draw(); toast(t('Enter the 6-digit code from your authenticator app.')); return; } throw e; }
+    } }));
+  draw();
+  return h('div', head('Log in'), h('div', { class: 'grid g2' }, panel(null, box),
   panel('New here?', h('div', h('p', t('Create a free account to order health cards and request appointments.')), h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/register' }, t('Create patient account')), h('a', { class: 'btn ghost', href: '#/register-org' }, t('Register a hospital / provider')))))));
 }
 export async function afterAuth(user) {

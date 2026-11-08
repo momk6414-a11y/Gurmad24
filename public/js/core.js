@@ -267,6 +267,10 @@ const ERR = {
   forbidden: 'You do not have permission for this.',
   not_found: 'Not found.',
   invalid_credentials: 'Wrong email or password.',
+  two_factor_required: 'Enter the 6-digit code from your authenticator app.',
+  invalid_code: 'That code is not correct or was already used.',
+  password_common: 'That password is too common. Choose another.',
+  password_contains_email: 'Do not use your email name inside the password.',
   too_many_attempts: 'Too many failed attempts. Try again in 15 minutes.',
   rate_limited: 'Too many requests. Please wait a moment.',
   email_taken: 'This email is already registered.',
@@ -548,6 +552,8 @@ export function form(
         ? t(f.placeholder)
         : undefined,
       maxlength: f.max,
+      inputmode: f.inputmode,
+      autocomplete: f.autocomplete,
     };
 
     if (f.type === 'textarea' || f.type === 'lines') {

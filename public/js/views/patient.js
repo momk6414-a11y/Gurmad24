@@ -55,9 +55,31 @@ function reply(c) {
   let m; m = modal(c.code, form([{ name: 'text', label: 'Your reply', type: 'textarea', required: true, max: 1000 }], { submit: 'Send', cancel: () => m.close(), onSubmit: async v => { await POST(`/complaints/${c.id}/reply`, v); m.close(); window.dispatchEvent(new HashChangeEvent('hashchange')); } }));
 }
 
+function securityPanels() {
+  const box = h('div'); const u = S.user;
+  const draw = async () => {
+    const { sessions } = await GET('/auth/sessions');
+    const twofa = h('div');
+    const show2fa = () => twofa.replaceChildren(u.twoFactor
+      ? h('div', h('p', h('b', t('Two-step login is ON.'))), h('button', { class: 'btn danger sm', onclick: () => { let m; m = modal(t('Turn off two-step login'), form([{ name: 'password', label: 'Password', type: 'password', required: true }, { name: 'code', label: 'Authenticator code', required: true, max: 12 }], { submit: 'Turn off', cancel: () => m.close(), onSubmit: async v => { await POST('/auth/2fa/disable', v); u.twoFactor = false; m.close(); toast(t('Saved.')); show2fa(); } })); } }, t('Turn off')))
+      : h('div', h('p', t('Add a second step: a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator, Aegis). Recommended for staff and admins.')),
+        h('button', { class: 'btn sm', onclick: async () => {
+          const r = await POST('/auth/2fa/setup');
+          twofa.replaceChildren(h('div', h('p', t('1. In your authenticator app choose "Enter a setup key" and paste this key:')), h('p', { class: 'mono' }, r.secret), h('p', t('2. Enter the 6-digit code it shows:')),
+            form([{ name: 'code', label: 'Authenticator code', required: true, max: 12, inputmode: 'numeric' }], { submit: 'Confirm', onSubmit: async v => { await POST('/auth/2fa/enable', v); u.twoFactor = true; toast(t('Two-step login is ON.')); show2fa(); } })));
+        } }, t('Set up two-step login'))));
+    show2fa();
+    box.replaceChildren(h('div', { class: 'grid g2' },
+      panel('Two-step login', twofa),
+      panel('Devices signed in', h('div', h('ul', { class: 'plain' }, sessions.map(x => h('li', fdt(x.createdAt), ' ', x.ip || '', x.current ? h('b', ' - ' + t('this device')) : null))),
+        sessions.length > 1 ? h('button', { class: 'btn ghost sm', onclick: async () => { await POST('/auth/sessions/revoke-others'); toast(t('Other devices signed out.')); draw(); } }, t('Sign out other devices')) : null))));
+  };
+  draw().catch(() => {}); return box;
+}
+
 export function account() {
   const u = S.user;
-  return h('div', head('My account'),
+  return h('div', head('My account'), securityPanels(),
     h('div', { class: 'grid g2' },
       panel('Profile', form([{ name: 'name', label: 'Full name', required: true, max: 80 }, { name: 'lang', label: 'Language', type: 'select', options: [['so', 'Somali'], ['en', 'English']] }], { initial: u, submit: 'Save',
         onSubmit: async v => { const r = await PATCH('/auth/profile', v); S.user = r.user; setLang(v.lang); toast(t('Saved.')); window.dispatchEvent(new CustomEvent('g24-auth')); } })),
