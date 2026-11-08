@@ -1,8 +1,8 @@
 
 // GURMAD 24 - Service Worker
-// Version 10: refreshes old app cache and keeps API/personal data uncached.
+// Version 11: refreshes old app cache and keeps API/personal data uncached.
 
-const CACHE = 'g24-v10';
+const CACHE = 'g24-v11';
 
 const SHELL = [
   '/',
@@ -34,6 +34,7 @@ const SHELL = [
 ];
 
 const SHELL_PATHS = new Set(SHELL);
+const OFFLINE_API = new Set(['/api/hospitals', '/api/providers', '/api/config']);
 
 // Install the new cache.
 self.addEventListener('install', event => {
@@ -61,7 +62,7 @@ self.addEventListener('activate', event => {
       .then(keys =>
         Promise.all(
           keys
-            .filter(key => key.startsWith('g24-') && key !== CACHE)
+            .filter(key => key.startsWith('g24-') && key !== CACHE && key !== CACHE + '-api')
             .map(key => caches.delete(key))
         )
       )
@@ -77,13 +78,27 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
 
-  // Never cache API requests or external websites.
-  if (
-    url.origin !== self.location.origin ||
-    url.pathname.startsWith('/api/')
-  ) {
+  // External websites are never touched.
+  if (url.origin !== self.location.origin) return;
+
+  // Offline help: only PUBLIC directory data (no personal data) is kept as a fallback.
+  if (OFFLINE_API.has(url.pathname + url.search)) {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE + '-api').then(c => c.put(request, copy)).catch(() => {});
+          }
+          return response;
+        })
+        .catch(async () => (await caches.match(request, { cacheName: CACHE + '-api' })) || new Response('{"error":"offline"}', { status: 503, headers: { 'Content-Type': 'application/json' } }))
+    );
     return;
   }
+
+  // Never cache any other API request.
+  if (url.pathname.startsWith('/api/')) return;
 
   // Ignore files outside the approved app shell.
   if (!SHELL_PATHS.has(url.pathname)) return;

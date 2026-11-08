@@ -203,6 +203,8 @@ export const so = {
 "Numbers come from the demo system. No personal data is shown.":"Tirooyinku waxay ka yimaadaan nidaamka tijaabada. Xog shakhsi ah lama muujiyo.",
 "Health cards":"Kaararka caafimaadka",
 "Appointments":"Ballamaha",
+"Emergency numbers":"Lambarrada degdegga",
+"Demo numbers. One tap to call from your phone.":"Lambarro tijaabo ah. Hal taabasho ayaad ku wici kartaa taleefankaaga.",
 "Satellite":"Satellite",
 "Street":"Waddooyin",
 "Map type":"Nooca khariidadda",

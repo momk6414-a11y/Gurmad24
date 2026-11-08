@@ -11,8 +11,18 @@ const head = (title, sub, right) => h('div', { class: 'page-head' }, h('div', h(
 export const notInsurance = () => demoNote('Health cards are hospital service products. They are NOT insurance and do not guarantee treatment or coverage.');
 
 // ---------- Home
+// Big one-tap call buttons (demo numbers) - also work offline from the cached directory.
+async function hotlines() {
+  let ps = []; try { ps = (await GET('/providers')).providers; } catch (_) { /* offline: no list */ }
+  const pick = type => { const l = ps.filter(p => p.type === type && p.phone); return l.find(p => p.available) || l[0]; };
+  const btn = (type, label) => { const p = pick(type); return p ? h('a', { class: 'call u-' + type, href: 'tel:' + p.phone.replace(/[^+\d]/g, '') }, icon(type, 26), h('span', h('b', t(label)), h('small', p.phone))) : null; };
+  const items = [btn('ambulance', 'Ambulance'), btn('police', 'Police'), btn('fire', 'Fire brigade')].filter(Boolean);
+  if (!items.length) return null;
+  return h('section', { class: 'panel hotlines' }, h('h3', t('Emergency numbers')), h('div', { class: 'calls' }, items), h('small', { class: 'hint' }, t('Demo numbers. One tap to call from your phone.')));
+}
+
 export async function home() {
-  const [cards, spons, hs] = await Promise.all([GET('/cards?sort=price_asc'), GET('/sponsored'), GET('/hospitals')]);
+  const [cards, spons, hs, hot] = await Promise.all([GET('/cards?sort=price_asc').catch(() => ({ cards: [] })), GET('/sponsored').catch(() => ({ listings: [] })), GET('/hospitals'), hotlines()]);
   const step = (n, ic, title, text) => h('div', { class: 'step' }, h('div', { class: 'step-n' }, n), h('div', { class: 'step-ic' }, icon(ic, 22)), h('h4', t(title)), h('p', t(text)));
   const who = (ic, title, text, cta, href) => h('div', { class: 'who' }, h('div', { class: 'who-ic' }, icon(ic, 26)), h('h4', t(title)), h('p', t(text)), h('a', { class: 'btn sm ghost', href }, t(cta)));
   const trust = (ic, title, text) => h('div', { class: 'trust' }, icon(ic, 22), h('div', h('b', t(title)), h('p', t(text))));
@@ -23,6 +33,7 @@ export async function home() {
         h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/cards' }, icon('card'), t('Browse health cards')), h('a', { class: 'btn ghost', href: '#/hospitals' }, icon('hospital'), t('Find a hospital')), h('a', { class: 'btn ghost', href: '#/system' }, icon('dash'), t('System overview')), S.user ? null : h('a', { class: 'btn ghost', href: '#/register' }, icon('user'), t('Create account'))),
         h('div', { class: 'stats-row' }, h('div', h('b', hs.hospitals.length), h('span', t('Verified hospitals'))), h('div', h('b', cards.cards.length), h('span', t('Health cards'))), h('div', h('b', '2'), h('span', t('Languages'))))),
       h('img', { class: 'hero2-img', src: '/img/hero.svg', alt: '', width: 560, height: 420 })),
+    hot,
     h('div', { class: 'panel sos' }, h('div', { style: 'display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap' }, icon('alert', 28), h('div', { style: 'flex:1;min-width:220px' }, h('h3', t('Emergency requests are a demo')),
       h('p', { style: 'margin:6px 0 0;color:var(--muted)' }, t('Ambulance, police and fire requests are simulated while the service is being tested. In a real emergency go to the nearest hospital or call your local emergency services directly.'))), h('a', { class: 'btn', href: '#/emergency' }, icon('alert'), t('Try the emergency demo')))),
     h('div', { class: 'panel' }, h('div', { style: 'display:flex;gap:14px;align-items:center;flex-wrap:wrap' }, icon('chat', 28), h('div', { style: 'flex:1;min-width:220px' }, h('h3', t('Questions or a complaint?')),
@@ -255,10 +266,10 @@ function requestForm(box, areas) {
 function showForm(box, areas) { box.replaceChildren(requestForm(box, areas)); }
 
 export async function emergency() {
-  const [hsr, cfg] = await Promise.all([GET('/hospitals'), GET('/config')]); const hs = hsr.hospitals; const box = h('div');
+  const [hsr, cfg, hot] = await Promise.all([GET('/hospitals'), GET('/config'), hotlines()]); const hs = hsr.hospitals; const box = h('div');
   const saved = loadTrack();
   if (saved) trackPanel(box, saved, () => showForm(box, cfg.areas)); else showForm(box, cfg.areas);
-  return h('div', head('Emergency'),
+  return h('div', head('Emergency'), hot,
     h('div', { class: 'panel sos' }, h('h3', t('In a real emergency')), h('ul', { class: 'bul', style: 'margin-top:8px' }, h('li', t('Go to the nearest hospital or call your local emergency services directly.')), h('li', t('GURMAD 24 does NOT contact police, fire or ambulance services at this stage. Requests below are a demonstration.')), h('li', t('The platform never diagnoses and never gives treatment advice.')))),
     panel('Request help (demo)', h('div', demoNote('DEMO: this creates a registered test request. The operators, police, fire and ambulance dashboards show it live, but no real help is requested.'), box)),
     panel('Hospital contacts (verified)', hs.length ? table([{ label: 'Hospital', key: 'name' }, { label: 'Area', key: 'area' }, { label: 'Phone', render: o => o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : '-' }], hs) : emptyState('No hospitals listed.')));
