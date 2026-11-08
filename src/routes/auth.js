@@ -108,10 +108,12 @@ module.exports = function (app) {
   });
 
   // ---- Two-step login (authenticator app). Optional for everyone, recommended for staff and admins.
-  app.post('/api/auth/2fa/setup', { auth: true, summary: 'Start authenticator setup: returns a secret to add to an authenticator app' }, req => {
+  app.post('/api/auth/2fa/setup', { auth: true, summary: 'Start authenticator setup: returns a secret to add to an authenticator app. Repeating it returns the same pending secret unless reset=true' }, req => {
     if (req.user.totp && req.user.totp.enabled) throw new HttpError(409, 'already_enabled');
-    const secret = S.newTotpSecret(); req.user.totp = { secret, enabled: false, lastStep: 0 }; store.save();
-    return { secret, uri: `otpauth://totp/GURMAD%2024:${encodeURIComponent(req.user.email)}?secret=${secret}&issuer=GURMAD%2024&digits=6&period=30` };
+    const reset = !!(req.body && req.body.reset);
+    if (!req.user.totp || reset) { req.user.totp = { secret: S.newTotpSecret(), enabled: false, lastStep: 0 }; store.save(); }
+    const secret = req.user.totp.secret;
+    return { secret, serverTime: new Date().toISOString(), uri: `otpauth://totp/GURMAD%2024:${encodeURIComponent(req.user.email)}?secret=${secret}&issuer=GURMAD%2024&algorithm=SHA1&digits=6&period=30` };
   });
   app.post('/api/auth/2fa/enable', { auth: true, summary: 'Confirm authenticator setup with a 6-digit code' }, req => {
     const b = validate({ code: v.str({ max: 12, required: true }) }, req.body);

@@ -63,11 +63,21 @@ function securityPanels() {
     const show2fa = () => twofa.replaceChildren(u.twoFactor
       ? h('div', h('p', h('b', t('Two-step login is ON.'))), h('button', { class: 'btn danger sm', onclick: () => { let m; m = modal(t('Turn off two-step login'), form([{ name: 'password', label: 'Password', type: 'password', required: true }, { name: 'code', label: 'Authenticator code', required: true, max: 12 }], { submit: 'Turn off', cancel: () => m.close(), onSubmit: async v => { await POST('/auth/2fa/disable', v); u.twoFactor = false; m.close(); toast(t('Saved.')); show2fa(); } })); } }, t('Turn off')))
       : h('div', h('p', t('Add a second step: a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator, Aegis). Recommended for staff and admins.')),
-        h('button', { class: 'btn sm', onclick: async () => {
-          const r = await POST('/auth/2fa/setup');
-          twofa.replaceChildren(h('div', h('p', t('1. In your authenticator app choose "Enter a setup key" and paste this key:')), h('p', { class: 'mono' }, r.secret), h('p', t('2. Enter the 6-digit code it shows:')),
-            form([{ name: 'code', label: 'Authenticator code', required: true, max: 12, inputmode: 'numeric' }], { submit: 'Confirm', onSubmit: async v => { await POST('/auth/2fa/enable', v); u.twoFactor = true; toast(t('Two-step login is ON.')); show2fa(); } })));
-        } }, t('Set up two-step login'))));
+        h('button', { class: 'btn sm', onclick: () => startSetup(false) }, t('Set up two-step login'))));
+    async function startSetup(reset) {
+      const r = await POST('/auth/2fa/setup', { reset });
+      const grouped = r.secret.match(/.{1,4}/g).join(' ');
+      const copy = h('button', { class: 'btn sm ghost', type: 'button', onclick: async () => { try { await navigator.clipboard.writeText(r.secret); toast(t('Key copied.')); } catch (_) { toast(t('Select the key and copy it.'), 'err'); } } }, t('Copy key'));
+      twofa.replaceChildren(h('div',
+        h('p', h('b', t('Step 1.')), ' ', t('Add this key to your authenticator app.')),
+        h('p', { class: 'note warn' }, t('If you already have a GURMAD 24 entry in the app from an earlier try, delete it first. Only the newest key works.')),
+        h('p', { class: 'mono key' }, grouped),
+        h('div', { class: 'actions tight' }, copy, h('a', { class: 'btn sm', href: r.uri }, t('Open in authenticator app'))),
+        h('p', { class: 'hint' }, t('In the app choose "Enter a setup key", account "GURMAD 24", type "Time based". Phone time must be automatic. Server time (UTC): {t}', { t: r.serverTime.slice(11, 19) })),
+        h('p', h('b', t('Step 2.')), ' ', t('Enter the 6-digit code it shows:')),
+        form([{ name: 'code', label: 'Authenticator code', required: true, max: 12, inputmode: 'numeric', autocomplete: 'one-time-code' }], { submit: 'Confirm', onSubmit: async v => { await POST('/auth/2fa/enable', v); u.twoFactor = true; toast(t('Two-step login is ON.')); show2fa(); } }),
+        h('button', { class: 'btn sm ghost', type: 'button', onclick: () => startSetup(true) }, t('Start again with a new key'))));
+    }
     show2fa();
     box.replaceChildren(h('div', { class: 'grid g2' },
       panel('Two-step login', twofa),

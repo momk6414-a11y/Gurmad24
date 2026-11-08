@@ -93,3 +93,12 @@ test('real mode: off by default, only admin can turn on (typed confirmation), re
   await adm.put('/api/admin/real-mode', { enabled: false });
   assert.equal((await c.get('/api/config')).data.realMode, false);
 });
+
+test('2FA setup is idempotent (same pending key) unless reset, so a retry never invalidates the key already in the app', async () => {
+  const c = await H.newPatient(t, 'retry2fa@test.local');
+  const a = (await c.post('/api/auth/2fa/setup')).data, b = (await c.post('/api/auth/2fa/setup')).data;
+  assert.equal(a.secret, b.secret); assert.match(a.serverTime, /^\d{4}-\d\d-\d\dT/);
+  const r = (await c.post('/api/auth/2fa/setup', { reset: true })).data; assert.notEqual(r.secret, a.secret);
+  const code = S.totpAt(r.secret, Math.floor(Date.now() / 30000));
+  assert.equal((await c.post('/api/auth/2fa/enable', { code })).status, 200);
+});

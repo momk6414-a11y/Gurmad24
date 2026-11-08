@@ -324,3 +324,5 @@ h1,h2,h3,h4{letter-spacing:-.01em}
 .pm-card-h{display:flex;gap:10px;align-items:center;margin-bottom:8px}.pm-card-h small{display:block;color:var(--muted)}.pm-card p{margin:6px 0}
 @media (max-width:900px){.pm{grid-template-columns:1fr}.pm-map .tmap{height:56vh}.pm-list{max-height:none}}
 @media (max-width:560px){.tm-scale{bottom:46px}.tm-north{bottom:50px}}
+
+.mono.key{font-size:19px;letter-spacing:1px;line-height:1.5;user-select:all}
