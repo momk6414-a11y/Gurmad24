@@ -231,3 +231,8 @@ h1,h2,h3,h4{letter-spacing:-.01em}
 .ai-form{display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--line,#ddd)}.ai-form input{flex:1;min-width:0}.ai-note{padding:0 12px 8px}
 .btn.rec{background:#dc2626;color:#fff;border-color:#dc2626;animation:recp 1.2s infinite}@keyframes recp{50%{opacity:.7}}@media (prefers-reduced-motion:reduce){.btn.rec{animation:none}}
 .voice-box audio{width:100%;margin-top:8px}
+
+/* Opt-in, device-only current-location control on interactive maps. */
+.tm-zoom .tm-locate{width:auto;min-width:38px;min-height:34px;padding:6px 9px;font-size:12px;white-space:nowrap}.tm-zoom .tm-locate:disabled{opacity:.55;cursor:wait}
+.tm-loc-status{position:absolute;top:58px;left:10px;right:58px;z-index:7;background:#0d2a33ed;color:#fff;padding:8px 10px;border:1px solid #ffffff55;border-radius:10px;font-size:12px;box-shadow:0 4px 12px #0005}.tm-loc-status[hidden]{display:none}
+.mk-user-location{width:24px;height:24px;margin:-12px 0 0 -12px;border:3px solid #fff;border-radius:50%;background:var(--blue);box-shadow:0 1px 9px #000b}.mk-user-location::after{content:"";position:absolute;inset:6px;border-radius:50%;background:#0d2a33}

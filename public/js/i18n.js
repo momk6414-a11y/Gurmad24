@@ -233,5 +233,5 @@ export const so = {
 "Satellite imagery and street map of the whole region.":"Sawirrada satellite-ka iyo khariidadda waddooyinka gobolka oo dhan.",
 "Satellite pictures come from Esri and the street map from OpenStreetMap, so an internet connection is needed. Facility positions are demo data.":"Sawirrada satellite-ka waxay ka yimaadaan Esri, khariidadda waddooyinkuna OpenStreetMap, sidaa darteed internet ayaa loo baahan yahay. Goobaha xarumaha waa xog tijaabo ah.",
 "Facilities (demo)":"Xarumaha (tijaabo)",
-"Show on map":"Ka tus khariidadda"
+"Show on map":"Ka tus khariidadda","Show my location":"Muuji goobtayda","My location":"Goobtayda","Finding your location…":"Goobtaada ayaa la helayaa…","Your location is shown on this device only. It is not sent to GURMAD 24.":"Goobtaada qalabkan oo keliya ayaa lagu muujinayaa. Looma dirayo GURMAD 24.","Location permission was denied. Allow location access in your browser settings.":"Ogolaanshaha goobta waa la diiday. Ka oggolow gelitaanka goobta dejimaha browser-kaaga.","Your location is unavailable right now. Try again.":"Goobtaada hadda lama heli karo. Mar kale isku day.","Location request timed out. Try again.":"Codsiga goobtu wuu dhacay. Mar kale isku day.","Location is not supported by this browser.":"Browser-kani ma taageerayo goob-helidda.","Your location":"Goobtaada"
 };

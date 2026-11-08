@@ -1,6 +1,6 @@
 // Real interactive map (slippy tiles, no library): satellite imagery (Esri) or street map (OpenStreetMap).
 // Needs an internet connection for the map pictures. Markers, routes and the Puntland view are drawn by us.
-// Tiles are plain <img> requests; the CSP allows only the two hosts below.
+// Tiles are plain <img> requests; the CSP allows only the two hosts below. Device location is opt-in and stays client-side.
 import { h, t, icon } from './core.js';
 
 const TILE = 256;
@@ -41,7 +41,7 @@ export function liveMap(entries, opts = {}) {
   let layer = LAYERS[opts.layer] ? opts.layer : 'satellite';
   const view = { lat: 8.4, lng: 49.3, z: 6 };
   const mode = opts.view === 'puntland' ? 'puntland' : 'points';
-  let items = []; let current = entries || []; let userMoved = false; let raf = 0; let loaded = 0;
+  let items = []; let current = entries || []; let userMoved = false; let raf = 0; let loaded = 0; let userLocation = null; let locStatusTimer = 0;
   const tiles = new Map();
 
   const tilePane = h('div', { class: 'tm-tiles' });
@@ -49,11 +49,14 @@ export function liveMap(entries, opts = {}) {
   const markPane = h('div', { class: 'tm-marks' });
   const msg = h('div', { class: 'tm-msg', hidden: true, role: 'status' }, t('The map pictures could not load. Check your internet connection. Markers still work.'));
   const attr = h('div', { class: 'tm-attr' });
+  const locStatus = h('div', { class: 'tm-loc-status', hidden: true, role: 'status', 'aria-live': 'polite' });
+  const locateBtn = h('button', { type: 'button', class: 'tm-locate', 'aria-label': t('Show my location'), onclick: () => locateMe() }, t('My location'));
   const seg = h('div', { class: 'seg tm-ctl tm-layers', role: 'group', 'aria-label': t('Map type') });
-  const box = h('div', { class: 'tmap', tabindex: 0, role: 'application', 'aria-label': t('Live map (demo)') }, tilePane, lines, markPane, msg, seg,
+  const box = h('div', { class: 'tmap', tabindex: 0, role: 'application', 'aria-label': t('Live map (demo)') }, tilePane, lines, markPane, msg, locStatus, seg,
     h('div', { class: 'tm-ctl tm-zoom' },
       h('button', { type: 'button', 'aria-label': t('Zoom in'), onclick: () => zoomBy(1) }, '+'),
       h('button', { type: 'button', 'aria-label': t('Zoom out'), onclick: () => zoomBy(-1) }, '−'),
+      locateBtn,
       h('button', { type: 'button', class: 'tm-pl', onclick: () => { userMoved = true; fit(PUNTLAND, 0); } }, t('Puntland'))), attr);
 
   const size = () => ({ w: box.clientWidth, h: box.clientHeight });
@@ -92,6 +95,33 @@ export function liveMap(entries, opts = {}) {
   }
   const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
 
+  function locationMessage(key) {
+    locStatus.textContent = t(key); locStatus.hidden = false;
+    clearTimeout(locStatusTimer); locStatusTimer = setTimeout(() => { locStatus.hidden = true; }, 7000);
+  }
+  function resetLocateButton() { locateBtn.disabled = false; locateBtn.textContent = t('My location'); }
+  function locateMe() {
+    if (!navigator.geolocation) { locationMessage('Location is not supported by this browser.'); return; }
+    locateBtn.disabled = true; locateBtn.textContent = t('Finding your location…');
+    try {
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat = Number(position.coords && position.coords.latitude), lng = Number(position.coords && position.coords.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          resetLocateButton(); locationMessage('Your location is unavailable right now. Try again.'); return;
+        }
+        userLocation = { lat, lng };
+        userMoved = true; view.lat = lat; view.lng = lng; view.z = Math.min(maxZ(), 14);
+        build(current); schedule(); resetLocateButton();
+        locationMessage('Your location is shown on this device only. It is not sent to GURMAD 24.');
+      }, error => {
+        resetLocateButton();
+        if (error && error.code === 1) locationMessage('Location permission was denied. Allow location access in your browser settings.');
+        else if (error && error.code === 3) locationMessage('Location request timed out. Try again.');
+        else locationMessage('Your location is unavailable right now. Try again.');
+      }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
+    } catch (_) { resetLocateButton(); locationMessage('Your location is unavailable right now. Try again.'); }
+  }
+
   function zoomAt(z, px, py) {
     z = Math.max(MIN_Z, Math.min(maxZ(), z)); const { w, h: hh } = size();
     const wx = lng2x(view.lng, view.z) - w / 2 + px, wy = lat2y(view.lat, view.z) - hh / 2 + py;
@@ -126,6 +156,7 @@ export function liveMap(entries, opts = {}) {
     const line = (a, b, cls) => { const l = document.createElementNS(NS, 'line'); l.setAttribute('class', cls); l.__d = { a, b }; lines.append(l); };
     if (opts.places) PLACES.forEach(p => add(p, mk('mk-city', h('span', { class: 'cdot' }), h('span', { class: 'clbl' }, p.name))));
     (opts.markers || []).forEach(m => add(m, mk('mk-fac u-' + (m.type || 'hospital'), icon(m.kind === 'hospital' ? 'hospital' : m.type, 14), m.label ? h('span', { class: 'clbl' }, m.label) : null)));
+    if (userLocation) add(userLocation, h('div', { class: 'mk mk-user-location', role: 'img', 'aria-label': t('Your location') }));
     for (const e of list) if (e.station) { line(e.station, e.incident, 'tm-route u-' + e.type); if (e.unit) line(e.station, e.unit, 'tm-trail u-' + e.type); }
     for (const e of list) if (e.station) add(e.station, mk('mk-station u-' + e.type, icon(e.type, 13)));
     for (const e of list) add(e.incident, mk('mk-incident' + (e.done ? ' done' : ''), h('span', { class: 'pulse' }), h('span', { class: 'dot' })));
