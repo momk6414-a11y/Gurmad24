@@ -22,35 +22,39 @@ async function hotlines() {
 }
 
 export async function home() {
-  const [cards, spons, hs, hot] = await Promise.all([GET('/cards?sort=price_asc').catch(() => ({ cards: [] })), GET('/sponsored').catch(() => ({ listings: [] })), GET('/hospitals'), hotlines()]);
-  const step = (n, ic, title, text) => h('div', { class: 'step' }, h('div', { class: 'step-n' }, n), h('div', { class: 'step-ic' }, icon(ic, 22)), h('h4', t(title)), h('p', t(text)));
-  const who = (ic, title, text, cta, href) => h('div', { class: 'who' }, h('div', { class: 'who-ic' }, icon(ic, 26)), h('h4', t(title)), h('p', t(text)), h('a', { class: 'btn sm ghost', href }, t(cta)));
-  const trust = (ic, title, text) => h('div', { class: 'trust' }, icon(ic, 22), h('div', h('b', t(title)), h('p', t(text))));
-  return h('div',
-    h('section', { class: 'hero2' },
-      h('div', { class: 'hero2-text' }, h('div', { class: 'eyebrow' }, t('GURMAD 24 - Gaalkacyo pilot')), h('h1', t('Clear coordination. Accessible healthcare.')),
-        h('p', t('Browse hospital health cards, find verified hospitals and providers, and request appointments - in Somali or English.')),
-        h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/cards' }, icon('card'), t('Browse health cards')), h('a', { class: 'btn ghost', href: '#/hospitals' }, icon('hospital'), t('Find a hospital')), h('a', { class: 'btn ghost', href: '#/system' }, icon('dash'), t('System overview')), S.user ? null : h('a', { class: 'btn ghost', href: '#/register' }, icon('user'), t('Create account'))),
-        h('div', { class: 'stats-row' }, h('div', h('b', hs.hospitals.length), h('span', t('Verified hospitals'))), h('div', h('b', cards.cards.length), h('span', t('Health cards'))), h('div', h('b', '2'), h('span', t('Languages'))))),
-      h('img', { class: 'hero2-img', src: '/img/hero.svg', alt: '', width: 560, height: 420 })),
+  const hot = await hotlines();
+  return h('div', { class: 'legend-home' },
+    h('section', { class: 'legend-hero' },
+      h('div', { class: 'legend-copy' },
+        h('div', { class: 'eyebrow' }, 'GURMAD 24  /  THE LEGEND'),
+        h('h1', t('One network. Every emergency.')),
+        h('p', t('A connected response system for people, location and essential services.')),
+        h('div', { class: 'actions' },
+          h('a', { class: 'btn', href: '#/map' }, icon('pin'), t('Open live map')),
+          h('a', { class: 'btn ghost', href: '#/emergency' }, icon('alert'), t('Emergency centre'))
+        ),
+        h('div', { class: 'legend-proof' },
+          h('span', icon('shield', 16), t('People first')),
+          h('span', icon('activity', 16), t('One connected system')),
+          h('span', icon('globe', 16), t('Somali + English'))
+        )
+      ),
+      h('div', { class: 'legend-art-wrap' },
+        h('img', { class: 'legend-art', src: '/img/hero.svg', alt: t('GURMAD 24 system map: people, GPS location, ambulance, hospitals, police, fire and support connected in one response network.'), width: 900, height: 620 })
+      )
+    ),
     hot,
-    h('div', { class: 'panel sos' }, h('div', { style: 'display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap' }, icon('alert', 28), h('div', { style: 'flex:1;min-width:220px' }, h('h3', t('Emergency requests are a demo')),
-      h('p', { style: 'margin:6px 0 0;color:var(--muted)' }, t('Ambulance, police and fire requests are simulated while the service is being tested. In a real emergency go to the nearest hospital or call your local emergency services directly.'))), h('a', { class: 'btn', href: '#/emergency' }, icon('alert'), t('Try the emergency demo')))),
-    h('div', { class: 'panel' }, h('div', { style: 'display:flex;gap:14px;align-items:center;flex-wrap:wrap' }, icon('chat', 28), h('div', { style: 'flex:1;min-width:220px' }, h('h3', t('Questions or a complaint?')),
-      h('p', { style: 'margin:6px 0 0;color:var(--muted)' }, t('Send us a message about an order, a hospital or a provider. Our team replies inside the app.'), S.user ? null : ' ' + t('You will be asked to log in first.'))),
-      h('a', { class: 'btn', href: '#/me/support' }, icon('chat'), t('Send a complaint')))),
-    h('section', h('h2', { class: 'sec-title' }, t('How it works')), h('div', { class: 'grid g3' },
-      step('1', 'search', 'Find', 'Browse verified hospitals and compare their health cards side by side.'), step('2', 'bag', 'Order', 'Order a card in a minute. In this demo no real money is charged.'), step('3', 'receipt', 'Use', 'Keep your receipt and show it at the hospital. Terms are those the hospital approved.'))),
-    h('section', h('h2', { class: 'sec-title' }, t('Built for everyone in healthcare')), h('div', { class: 'grid g3' },
-      who('user', 'Patients and families', 'Compare cards, request appointments, get support in Somali or English.', 'Create account', '#/register'),
-      who('hospital', 'Hospitals', 'Publish your own health cards, set your prices, manage appointments and see your sales.', 'Register a hospital / provider', '#/register-org'),
-      who('ambulance', 'Ambulance and labs', 'List your services, manage availability and reach more patients.', 'Register a hospital / provider', '#/register-org'))),
-    spons.listings.length ? panel('Sponsored', h('div', { class: 'grid g3' }, spons.listings.map(s => h('div', { class: 'hc' }, h('span', { class: 'badge spons' }, t('SPONSORED')), h('h4', s.headline), h('div', { class: 'meta' }, s.text), h('small', { class: 'hint' }, s.org && s.org.name)))), h('small', { class: 'hint' }, t('Advertising. Paid placement never changes medical advice.'))) : null,
-    panel('Popular health cards', h('div', { class: 'grid g3' }, cards.cards.slice(0, 3).map(cardTile)), link('/cards', t('See all'))),
-    h('section', h('h2', { class: 'sec-title' }, t('Trust and safety')), h('div', { class: 'grid g2' },
-      trust('shield', 'Verified organisations', 'Every hospital and provider is reviewed by an administrator before it appears.'), trust('check', 'Hospitals approve their own terms', 'Prices, services and refund rules are written and approved by each hospital.'),
-      trust('eye', 'Your data stays yours', 'We never sell personal data. Download or delete your data any time.'), trust('alert', 'No medical advice', 'The platform never diagnoses and never decides treatment.'))),
-    notInsurance());
+    h('section', { class: 'legend-actions' },
+      h('a', { class: 'legend-action', href: '#/hospitals' }, icon('hospital', 22), h('b', t('Hospitals')), h('span', t('Find care'))),
+      h('a', { class: 'legend-action', href: '#/services' }, icon('ambulance', 22), h('b', t('Emergency services')), h('span', t('Ambulance and providers'))),
+      h('a', { class: 'legend-action', href: '#/cards' }, icon('card', 22), h('b', t('Health cards')), h('span', t('Explore healthcare'))),
+      h('a', { class: 'legend-action', href: '#/map' }, icon('pin', 22), h('b', t('Live map')), h('span', t('GPS and locations')))
+    ),
+    h('div', { class: 'legend-safety' },
+      icon('alert', 20),
+      h('span', t('Pilot demo only — emergency dispatch is simulated. For a real emergency, contact local emergency services directly.'))
+    )
+  );
 }
 
 // ---------- Marketplace
