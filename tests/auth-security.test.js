@@ -41,7 +41,7 @@ test('wrong password is rejected and account locks after 5 failures', async () =
 });
 
 test('unknown-account dummy credential is a valid salted scrypt hash', () => {
-  assert.match(S.DUMMY_PASSWORD_HASH, /^scrypt\\$[a-f0-9]{32}\\$[a-f0-9]{128}$/);
+  assert.match(S.DUMMY_PASSWORD_HASH, /^scrypt\$[a-f0-9]{32}\$[a-f0-9]{128}$/);
   assert.equal(S.verifyPassword('Whatever123', S.DUMMY_PASSWORD_HASH), false);
 });
 
