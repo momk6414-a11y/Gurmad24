@@ -33,6 +33,8 @@ const { chromium } = require('playwright');
   // Puntland map: list selection opens place details with a call link and directions.
   await guest.locator('.pm-row').first().click();
   await guest.waitForSelector('.pm-card a[href^="tel:"]', { timeout: 5000 }).catch(() => errors.push('map: place details did not open'));
+  const firstPhoneHref = await guest.locator('.pm-card a[href^="tel:"]').getAttribute('href').catch(() => '');
+  if (!/\\d/.test(firstPhoneHref)) errors.push('map: place phone link did not retain its digits');
   await guest.fill('.pm-tools input', 'zzzz-no-match');
   await guest.waitForFunction(() => document.querySelectorAll('.pm-row').length === 0, null, { timeout: 3000 }).catch(() => errors.push('map: search did not filter the list'));
   await guest.fill('.pm-tools input', '');
