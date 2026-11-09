@@ -8,7 +8,7 @@ test('serves browser .mjs modules with a JavaScript MIME type and revalidation',
   try {
     const response = await fetch(t.base + '/js/place-trust.mjs');
     assert.equal(response.status, 200);
-    assert.match(response.headers.get('content-type') || '', /^text\\/javascript(?:;|$)/);
+    assert.ok((response.headers.get('content-type') || '').startsWith('text/javascript'));
     assert.equal(response.headers.get('cache-control'), 'no-cache');
     assert.match(await response.text(), /export function placeTrust/);
   } finally {
