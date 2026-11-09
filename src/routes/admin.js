@@ -73,7 +73,7 @@ module.exports = function (app) {
   });
 
   // ---------- Organisations (verification workflow + contract overrides)
-  app.get('/api/admin/orgs', { auth: A, summary: 'All organisations (?status=pending)' }, req => ({ orgs: store.filter('orgs', o => !req.query.status || o.status === req.query.status).map(D.orgPrivate) }));
+  app.get('/api/admin/orgs', { auth: A, summary: 'All organisations (?status=pending& type=hospital|provider)' }, req => ({ orgs: store.filter('orgs', o => (!req.query.status || o.status === req.query.status) && (!req.query.type || (req.query.type === 'hospital' ? o.type === 'hospital' : req.query.type === 'provider' ? o.type !== 'hospital' : false)).map(D.orgPrivate) }));
   app.get('/api/admin/orgs/:id/activity', { auth: A, summary: 'Organisation activity and completed-patient counts by day, week or month' }, req => {
     const org = store.get('orgs', req.params.id);
     if (!org) throw new HttpError(404, 'not_found');
