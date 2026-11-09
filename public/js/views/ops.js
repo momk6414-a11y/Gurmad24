@@ -14,7 +14,7 @@ const respTag = r => h('span', { class: 'rtag u-' + r }, icon(r, 16), t(SERVICE_
 const badgeText = s => badge(s).textContent;
 
 export async function dashboard({ query }) {
-  const status = query.status || ''; const responder = query.responder || '';
+  const status = query.status || ''; const responder = query.responder || ''; const view = ['active', 'today'].includes(query.view) ? query.view : '';
   const cfg = await GET('/config');
   const qs = () => { const p = new URLSearchParams(); if (status) p.set('status', status); if (responder) p.set('responder', responder); const x = p.toString(); return x ? '?' + x : ''; };
   const add = () => { let m; m = modal(t('New simulated request'), form([
@@ -29,6 +29,12 @@ export async function dashboard({ query }) {
   const load = async () => {
     const [st, cs, all] = await Promise.all([GET('/ops/stats'), GET('/ops/cases' + qs()), responder || status ? GET('/ops/cases') : null]);
     const everything = (all || cs).cases;
+    const day = new Date().toISOString().slice(0, 10); // Match /ops/stats UTC day boundary.
+    const visibleCases = view === 'active'
+      ? cs.cases.filter(c => !['closed', 'cancelled', 'handed_over'].includes(c.status))
+      : view === 'today'
+        ? cs.cases.filter(c => c.createdAt && c.createdAt.slice(0, 10) === day)
+        : cs.cases;
     const active = everything.filter(c => !['closed', 'cancelled'].includes(c.status) && c.track && c.track.location);
     const entries = active.map(c => ({ type: c.responder, incident: c.track.location, unit: c.track.unit, station: c.track.station, done: c.status === 'handed_over' }));
     const by = r => everything.filter(c => c.responder === r && !['closed', 'cancelled', 'handed_over'].includes(c.status)).length;
@@ -41,11 +47,13 @@ export async function dashboard({ query }) {
       panel('Cases', h('div', h('div', { class: 'chips' }, [['', 'All'], ...RESP.map(r => [r, SERVICE_NAME[r]])].map(([v, l]) => h('button', { class: 'chip', 'aria-pressed': responder === v, onclick: () => go('/ops' + (v ? '?responder=' + v : '') + (status ? (v ? '&' : '?') + 'status=' + status : '')) }, t(l)))),
         h('div', { class: 'chips' }, [['', 'All'], ...STATUSES.map(s => [s, s])].map(([v, l]) => h('button', { class: 'chip', 'aria-pressed': status === v, onclick: () => go('/ops' + (v ? '?status=' + v : '') + (responder ? (v ? '&' : '?') + 'responder=' + responder : '')) }, v ? badgeText(v) : t(l)))),
         table([{ label: 'Code', render: c => link('/ops/case/' + c.id, c.code) }, { label: 'Service', render: c => respTag(c.responder) }, { label: 'Type', render: c => catName(c.category) }, { label: 'Area', render: c => c.area || '-' }, { label: 'Status', render: c => badge(c.status) },
-          { label: 'Provider', render: c => c.assignedOrgName || '-' }, { label: 'Created', render: c => fdt(c.createdAt) }], cs.cases, { empty: 'No cases.' }))));
+          { label: 'Provider', render: c => c.assignedOrgName || '-' }, { label: 'Created', render: c => fdt(c.createdAt) }], visibleCases, { empty: view === 'today' ? 'No requests recorded today.' : view === 'active' ? 'No active cases right now.' : 'No cases.' }))));
   };
   await load();
   S.poll = setInterval(() => load().catch(() => stopPoll()), 3000);
-  return h('div', head('Coordination dashboard', cfg.realMode ? 'Ambulance, police and fire requests (real mode is ON).' : 'Ambulance, police and fire requests in simulation mode.', h('button', { class: 'btn', onclick: add }, icon('plus'), t('New simulated request'))), cfg.realMode ? REALN() : SIM(), statsBox, mapPanel, casesBox);
+  const pageTitle = view === 'active' ? 'Active cases' : view === 'today' ? 'Today’s requests' : 'Coordination dashboard';
+  const pageSub = view === 'active' ? 'Requests that are not closed, cancelled or handed over.' : view === 'today' ? 'Requests created today (UTC day boundary, matching the dashboard count).' : cfg.realMode ? 'Ambulance, police and fire requests (real mode is ON).' : 'Ambulance, police and fire requests in simulation mode.';
+  return h('div', head(pageTitle, pageSub, h('button', { class: 'btn', onclick: add }, icon('plus'), t('New simulated request'))), cfg.realMode ? REALN() : SIM(), statsBox, mapPanel, casesBox);
 }
 
 function voicePlayer(id) {
@@ -100,7 +108,7 @@ export async function liveBoard() {
     const [st, cs] = await Promise.all([GET('/ops/stats'), GET('/ops/cases')]);
     const active = cs.cases.filter(c => !['closed', 'cancelled', 'handed_over'].includes(c.status));
     map.update(active.filter(c => c.track && c.track.location).map(c => ({ type: c.responder, incident: c.track.location, unit: c.track.unit, station: c.track.station, done: false })));
-    stats.replaceChildren(h('div', { class: 'grid g4 keep2' }, tile('Active cases', String(st.active), t('Open active requests'), () => go('/ops')), tile('Today', String(st.today), t('View today’s requests'), () => go('/ops')), tile('Responders available', `${st.providersAvailable}/${st.providersTotal}`, t('Open responder directory'), () => go('/ops/directory')), tile('Hospitals on map', String(markers.filter(m => m.kind === 'hospital').length), t('Open hospital directory'), () => go('/ops/directory'))));
+    stats.replaceChildren(h('div', { class: 'grid g4 keep2' }, tile('Active cases', String(st.active), t('Open active requests'), () => go('/ops?view=active')), tile('Today', String(st.today), t('View today’s requests'), () => go('/ops?view=today')), tile('Responders available', `${st.providersAvailable}/${st.providersTotal}`, t('Open responder directory'), () => go('/ops/directory')), tile('Hospitals on map', String(markers.filter(m => m.kind === 'hospital').length), t('Open hospital directory'), () => go('/ops/directory'))));
     list.replaceChildren(table([
       { label: 'Code', render: c => link('/ops/case/' + c.id, c.code) }, { label: 'Service', render: c => respTag(c.responder) },
       { label: 'Area', render: c => c.area || '-' }, { label: 'Status', render: c => badge(c.status) },
