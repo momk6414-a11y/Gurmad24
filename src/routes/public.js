@@ -11,7 +11,7 @@ module.exports = function (app) {
   const { store, config } = app.ctx;
 
   app.get('/api/health', { summary: 'Service health and safety mode' }, () => ({
-    ok: true, mode: 'PILOT', storage: config.persistentStorage ? 'persistent-json' : 'ephemeral-json', storagePersistent: config.persistentStorage, payments: 'sandbox-only', liveDispatch: false, gps: 'optional-demo-consent', schema: store.data.meta.version,
+    ok: true, mode: 'PILOT', storage: store.backend === 'supabase-postgres' ? 'supabase-postgres' : (config.persistentStorage ? 'persistent-json' : 'ephemeral-json'), storagePersistent: store.backend === 'supabase-postgres' || config.persistentStorage, payments: 'sandbox-only', liveDispatch: false, gps: 'optional-demo-consent', schema: store.data.meta.version,
   }));
 
   app.get('/api/config', { summary: 'Public client configuration and safety notices' }, () => ({
