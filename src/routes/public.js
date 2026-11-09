@@ -11,11 +11,11 @@ module.exports = function (app) {
   const { store, config } = app.ctx;
 
   app.get('/api/health', { summary: 'Service health and safety mode' }, () => ({
-    ok: true, mode: config.demoMode ? 'DEMO_SANDBOX' : 'PILOT', storage: config.persistentStorage ? 'persistent-json' : 'ephemeral-json', storagePersistent: config.persistentStorage, payments: 'sandbox-only', liveDispatch: false, gps: 'optional-demo-consent', schema: store.data.meta.version,
+    ok: true, mode: 'PILOT', storage: config.persistentStorage ? 'persistent-json' : 'ephemeral-json', storagePersistent: config.persistentStorage, payments: 'sandbox-only', liveDispatch: false, gps: 'optional-demo-consent', schema: store.data.meta.version,
   }));
 
   app.get('/api/config', { summary: 'Public client configuration and safety notices' }, () => ({
-    mode: config.demoMode ? 'DEMO_SANDBOX' : 'PILOT', currency: D.settings(store).currency, languages: ['so', 'en'],
+    mode: 'PILOT', currency: D.settings(store).currency, languages: ['so', 'en'],
     caseCategories: CASE_CATEGORIES, areas: R.AREAS, responderTypes: R.RESPONDER_TYPES, liveDispatch: !!D.settings(store).realMode, realMode: !!D.settings(store).realMode, payments: 'sandbox',
     notices: { dispatch: 'simulation_only', location: 'demo_map_only', cards: 'not_insurance', data: 'no_real_patient_data' },
   }));
@@ -29,7 +29,7 @@ module.exports = function (app) {
     const done = cases.filter(c => c.history.some(x => x.status === 'handed_over'));
     const mins = done.map(c => (new Date(c.history.find(x => x.status === 'handed_over').ts) - new Date(c.createdAt)) / 60000);
     return {
-      mode: config.demoMode ? 'DEMO_SANDBOX' : 'PILOT', time: new Date().toISOString(),
+      mode: 'PILOT', time: new Date().toISOString(),
       facilities: { hospital: n('hospital'), ambulance: n('ambulance'), police: n('police'), fire: n('fire'), lab: n('lab') },
       available: R.RESPONDER_TYPES.reduce((m, t) => { m[t] = orgs.filter(o => o.type === t && o.available).length; return m; }, {}),
       cases: { total: cases.length, today: cases.filter(c => c.createdAt.slice(0, 10) === today).length, active: cases.filter(c => !['closed', 'cancelled', 'handed_over'].includes(c.status)).length, activeByResponder: by(c => !['closed', 'cancelled', 'handed_over'].includes(c.status)), avgMinutesToHandover: mins.length ? Math.round(mins.reduce((a, b) => a + b, 0) / mins.length * 10) / 10 : null },
