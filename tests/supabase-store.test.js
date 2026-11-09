@@ -21,8 +21,9 @@ test('SupabaseStore loads all collections and commits a complete snapshot', asyn
   await store.flush();
   assert.equal(calls.length, 2);
   assert.equal(calls[1].name, 'gurmad24_store_replace');
-  assert.equal(calls[1].body.p_snapshot.collections.users.length, 2);
-  assert.deepEqual(calls[1].body.p_snapshot.collections.sessions, []);
+  assert.equal(calls[1].body.p_changes.collections.users.upsert.length, 1);
+  assert.equal(calls[1].body.p_changes.collections.users.upsert[0].id, 'u_2');
+  assert.equal(calls[1].body.p_changes.stateChanged, false);
   await store.close();
 });
 
