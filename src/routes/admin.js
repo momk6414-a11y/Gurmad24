@@ -240,6 +240,9 @@ module.exports = function (app) {
     const list = store.filter('audit', a => !act || a.action.startsWith(act)).slice(-lim).reverse().map(a => ({ ...a, actorName: a.actorId ? (store.get('users', a.actorId) || {}).name : null }));
     return { audit: list };
   });
-  app.get('/api/admin/backups', { auth: A, summary: 'List database backups' }, () => ({ backups: store.listBackups() }));
-  app.post('/api/admin/backups', { auth: A, summary: 'Create a database backup now' }, req => { const name = store.backup(); app.audit(req, 'backup.create', 'backup', name); return created({ backup: name }); });
+  app.get('/api/admin/backups', { auth: A, summary: 'List database backups' }, () => ({ backups: store.listBackups(), independentBackupConfigured: false, storage: store.backend || 'json' }));
+  app.post('/api/admin/backups', { auth: A, summary: 'Create a database backup now' }, req => {
+    if (store.backend === 'supabase-postgres') throw new HttpError(503, 'offsite_backup_not_configured');
+    const name = store.backup(); app.audit(req, 'backup.create', 'backup', name); return created({ backup: name });
+  });
 };
