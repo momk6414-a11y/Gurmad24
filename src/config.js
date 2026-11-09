@@ -36,8 +36,6 @@ function load(overrides = {}) {
     secret,
     adminEmail: (env.ADMIN_EMAIL || 'admin@example.com').toLowerCase(),
     adminPassword: env.ADMIN_PASSWORD || '',
-    // Keep the responder autopilot enabled for synthetic pilot/UAT cases only.
-    // Real dispatch remains separately gated by the explicit realMode setting.
     demoMode: bool(env.DEMO_MODE, true),
     seedDemoData: bool(env.SEED_DEMO_DATA, true),
     demoPassword: env.DEMO_PASSWORD || '',
@@ -45,8 +43,9 @@ function load(overrides = {}) {
     cookieSecure: bool(env.COOKIE_SECURE, false),
     trustProxy: bool(env.TRUST_PROXY, false),
     retentionDays: Number(env.RETENTION_DAYS || 365),
-    // Is DATA_DIR on storage that survives restarts/deploys? Render's free plan wipes it, so there it must be declared (PERSISTENT_STORAGE=true after attaching a disk).
     persistentStorage: bool(env.PERSISTENT_STORAGE, !env.RENDER),
+    supabaseUrl: String(env.SUPABASE_URL || '').replace(/\/$/, ''),
+    supabaseServiceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY || '',
     publicDir: path.join(__dirname, '..', 'public'),
     rateLimit: overrides.rateLimit || { authPerMin: 20, globalPerMin: 600 },
     autoBackup: overrides.autoBackup !== undefined ? overrides.autoBackup : true,
