@@ -43,6 +43,8 @@ function load(overrides = {}) {
     cookieSecure: bool(env.COOKIE_SECURE, false),
     trustProxy: bool(env.TRUST_PROXY, false),
     retentionDays: Number(env.RETENTION_DAYS || 365),
+    // Is DATA_DIR on storage that survives restarts/deploys? Render's free plan wipes it, so there it must be declared (PERSISTENT_STORAGE=true after attaching a disk).
+    persistentStorage: bool(env.PERSISTENT_STORAGE, !env.RENDER),
     publicDir: path.join(__dirname, '..', 'public'),
     rateLimit: overrides.rateLimit || { authPerMin: 20, globalPerMin: 600 },
     autoBackup: overrides.autoBackup !== undefined ? overrides.autoBackup : true,

@@ -39,7 +39,7 @@ module.exports = function (app) {
       providersVerified: store.filter('orgs', o => o.type !== 'hospital' && o.status === 'verified').length, orgsPending: store.filter('orgs', o => o.status === 'pending').length,
       cardsPublished: store.filter('cards', c => c.status === 'published').length, orders: store.col('orders').length, refundsPending: store.filter('orders', o => o.status === 'refund_requested').length,
       complaintsOpen: store.filter('complaints', c => ['open', 'in_review'].includes(c.status)).length, casesTotal: store.col('cases').length,
-      platformRevenueThisMonthCents: cur ? cur.totalPlatformCents : 0, platformRevenueTotalCents: rev.totals.totalPlatformCents || 0, currency: D.settings(store).currency, sandbox: true,
+      platformRevenueThisMonthCents: cur ? cur.totalPlatformCents : 0, platformRevenueTotalCents: rev.totals.totalPlatformCents || 0, currency: D.settings(store).currency, sandbox: true, storagePersistent: app.ctx.config.persistentStorage,
     };
   });
   app.get('/api/admin/reports/revenue', { auth: A, summary: 'Revenue report by month or year (?period=month|year&year=YYYY)' }, req => revenue(req.query.period === 'year' ? 'year' : 'month', req.query.year));

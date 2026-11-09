@@ -13,6 +13,7 @@ function build(overrides = {}) {
   const app = new App({ store, config });
   const log = overrides.quiet ? () => {} : console.log;
   for (const r of ['auth', 'public', 'patient', 'org', 'ops', 'admin']) require('./routes/' + r)(app);
+  if (!config.persistentStorage) log('WARNING: storage is NOT persistent - all data is lost on restart/deploy. Attach a disk and set DATA_DIR + PERSISTENT_STORAGE=true (see docs/DEPLOY_SOMALI.md).');
   seed.ensureAdmin(app, config, log);
   if (config.seedDemoData) seed.seedDemoData(app);
   seed.ensureResponderDemo(app);

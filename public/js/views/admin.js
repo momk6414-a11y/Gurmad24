@@ -15,6 +15,7 @@ export async function overview() {
     h('div', { class: 'grid g4 keep2' }, tile('Pending verifications', d.orgsPending, null, () => go('/admin/orgs?status=pending')), tile('Pending refunds', d.refundsPending, null, () => go('/admin/finance?tab=orders')), tile('Open complaints', d.complaintsOpen, null, () => go('/admin/complaints')), tile('Users', d.users, null, () => go('/admin/users'))),
     h('div', { class: 'grid g4 keep2' }, tile('Verified hospitals', d.hospitalsVerified), tile('Verified providers', d.providersVerified), tile('Published cards', d.cardsPublished, null, () => go('/admin/cards')), tile('Card orders', d.orders)),
     h('div', { class: 'grid g2' }, tile('Platform revenue this month', money(d.platformRevenueThisMonthCents)), tile('Platform revenue total', money(d.platformRevenueTotalCents), null, () => go('/admin/revenue'))),
+    d.storagePersistent === false ? demoNote('Storage is NOT persistent: all data (hospitals, cards, users) is lost on every restart or deploy. Attach a persistent disk.') : null,
     demoNote('All revenue figures come from sandbox transactions. No real money has moved.'));
 }
 

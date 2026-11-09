@@ -48,3 +48,14 @@ test('non-admin cannot run the catalogue', async () => {
   assert.equal((await (await H.demo(t, 'hospital')).post('/api/admin/catalog/apply', {})).status, 403);
   assert.equal((await t.client().post('/api/admin/catalog/apply', {})).status, 401);
 });
+
+test('health and admin dashboard report whether storage is persistent', async () => {
+  const h = (await t.client().get('/api/health')).data;
+  assert.equal(typeof h.storagePersistent, 'boolean');
+  assert.equal(h.storage, h.storagePersistent ? 'persistent-json' : 'ephemeral-json');
+  const d = (await (await H.admin(t)).get('/api/admin/dashboard')).data;
+  assert.equal(d.storagePersistent, h.storagePersistent);
+  const { load } = require('../src/config');
+  assert.equal(load({ DATA_DIR: require('os').tmpdir() + '/g24-cfg-a', RENDER: 'true' }).persistentStorage, false);
+  assert.equal(load({ DATA_DIR: require('os').tmpdir() + '/g24-cfg-b', RENDER: 'true', PERSISTENT_STORAGE: 'true' }).persistentStorage, true);
+});

@@ -17,6 +17,9 @@ services:
         value: "true"
       - key: COOKIE_SECURE
         value: "true"
+      # Free plan = NO persistent disk: data is wiped on every restart/deploy.
+      # To keep data: upgrade the plan, add a disk (e.g. 1GB at /var/data), then set
+      #   DATA_DIR=/var/data  and  PERSISTENT_STORAGE=true   (and remove the /tmp value above).
       - key: DEMO_MODE
         value: "true"
       - key: SEED_DEMO_DATA

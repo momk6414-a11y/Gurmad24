@@ -4,7 +4,7 @@ Ujeeddo: app-ku inuu helo **URL HTTPS ah** si Chrome Android uu ugu daro **Home 
 
 ## Waxa aad u baahan tahay
 - Akoon **GitHub** (bilaash) — koodhka ku rar.
-- Akoon host: **Render.com**, ama Railway / Fly.io / VPS. **Muhiim:** database-ku waa fayl (`data/db.json`), sidaas darteed host-ku waa inuu lahaado **disk joogto ah**. Haddii kale xogtu way baaba'aysaa marka server-ku dib u bilaabmo.
+- Akoon host: **Render.com**, ama Railway / Fly.io / VPS. **Muhiim:** database-ku waa fayl (`data/db.json`), sidaas darteed host-ku waa inuu lahaado **disk joogto ah**. Haddii kale xogtu way baaba'aysaa marka server-ku dib u bilaabmo. **Render Free** disk ma laha: xogta waxaa tirtira deji kasta iyo dib-u-bilaabid kasta. Marka disk lagu xiro, deji `DATA_DIR=/var/data` iyo `PERSISTENT_STORAGE=true`; ilaa markaas shaashadda maamulaha waxay muujisaa digniin cas.
 
 ## Render.com (soo jeedin)
 1. Ku rar galka mashruuca GitHub (repository cusub). **Ha rarin `.env` ama `data/`** (`.gitignore` ayaa ka ilaaliya).
