@@ -11,7 +11,7 @@ before(async () => {
     const client = t.client();
     const r = await client.post('/api/auth/register-org', {
       orgType, orgName: suffix + ' organisation', area: 'Bosaso',
-      name: suffix + ' Admin', email: suffix.toLowerCase() + '@admin-filter.test',
+      name: suffix + ' Admin', email: suffix.toLowerCase().replace(/[^a-z0-9]+/g, '') + '@admin-filter.test',
       password: 'EyePass12345', consent: true,
     });
     assert.equal(r.status, 201);
