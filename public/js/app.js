@@ -149,7 +149,7 @@ function chrome() {
   const banner = document.getElementById('demoBanner');
 
   if (banner) {
-    const demoMessage = t('SAFE TEST MODE: demo data, sandbox payments, no live dispatch. Not for real emergencies.');
+    const demoMessage = t('INSTITUTIONAL PILOT: digital service testing; emergency requests are simulated, payments are sandbox-only, and no live dispatch is available. Not for real emergencies.');
     const offlineMessage = 'OFFLINE: Internet connection is unavailable. Changes have not been sent.';
     const real = !!(S.config && S.config.realMode);
     banner.classList.toggle('real', real);
@@ -177,7 +177,7 @@ function chrome() {
   );
 
   document.getElementById('footer').replaceChildren(
-    h('div', t('GURMAD 24 - pilot: Gaalkacyo. Demo only: not insurance, not a medical service, not for live emergency use.')),
+    h('div', t('GURMAD 24 - Institutional Pilot: Gaalkacyo. Testing environment: not insurance, not a medical service, and not for live emergency use.')),
     h('a', { href: '#/privacy' }, t('Privacy notice'))
   );
 
