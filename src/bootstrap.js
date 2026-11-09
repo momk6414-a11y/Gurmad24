@@ -4,6 +4,7 @@ const { Store } = require('./store');
 const { App } = require('./app');
 const migrations = require('./migrations');
 const seed = require('./seed');
+const catalog = require('./catalog');
 
 function build(overrides = {}) {
   const config = config0.load(overrides);
@@ -15,6 +16,7 @@ function build(overrides = {}) {
   seed.ensureAdmin(app, config, log);
   if (config.seedDemoData) seed.seedDemoData(app);
   seed.ensureResponderDemo(app);
+  catalog.applyToAll(store); // starter services + cards for hospitals that have none (idempotent)
   seed.seedDemoUsers(app, config, log);
   seed.runRetention(store, config.retentionDays);
   const timers = [];

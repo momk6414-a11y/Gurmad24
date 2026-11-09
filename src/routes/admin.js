@@ -5,6 +5,7 @@ const S = require('../security');
 const { created, csv } = require('../app');
 const { getProvider, listProviders } = require('../payments');
 const { addMonths } = require('../money');
+const catalog = require('../catalog');
 
 const A = ['admin'];
 const ROLES = ['patient', 'hospital_admin', 'provider_admin', 'operator', 'admin'];
@@ -81,7 +82,12 @@ module.exports = function (app) {
     }, req.body, { partial: true });
     if (b.status) { o.status = b.status; o.statusNote = b.statusNote || ''; o.verifiedAt = b.status === 'verified' ? new Date().toISOString() : o.verifiedAt; }
     for (const k of ['cardCommissionBps', 'labCommissionBps', 'appointmentFeeCents']) if (req.body[k] !== undefined) o.contract[k] = req.body[k] === null || req.body[k] === '' ? null : b[k];
+    if (b.status === 'verified') catalog.applyToHospital(store, o); // newly verified hospital gets starter services/cards if it has none
     store.save(); app.audit(req, 'org.admin_update', 'org', o.id, { status: o.status, contract: o.contract }); return { org: D.orgPrivate(o) };
+  });
+  app.post('/api/admin/catalog/apply', { auth: A, summary: 'Add starter services and health cards to every hospital that has none (never overwrites)' }, req => {
+    const results = catalog.applyToAll(store); app.audit(req, 'catalog.apply', 'org', null, { hospitals: results.length });
+    return { results };
   });
 
   // ---------- Health cards moderation
