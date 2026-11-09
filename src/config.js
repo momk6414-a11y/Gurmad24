@@ -36,6 +36,8 @@ function load(overrides = {}) {
     secret,
     adminEmail: (env.ADMIN_EMAIL || 'admin@example.com').toLowerCase(),
     adminPassword: env.ADMIN_PASSWORD || '',
+    // Keep the responder autopilot enabled for synthetic pilot/UAT cases only.
+    // Real dispatch remains separately gated by the explicit realMode setting.
     demoMode: bool(env.DEMO_MODE, true),
     seedDemoData: bool(env.SEED_DEMO_DATA, true),
     demoPassword: env.DEMO_PASSWORD || '',

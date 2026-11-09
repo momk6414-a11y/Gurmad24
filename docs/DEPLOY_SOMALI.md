@@ -1,6 +1,6 @@
 # Sida loo geliyo internet-ka (laga bilaabo taleefan Android)
 
-Ujeeddo: app-ku inuu helo **URL HTTPS ah** si Chrome Android uu ugu daro **Home screen** (PWA).
+Ujeeddo: GURMAD 24 in loo diyaariyo **Institutional Pilot / UAT** oo lagu tijaabiyo adeegyada dijitaalka ah. Pilot-ku ma aha adeeg gurmad toos ah.
 
 ## Waxa aad u baahan tahay
 - Akoon **GitHub** (bilaash) — koodhka ku rar.
@@ -12,7 +12,7 @@ Ujeeddo: app-ku inuu helo **URL HTTPS ah** si Chrome Android uu ugu daro **Home 
 3. Geli `ADMIN_EMAIL` iyo `ADMIN_PASSWORD` (eray-sir adag; **ha la wadaagin**).
 4. Disk 1GB wuxuu ku xiran yahay `/var/data` (u baahan qorshe lacag ah — Render disk ma bilaash aha).
 5. Sug build-ka → fur URL-ka `https://magacaaga.onrender.com`.
-6. Hubi: `/api/health` wuxuu soo celinayaa `{"ok":true,"mode":"DEMO_SANDBOX",...}`.
+6. Hubi: `/api/health` wuxuu soo celinayaa `{"ok":true,"mode":"PILOT",...}`. Tani waxay ka dhigan tahay marxalad tijaabo hay'adeed; **ma aha** in ambalaas dhab ah la dirayo.
 7. Gal maamule ahaan → **Settings** → deji qiyamaadka.
 
 Haddii aad rabto Docker: `Dockerfile` ayaa diyaar ah (`docker build -t gurmad24 .` ; `docker run -p 8080:8080 -v g24data:/data -e ADMIN_PASSWORD=... gurmad24`).
