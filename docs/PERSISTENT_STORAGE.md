@@ -11,7 +11,7 @@ Until both Supabase variables are configured, Render Free continues to use `DATA
 - Existing synchronous application Store interface is retained for domain logic and local tests.
 - `src/supabase-store.js` loads the whitelisted collections and app metadata from the private `gurmad24` schema.
 - Each API request flushes pending writes before returning its response.
-- A single transaction replaces the snapshot through two restricted PostgREST RPC functions.
+- Changed rows are upserted and deleted in one transaction through restricted PostgREST RPC functions; the app does not rewrite every collection on each request.
 - The RPC functions are SECURITY INVOKER, fully qualify the private schema, and are executable only by `service_role`.
 - Public/anon/authenticated roles have no access to the private schema or RPC functions.
 - Health reports `supabase-postgres` only when that backend is actually active.
