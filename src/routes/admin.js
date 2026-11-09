@@ -74,6 +74,50 @@ module.exports = function (app) {
 
   // ---------- Organisations (verification workflow + contract overrides)
   app.get('/api/admin/orgs', { auth: A, summary: 'All organisations (?status=pending)' }, req => ({ orgs: store.filter('orgs', o => !req.query.status || o.status === req.query.status).map(D.orgPrivate) }));
+  app.get('/api/admin/orgs/:id/activity', { auth: A, summary: 'Organisation activity and completed-patient counts by day, week or month' }, req => {
+    const org = store.get('orgs', req.params.id);
+    if (!org) throw new HttpError(404, 'not_found');
+    const period = req.query.period || 'month';
+    if (!['day', 'week', 'month'].includes(period)) throw new HttpError(400, 'invalid_period');
+    const now = new Date();
+    const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    if (period === 'week') {
+      const daysSinceMonday = (start.getUTCDay() + 6) % 7;
+      start.setUTCDate(start.getUTCDate() - daysSinceMonday);
+    } else if (period === 'month') {
+      start.setUTCDate(1);
+    }
+    const since = start.getTime();
+    const inPeriod = (value) => value && Number.isFinite(Date.parse(value)) && Date.parse(value) >= since && Date.parse(value) <= now.getTime();
+    const appointments = store.filter('appointments', a => a.orgId === org.id);
+    const completedAppointments = appointments.filter(a => a.status === 'completed' && inPeriod(a.updatedAt || a.createdAt));
+    const newAppointments = appointments.filter(a => inPeriod(a.createdAt));
+    const patientsServed = new Set(completedAppointments.map(a => a.userId).filter(Boolean));
+    const orders = store.filter('orders', o => o.hospitalId === org.id && inPeriod(o.createdAt));
+    const cases = store.filter('cases', c => c.assignedOrgId === org.id || (c.history || []).some(h => h.by === 'provider:' + org.id));
+    const completedCases = cases.filter(c => ['handed_over', 'closed'].includes(c.status) && inPeriod(c.updatedAt));
+    const cards = store.filter('cards', c => c.hospitalId === org.id);
+    return {
+      organisation: { id: org.id, name: org.name, type: org.type, status: org.status, verifiedAt: org.verifiedAt || null, createdAt: org.createdAt || null },
+      period, from: start.toISOString(), to: now.toISOString(),
+      totals: {
+        appointmentsRequested: newAppointments.length,
+        appointmentsCompleted: completedAppointments.length,
+        uniquePatientsServed: patientsServed.size,
+        cardOrders: orders.length,
+        cardOrdersSandbox: orders.filter(o => o.paymentProvider === 'sandbox' || o.status === 'paid_sandbox').length,
+        emergencyCasesCompleted: completedCases.length,
+        publishedCards: cards.filter(c => c.status === 'published').length,
+        allCards: cards.length,
+      },
+      recentAppointments: appointments.filter(a => inPeriod(a.createdAt) || inPeriod(a.updatedAt)).sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt))).slice(0, 20).map(a => ({
+        id: a.id, status: a.status, category: a.category, preferredDate: a.preferredDate,
+        createdAt: a.createdAt, updatedAt: a.updatedAt, patientName: (store.get('users', a.userId) || {}).name || '—',
+      })),
+      dataNote: 'Counts use saved GURMAD 24 records. Sandbox card orders and simulated emergency cases are identified separately; no directory/demo record is counted as a completed hospital service.',
+    };
+  });
+
   app.patch('/api/admin/orgs/:id', { auth: A, summary: 'Verify / reject / suspend an organisation; set contract overrides' }, req => {
     const o = store.get('orgs', req.params.id); if (!o) throw new HttpError(404, 'not_found');
     const b = validate({
