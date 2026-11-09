@@ -2,7 +2,7 @@
 
 ## Current architecture
 
-The app preserves its existing synchronous in-memory Store interface for domain logic and local tests. In production, `src/supabase-store.js` loads the collections from the private `gurmad24` schema and commits each API request's changes through two restricted PostgREST RPC functions. The server key is used only in Node.js; it is never sent to browser code.
+The app preserves its existing synchronous in-memory Store interface for domain logic and local tests. In production, `src/supabase-store.js` loads the collections from the private `gurmad24` schema and commits only changed records from each API request through restricted PostgREST RPC functions. The server key is used only in Node.js; it is never sent to browser code.
 
 The RPC functions run as invoker (not SECURITY DEFINER), use fully qualified table names, and are executable only by `service_role`. The underlying tables have RLS enabled and no public table grants. The app writes all whitelisted collections and the metadata/settings row atomically in one database transaction.
 
