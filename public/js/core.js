@@ -34,7 +34,7 @@ const LS = {
 export const S = {
   user: null,
   org: null,
-  config: { currency: 'USD', mode: 'DEMO_SANDBOX' },
+  config: { currency: 'USD', mode: 'PILOT' },
   lang: LS.get('g24-lang') || 'so',
   cmp: [],
 };
