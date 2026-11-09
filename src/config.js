@@ -36,7 +36,7 @@ function load(overrides = {}) {
     secret,
     adminEmail: (env.ADMIN_EMAIL || 'admin@example.com').toLowerCase(),
     adminPassword: env.ADMIN_PASSWORD || '',
-    demoMode: bool(env.DEMO_MODE, true),
+    demoMode: bool(env.DEMO_MODE, false),
     seedDemoData: bool(env.SEED_DEMO_DATA, true),
     demoPassword: env.DEMO_PASSWORD || '',
     anthropicKey: env.ANTHROPIC_API_KEY || '', anthropicModel: env.ANTHROPIC_MODEL || '',
