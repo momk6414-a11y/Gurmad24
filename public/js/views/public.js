@@ -436,7 +436,7 @@ export async function puntlandMap() {
   function detail() {
     const x = selected;
     if (!x) { card.replaceChildren(h('p', { class: 'hint' }, t('Select a place on the map or in the list to see its details.'))); return; }
-    const tel = x.phone ? x.phone.replace(/[^+\\d]/g, '') : '';
+    const tel = x.phone ? x.phone.replace(/[^+\d]/g, '') : '';
     const trust = placeTrust(x);
     card.replaceChildren(h('div', { class: 'pm-card u-' + x.type },
       h('div', { class: 'pm-card-h' },
