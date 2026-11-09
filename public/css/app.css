@@ -419,3 +419,41 @@ form.row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}form.row input{flex:1
 @media(max-width:560px){.g24-home-hero{padding:16px;border-radius:20px}.g24-home-main h1{font-size:34px}.g24-home-main p{font-size:14px;margin-bottom:15px}.g24-home-cta{grid-template-columns:1fr}.g24-home-cta .btn{min-height:52px}.g24-home-visual{max-height:145px}.g24-home-visual img{max-height:130px}.g24-home-proof{gap:6px;margin-top:12px}.g24-home-proof span{font-size:10px;padding:6px 8px}.g24-home .hotlines .calls{grid-template-columns:repeat(2,minmax(0,1fr))}.g24-home .hotlines .call:last-child:nth-child(odd){grid-column:1/-1}.g24-home-link{min-height:82px;padding:11px;gap:9px}.g24-home-link-icon{width:35px;height:35px}.g24-home-link-copy b{font-size:12px}.g24-home-link-copy small{font-size:10.5px}}
 @media(max-width:360px){.g24-home-brand .eyebrow{font-size:9.5px;letter-spacing:1px}.g24-home-main h1{font-size:30px}.g24-home-link{align-items:flex-start;flex-direction:column;min-height:96px}}
 @media(prefers-reduced-motion:reduce){.g24-home-link{transition:none}}
+
+/* iPhone/iOS Safari compatibility: dynamic viewport, safe areas and touch controls. */
+html {
+  min-height: 100%;
+  min-height: 100svh;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  min-height: 100%;
+  min-height: 100svh;
+  padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+}
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+input, select, textarea {
+  font-size: 16px;
+}
+.tabs {
+  padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+}
+.modal {
+  max-height: 92vh;
+  max-height: 92svh;
+}
+@supports (min-height: 100dvh) {
+  html, body {
+    min-height: 100dvh;
+  }
+  .modal {
+    max-height: 92dvh;
+  }
+}
+@media (min-width: 860px) {
+  body {
+    padding-bottom: 0;
+  }
+}
