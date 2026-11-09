@@ -35,6 +35,12 @@ const { chromium } = require('playwright');
   await guest.waitForSelector('.pm-card a[href^="tel:"]', { timeout: 5000 }).catch(() => errors.push('map: place details did not open'));
   await guest.fill('.pm-tools input', 'zzzz-no-match');
   await guest.waitForFunction(() => document.querySelectorAll('.pm-row').length === 0, null, { timeout: 3000 }).catch(() => errors.push('map: search did not filter the list'));
+  await guest.fill('.pm-tools input', '');
+  await guest.locator('.chip').filter({ hasText: 'Tixraacyada directory-ga' }).click();
+  await guest.locator('.pm-row').filter({ hasText: 'University Teaching Hospital Galkayo' }).click();
+  const referenceDetails = await guest.locator('.pm-card').innerText();
+  if (!/lama xaqiijin/i.test(referenceDetails)) errors.push('map: directory POI was not clearly labelled unverified');
+  if (!referenceDetails.includes('Public place directory')) errors.push('map: directory POI source was not shown');
   // Marketplace cards expose a working details action.
   await guest.goto(t.base + '/#/cards'); await guest.reload();
   await guest.locator('#view .hc button.ghost').first().click();
