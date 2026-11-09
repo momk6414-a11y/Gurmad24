@@ -100,7 +100,7 @@ export async function liveBoard() {
     const [st, cs] = await Promise.all([GET('/ops/stats'), GET('/ops/cases')]);
     const active = cs.cases.filter(c => !['closed', 'cancelled', 'handed_over'].includes(c.status));
     map.update(active.filter(c => c.track && c.track.location).map(c => ({ type: c.responder, incident: c.track.location, unit: c.track.unit, station: c.track.station, done: false })));
-    stats.replaceChildren(h('div', { class: 'grid g4 keep2' }, tile('Active cases', String(st.active)), tile('Today', String(st.today)), tile('Responders available', `${st.providersAvailable}/${st.providersTotal}`), tile('Hospitals on map', String(markers.filter(m => m.kind === 'hospital').length))));
+    stats.replaceChildren(h('div', { class: 'grid g4 keep2' }, tile('Active cases', String(st.active), t('Open active requests'), () => go('/ops')), tile('Today', String(st.today), t('View today’s requests'), () => go('/ops')), tile('Responders available', `${st.providersAvailable}/${st.providersTotal}`, t('Open responder directory'), () => go('/ops/directory')), tile('Hospitals on map', String(markers.filter(m => m.kind === 'hospital').length), t('Open hospital directory'), () => go('/ops/directory'))));
     list.replaceChildren(table([
       { label: 'Code', render: c => link('/ops/case/' + c.id, c.code) }, { label: 'Service', render: c => respTag(c.responder) },
       { label: 'Area', render: c => c.area || '-' }, { label: 'Status', render: c => badge(c.status) },

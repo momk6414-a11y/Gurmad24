@@ -16,7 +16,7 @@ export async function dashboard() {
   if (org.type === 'hospital') {
     const [sales, cards, ap, cm] = await Promise.all([GET('/org/reports/sales'), GET('/org/cards'), GET('/org/appointments'), GET('/org/complaints')]);
     wrap.append(h('div', { class: 'grid g4 keep2' }, tile('Published cards', cards.cards.filter(c => c.status === 'published').length, null, () => go('/org/cards')), tile('Orders', sales.report.orders, null, () => go('/org/sales')),
-      tile('Gross sales (demo)', money(sales.report.grossCents)), tile('Net to hospital (demo)', money(sales.report.netCents)),
+      tile('Gross sales (demo)', money(sales.report.grossCents), t('Open sales report'), () => go('/org/sales')), tile('Net to hospital (demo)', money(sales.report.netCents), t('Open sales report'), () => go('/org/sales')),
       tile('Appointment requests', ap.appointments.filter(a => a.status === 'requested').length, null, () => go('/org/appointments')), tile('Open complaints', cm.complaints.filter(c => c.status !== 'resolved').length, null, () => go('/org/complaints'))));
   } else {
     const resp = ['ambulance', 'police', 'fire'].includes(org.type);
