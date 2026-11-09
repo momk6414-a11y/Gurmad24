@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { SupabaseStore } = require('../src/supabase-store');
 
-test('SupabaseStore loads all collections and commits a complete snapshot', async () => {
+test('SupabaseStore loads collections and commits only changed rows', async () => {
   const store = new SupabaseStore('/tmp/gurmad24-test-data', { url: 'https://example.supabase.co', serviceRoleKey: 'test-only' });
   const calls = [];
   store._rpc = async (name, body) => {
@@ -30,4 +30,22 @@ test('SupabaseStore loads all collections and commits a complete snapshot', asyn
 test('SupabaseStore refuses to connect without server-side credentials', async () => {
   const store = new SupabaseStore('/tmp/gurmad24-test-data');
   await assert.rejects(store.connect(), /SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+test('SupabaseStore persists deletions and retries a failed commit', async () => {
+  const store = new SupabaseStore('/tmp/gurmad24-test-data', { url: 'https://example.supabase.co', serviceRoleKey: 'test-only' });
+  let writes = 0;
+  store._rpc = async name => {
+    if (name === 'gurmad24_store_load') return { meta: { version: 3 }, settings: {}, collections: { users: [{ id: 'u_old' }] } };
+    writes++;
+    if (writes === 1) throw new Error('temporary network failure');
+    return { ok: true };
+  };
+  await store.connect();
+  store.remove('users', 'u_old');
+  await assert.rejects(store.flush(), /temporary network failure/);
+  assert.equal(store.dirty, true);
+  await store.flush();
+  assert.equal(store.dirty, false);
+  assert.equal(writes, 2);
 });
