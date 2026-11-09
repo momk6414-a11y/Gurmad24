@@ -39,7 +39,7 @@ export async function dashboard({ query }) {
     const entries = active.map(c => ({ type: c.responder, incident: c.track.location, unit: c.track.unit, station: c.track.station, done: c.status === 'handed_over' }));
     const by = r => everything.filter(c => c.responder === r && !['closed', 'cancelled', 'handed_over'].includes(c.status)).length;
     statsBox.replaceChildren(
-      h('div', { class: 'grid g4 keep2' }, tile('Active cases', st.active), tile('Today', st.today), tile('Responders available', `${st.providersAvailable}/${st.providersTotal}`), tile('Avg. minutes to handover', st.avgMinutesToHandover === null ? '-' : st.avgMinutesToHandover)),
+      h('div', { class: 'grid g4 keep2' }, tile('Active cases', st.active, t('View active cases'), () => go('/ops?view=active')), tile('Today', st.today, t('View today’s requests'), () => go('/ops?view=today')), tile('Responders available', `${st.providersAvailable}/${st.providersTotal}`, t('Open responder directory'), () => go('/ops/directory')), tile('Avg. minutes to handover', st.avgMinutesToHandover === null ? '-' : st.avgMinutesToHandover, t('View active cases'), () => go('/ops?view=active'))),
       h('div', { class: 'grid g3 keep2' }, RESP.map(r => h('div', { class: 'rcount u-' + r }, icon(r, 26), h('div', h('b', by(r)), h('small', t(SERVICE_NAME[r])))))),
     );
     map.update(entries);
