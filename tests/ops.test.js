@@ -15,6 +15,51 @@ test('public simulated request: clearly SIMULATION, validated, rate limited', as
   assert.equal((await c.get('/api/health')).data.liveDispatch, false);
 });
 
+test('Active cases and Today use separate server filters and Somalia local dates', async () => {
+  const localDate = value => {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Mogadishu', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date(value));
+    const part = type => parts.find(x => x.type === type).value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
+  };
+  const today = localDate(new Date());
+  const yesterday = localDate(Date.now() - 86400000);
+  const timestamp = day => new Date(`${day}T00:30:00+03:00`).toISOString();
+
+  const openToday = (await op.post('/api/ops/cases', { category: 'general', area: 'Today active' })).data.case;
+  const closedToday = (await op.post('/api/ops/cases', { category: 'general', area: 'Today handed over' })).data.case;
+  const openYesterday = (await op.post('/api/ops/cases', { category: 'general', area: 'Yesterday active' })).data.case;
+  for (const [id, status, createdAt] of [
+    [openToday.id, 'received', timestamp(today)],
+    [closedToday.id, 'handed_over', timestamp(today)],
+    [openYesterday.id, 'received', timestamp(yesterday)],
+  ]) {
+    const c = t.store.get('cases', id);
+    c.status = status;
+    c.autopilot = false;
+    c.createdAt = createdAt;
+  }
+  t.store.save();
+
+  const [stats, todayView, activeView] = await Promise.all([
+    op.get('/api/ops/stats'),
+    op.get('/api/ops/cases?today=1'),
+    op.get('/api/ops/cases?active=1'),
+  ]);
+  const ids = rows => new Set(rows.map(c => c.id));
+
+  assert.equal(stats.data.todayDate, today);
+  assert.equal(stats.data.today, todayView.data.cases.length);
+  assert.equal(stats.data.active, activeView.data.cases.length);
+  assert.ok(ids(todayView.data.cases).has(openToday.id));
+  assert.ok(ids(todayView.data.cases).has(closedToday.id));
+  assert.ok(!ids(todayView.data.cases).has(openYesterday.id));
+  assert.ok(ids(activeView.data.cases).has(openToday.id));
+  assert.ok(ids(activeView.data.cases).has(openYesterday.id));
+  assert.ok(!ids(activeView.data.cases).has(closedToday.id));
+});
+
 test('operator workflow: assign provider, state machine, history', async () => {
   const cases = (await op.get('/api/ops/cases')).data.cases; const rec = cases.find(c => c.status === 'received');
   const provs = (await op.get('/api/ops/providers')).data.providers; assert.ok(provs.length >= 1);
