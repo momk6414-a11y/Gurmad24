@@ -19,6 +19,37 @@ export async function overview() {
     demoNote('All revenue figures come from sandbox transactions. No real money has moved.'));
 }
 
+async function hospitalActivity(org) {
+  const body = h('div', { class: 'activity-detail' }, h('p', { class: 'muted' }, t('Loading saved activity…')));
+  const m = modal(t('Hospital activity') + ' - ' + org.name, body, { wide: true });
+  let selected = 'month';
+  const draw = async () => {
+    body.replaceChildren(h('p', { class: 'muted' }, t('Loading saved activity…')));
+    try {
+      const d = await GET('/admin/orgs/' + encodeURIComponent(org.id) + '/activity?period=' + selected);
+      const x = d.totals;
+      body.replaceChildren(
+        h('div', { class: 'chips' }, [['day', 'Daily'], ['week', 'Weekly'], ['month', 'Monthly']].map(([p, label]) =>
+          h('button', { class: 'chip', 'aria-pressed': selected === p, onclick: () => { selected = p; draw(); } }, t(label)))),
+        h('p', { class: 'hint' }, t('Period starts {from}', { from: fdt(d.from) }) + ' · ' + t('Status') + ': ' + t(d.organisation.status)),
+        h('div', { class: 'grid g3 keep2' },
+          tile('Patients served', String(x.uniquePatientsServed)),
+          tile('Completed appointments', String(x.appointmentsCompleted)),
+          tile('New appointment requests', String(x.appointmentsRequested)),
+          tile('Card orders (sandbox)', String(x.cardOrdersSandbox)),
+          tile('Completed emergency cases (simulation)', String(x.emergencyCasesCompleted)),
+          tile('Published health cards', String(x.publishedCards))),
+        panel('Recent appointment activity', x.appointmentsCompleted || x.appointmentsRequested
+          ? table([{ label: 'Patient', key: 'patientName' }, { label: 'Type', key: 'category' }, { label: 'Preferred date', render: a => fdate(a.preferredDate) }, { label: 'Status', render: a => badge(a.status) }, { label: 'Updated', render: a => fdt(a.updatedAt || a.createdAt) }], d.recentAppointments)
+          : emptyState('No saved appointment activity in this period.')),
+        demoNote(d.dataNote));
+    } catch (e) {
+      body.replaceChildren(h('p', { class: 'note warn' }, errText(e)));
+    }
+  };
+  draw();
+}
+
 export async function orgs({ query }) {
   const st = query.status || '';
   const { orgs: os } = await GET('/admin/orgs' + (st ? '?status=' + st : ''));
@@ -30,7 +61,7 @@ export async function orgs({ query }) {
     h('div', { class: 'chips' }, [['', 'All'], ['pending', 'Pending'], ['verified', 'Verified'], ['rejected', 'Rejected'], ['suspended', 'Suspended']].map(([v, l]) => h('button', { class: 'chip', 'aria-pressed': st === v, onclick: () => go('/admin/orgs' + (v ? '?status=' + v : '')) }, t(l)))),
     panel(null, table([{ label: 'Name', key: 'name' }, { label: 'Type', render: o => typeName(o.type) }, { label: 'Area', key: 'area' }, { label: 'Status', render: o => badge(o.status) }, { label: 'Contract', render: o => ['cardCommissionBps', 'labCommissionBps'].map(k => o.contract[k] === null ? null : pct(o.contract[k])).filter(Boolean).join(' / ') || t('default') },
       { label: '', render: o => h('div', { class: 'actions' }, o.status !== 'verified' ? h('button', { class: 'btn sm', onclick: () => decide(o, 'verified') }, t('Verify')) : null, o.status === 'pending' ? h('button', { class: 'btn sm ghost', onclick: () => decide(o, 'rejected') }, t('Reject')) : null,
-        o.status === 'verified' ? h('button', { class: 'btn sm ghost', onclick: () => decide(o, 'suspended') }, t('Suspend')) : null, h('button', { class: 'btn sm ghost', onclick: () => contract(o) }, t('Contract'))) }], os, { empty: 'No organisations.' })));
+        o.status === 'verified' ? h('button', { class: 'btn sm ghost', onclick: () => decide(o, 'suspended') }, t('Suspend')) : null, h('button', { class: 'btn sm ghost', onclick: () => hospitalActivity(o) }, t('Activity')), h('button', { class: 'btn sm ghost', onclick: () => contract(o) }, t('Contract'))) }], os, { empty: 'No organisations.' })));
 }
 
 export async function users() {
