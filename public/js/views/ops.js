@@ -16,7 +16,14 @@ const badgeText = s => badge(s).textContent;
 export async function dashboard({ query }) {
   const status = query.status || ''; const responder = query.responder || ''; const view = ['active', 'today'].includes(query.view) ? query.view : '';
   const cfg = await GET('/config');
-  const qs = () => { const p = new URLSearchParams(); if (status) p.set('status', status); if (responder) p.set('responder', responder); const x = p.toString(); return x ? '?' + x : ''; };
+  const qs = () => {
+    const p = new URLSearchParams();
+    if (view === 'active') p.set('active', '1');
+    if (view === 'today') p.set('today', '1');
+    if (status) p.set('status', status);
+    if (responder) p.set('responder', responder);
+    const x = p.toString(); return x ? '?' + x : '';
+  };
   const add = () => { let m; m = modal(t('New simulated request'), form([
     { name: 'category', label: 'Request type', type: 'select', options: CASE_CATS, required: true },
     { name: 'areaId', label: 'Location (demo area)', type: 'select', options: [['', '-'], ...cfg.areas.map(a => [a.id, a.name])] },
@@ -27,14 +34,13 @@ export async function dashboard({ query }) {
   const map = liveMap([], { places: true });
   const mapPanel = panel('Live map (demo)', h('div', map, h('div', { class: 'legend' }, RESP.map(r => respTag(r)))));
   const load = async () => {
-    const [st, cs, all] = await Promise.all([GET('/ops/stats'), GET('/ops/cases' + qs()), responder || status ? GET('/ops/cases') : null]);
+    const [st, cs, all] = await Promise.all([
+      GET('/ops/stats'),
+      GET('/ops/cases' + qs()),
+      view || responder || status ? GET('/ops/cases') : null,
+    ]);
     const everything = (all || cs).cases;
-    const day = new Date().toISOString().slice(0, 10); // Match /ops/stats UTC day boundary.
-    const visibleCases = view === 'active'
-      ? cs.cases.filter(c => !['closed', 'cancelled', 'handed_over'].includes(c.status))
-      : view === 'today'
-        ? cs.cases.filter(c => c.createdAt && c.createdAt.slice(0, 10) === day)
-        : cs.cases;
+    const visibleCases = cs.cases;
     const active = everything.filter(c => !['closed', 'cancelled'].includes(c.status) && c.track && c.track.location);
     const entries = active.map(c => ({ type: c.responder, incident: c.track.location, unit: c.track.unit, station: c.track.station, done: c.status === 'handed_over' }));
     const by = r => everything.filter(c => c.responder === r && !['closed', 'cancelled', 'handed_over'].includes(c.status)).length;
@@ -52,7 +58,7 @@ export async function dashboard({ query }) {
   await load();
   S.poll = setInterval(() => load().catch(() => stopPoll()), 3000);
   const pageTitle = view === 'active' ? 'Active cases' : view === 'today' ? 'Today’s requests' : 'Coordination dashboard';
-  const pageSub = view === 'active' ? 'Requests that are not closed, cancelled or handed over.' : view === 'today' ? 'Requests created today (UTC day boundary, matching the dashboard count).' : cfg.realMode ? 'Ambulance, police and fire requests (real mode is ON).' : 'Ambulance, police and fire requests in simulation mode.';
+  const pageSub = view === 'active' ? 'Requests that are not closed, cancelled or handed over.' : view === 'today' ? 'Requests created today in Somalia local time (Africa/Mogadishu).' : cfg.realMode ? 'Ambulance, police and fire requests (real mode is ON).' : 'Ambulance, police and fire requests in simulation mode.';
   return h('div', head(pageTitle, pageSub, h('button', { class: 'btn', onclick: add }, icon('plus'), t('New simulated request'))), cfg.realMode ? REALN() : SIM(), statsBox, mapPanel, casesBox);
 }
 
