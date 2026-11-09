@@ -91,13 +91,14 @@ class SupabaseStore extends Store {
     this.dirty = false;
     if (!Object.keys(changes.collections).length && !changes.stateChanged) return this._writeChain;
 
-    const task = this._writeChain.then(() => this._rpc('gurmad24_store_replace', { p_changes: changes }))
+    const task = this._writeChain.catch(() => {}).then(() => this._rpc('gurmad24_store_replace', { p_changes: changes }))
       .then(result => {
         this._persisted = nextPersisted;
         if (changes.stateChanged) this._statePersisted = JSON.stringify(state);
         return result;
       });
-    this._writeChain = task.catch(error => {
+    this._writeChain = task;
+    task.catch(error => {
       this.dirty = true;
       console.error('[supabase-store] commit failed:', error.message);
     });
