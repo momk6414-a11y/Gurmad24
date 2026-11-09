@@ -6,6 +6,10 @@ The app preserves its existing synchronous in-memory Store interface for domain 
 
 The RPC functions run as invoker (not SECURITY DEFINER), use fully qualified table names, and are executable only by `service_role`. The underlying tables have RLS enabled and no public table grants. The app writes all whitelisted collections and the metadata/settings row atomically in one database transaction.
 
+## Database schema
+
+`supabase/migrations/` must be applied in filename order: `..._base_schema.sql` (private `gurmad24` schema, tables, RLS, grants), then the two RPC migrations. Verified on a clean PostgreSQL 16: all three apply in order, the base file is re-runnable, `service_role` can load/upsert/delete, and `anon`/`authenticated` are denied both RPCs and the tables.
+
 ## Required Render environment variables
 
 Set these on the existing `gurmad24` Render web service. Do not paste the secret into GitHub, source code, a public issue, or this chat.
