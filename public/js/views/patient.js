@@ -74,7 +74,7 @@ function securityPanels() {
         h('div', { class: 'actions tight' }, copy, h('a', { class: 'btn sm', href: r.uri }, t('Open in authenticator app'))),
         h('p', { class: 'hint' }, t('In the app choose "Enter a setup key", account "GURMAD 24", type "Time based". Phone time must be automatic. Server time (UTC): {t}', { t: r.serverTime.slice(11, 19) })),
         h('p', h('b', t('Step 2.')), ' ', t('Enter the 6-digit code it shows:')),
-        form([{ name: 'code', label: 'Authenticator code', required: true, max: 12, inputmode: 'numeric', autocomplete: 'one-time-code' }], { submit: 'Confirm', onSubmit: async v => { await POST('/auth/2fa/enable', v); u.twoFactor = true; toast(t('Two-step login is ON.')); show2fa(); } }),
+        form([{ name: 'code', label: 'Authenticator code', required: true, max: 12, inputmode: 'numeric', autocomplete: 'one-time-code' }], { submit: 'Confirm', onSubmit: async v => { await POST('/auth/2fa/enable', v); u.twoFactor = true; toast(t('Two-step login is ON. Use the next new code for your next login; the setup code has been used.')); show2fa(); } }),
         h('button', { class: 'btn sm ghost', type: 'button', onclick: () => startSetup(true) }, t('Start again with a new key'))));
     }
     show2fa();

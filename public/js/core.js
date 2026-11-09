@@ -275,7 +275,7 @@ const ERR = {
   not_found: 'Not found.',
   invalid_credentials: 'Wrong email or password.',
   two_factor_required: 'Enter the 6-digit code from your authenticator app.',
-  invalid_code: 'That code is not correct or was already used.',
+  invalid_code: 'Code expired, was already used, or belongs to an older setup key. Wait for a fresh code and check that your phone time is automatic.',
   password_common: 'That password is too common. Choose another.',
   password_contains_email: 'Do not use your email name inside the password.',
   too_many_attempts: 'Too many failed attempts. Try again in 15 minutes.',
