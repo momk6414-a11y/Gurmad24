@@ -193,7 +193,7 @@ export function liveMap(entries, opts = {}) {
     if (opts.places) PLACES.forEach(p => add(p, mk('mk-city', h('span', { class: 'cdot' }), h('span', { class: 'clbl' }, p.name))));
     (opts.markers || []).forEach(m => {
       const el = mk('mk-fac u-' + (m.type || 'hospital'), icon(m.kind === 'hospital' ? 'hospital' : m.kind === 'government' ? 'shield' : m.kind === 'landmark' ? 'pin' : (m.type || 'pin'), 14), m.label ? h('span', { class: 'clbl' }, m.label) : null);
-      el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0'); el.setAttribute('aria-label', t('Show details: {name}', { name: m.label || t('Map location') }));
+      el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0'); el.setAttribute('aria-label', m.ariaLabel || t('Show details: {name}', { name: m.label || t('Map location') }));
       el.addEventListener('click', () => opts.onMarkerClick?.(m));
       el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); opts.onMarkerClick?.(m); } });
       el.__m = m; add(m, el); items[items.length - 1].fac = true; items[items.length - 1].m = m;
