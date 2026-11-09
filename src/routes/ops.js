@@ -8,6 +8,15 @@ const R = require('../responders');
 const { createCase, CASE_CATEGORIES } = require('./public');
 
 const OPS = ['operator', 'admin'];
+const SOMALIA_TIME_ZONE = 'Africa/Mogadishu';
+const dateKey = value => {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: SOMALIA_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date(value));
+  const part = type => parts.find(x => x.type === type).value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+};
+const isActiveCase = c => !['closed', 'cancelled', 'handed_over'].includes(c.status);
 
 module.exports = function (app) {
   const { store } = app.ctx;
@@ -17,9 +26,18 @@ module.exports = function (app) {
     return { ...rest, hasVoice: !!voice, responder: c.responder || R.responderFor(c.category), assignedOrgName: org ? org.name : null, assignedOrgType: org ? org.type : null, next: D.CASE_FLOW[c.status], track: R.trackView(store, c) };
   };
 
-  app.get('/api/ops/cases', { auth: OPS, summary: 'Case list (?status=&responder=)' }, req => (R.advanceAll(store), {
-    cases: store.filter('cases', c => (!req.query.status || c.status === req.query.status) && (!req.query.responder || (c.responder || R.responderFor(c.category)) === req.query.responder)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 500).map(view),
-  }));
+  app.get('/api/ops/cases', { auth: OPS, summary: 'Case list (?status=&responder=&active=1&today=1)' }, req => {
+    R.advanceAll(store);
+    const today = dateKey(new Date());
+    return {
+      cases: store.filter('cases', c =>
+        (!req.query.status || c.status === req.query.status) &&
+        (!req.query.responder || (c.responder || R.responderFor(c.category)) === req.query.responder) &&
+        (req.query.active !== '1' || isActiveCase(c)) &&
+        (req.query.today !== '1' || dateKey(c.createdAt) === today)
+      ).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 500).map(view),
+    };
+  });
   app.post('/api/ops/cases', { auth: OPS, summary: 'Record a simulated emergency request' }, req => {
     const b = validate({ category: v.enum(CASE_CATEGORIES, { required: true }), area: v.str({ max: 60, default: '' }), note: v.str({ max: 200, default: '' }), areaId: v.str({ max: 20 }) }, req.body);
     const a = b.areaId ? R.AREAS.find(x => x.id === b.areaId) : null;
@@ -62,11 +80,11 @@ module.exports = function (app) {
     const cases = store.col('cases'); const by = (key) => cases.reduce((m, c) => { m[c[key]] = (m[c[key]] || 0) + 1; return m; }, {});
     const done = cases.filter(c => c.history.some(h => h.status === 'handed_over'));
     const mins = done.map(c => (new Date(c.history.find(h => h.status === 'handed_over').ts) - new Date(c.createdAt)) / 60000);
-    const today = new Date().toISOString().slice(0, 10);
+    const todayDate = dateKey(new Date());
     return {
-      mode: 'SIMULATION', total: cases.length, today: cases.filter(c => c.createdAt.slice(0, 10) === today).length, byStatus: by('status'), byCategory: by('category'),
+      mode: 'SIMULATION', total: cases.length, todayDate, today: cases.filter(c => dateKey(c.createdAt) === todayDate).length, byStatus: by('status'), byCategory: by('category'),
       byResponder: cases.reduce((m, c) => { const k = c.responder || R.responderFor(c.category); m[k] = (m[k] || 0) + 1; return m; }, {}),
-      active: cases.filter(c => !['closed', 'cancelled', 'handed_over'].includes(c.status)).length,
+      active: cases.filter(isActiveCase).length,
       avgMinutesToHandover: mins.length ? Math.round(mins.reduce((a, b) => a + b, 0) / mins.length * 10) / 10 : null,
       providersAvailable: store.filter('orgs', o => R.RESPONDER_TYPES.includes(o.type) && o.status === 'verified' && o.available).length,
       providersTotal: store.filter('orgs', o => R.RESPONDER_TYPES.includes(o.type) && o.status === 'verified').length,
