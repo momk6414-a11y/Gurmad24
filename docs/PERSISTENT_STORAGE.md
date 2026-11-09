@@ -1,44 +1,28 @@
-# Persistent data storage plan (zero-cost pilot)
+# Persistent data storage — current status
 
-## Current limitation
+GURMAD 24 now includes a server-side Supabase PostgreSQL adapter on branch `feature/supabase-persistent-store`. It is deliberately **not activated in production yet**: Render must receive the two secret environment variables described in [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) after the code is reviewed and merged.
 
-The current `src/store.js` writes the entire application database to `DATA_DIR/db.json`.
-Render Free web services have an ephemeral filesystem: local writes are lost on restart,
-redeploy, and spin-down. A persistent disk is not available on the Free web-service plan.
+## Current production limitation
 
-## Proposed zero-cost database
+Until both Supabase variables are configured, Render Free continues to use `DATA_DIR/db.json`. Render Free's local filesystem is ephemeral, so writes may be lost on restart, redeploy, or spin-down.
 
-Use a dedicated Supabase Free PostgreSQL project as the durable system of record.
+## Implemented integration
 
-- The Free plan currently includes 500 MB database storage per project.
-- Free projects may be paused after a period of low activity; a paused project retains its
-  data and can be restored. This is availability downtime, not a substitute for backups.
-- Keep all credentials server-side. Never put a service-role key in browser JavaScript,
-  GitHub, logs, or client-visible configuration.
-- Set connection secrets only in the Render service environment after the owner creates
-  and controls the Supabase project.
+- Existing synchronous application Store interface is retained for domain logic and local tests.
+- `src/supabase-store.js` loads the whitelisted collections and app metadata from the private `gurmad24` schema.
+- Each API request flushes pending writes before returning its response.
+- Changed rows are upserted and deleted in one transaction through restricted PostgREST RPC functions; the app does not rewrite every collection on each request.
+- The RPC functions are SECURITY INVOKER, fully qualify the private schema, and are executable only by `service_role`.
+- Public/anon/authenticated roles have no access to the private schema or RPC functions.
+- Health reports `supabase-postgres` only when that backend is actually active.
 
-## Required migration before connecting production
+## Rollout gates
 
-The existing Store interface is synchronous and used across route handlers, domain logic,
-seed routines, migrations, and tests. A PostgreSQL migration is therefore not a safe
-one-line environment-variable change. It requires a deliberate async repository refactor,
-SQL schema/migrations, transaction boundaries, uniqueness constraints, and test coverage.
+1. Review and merge the storage adapter PR.
+2. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Render's service environment. Never put the server key in browser code or GitHub.
+3. Verify `/api/health` reports `storage: supabase-postgres` and `storagePersistent: true`.
+4. Verify the admin login and synthetic pilot data, then create a test record, restart the service, and confirm the record remains.
+5. Complete a data export/import if any records from an earlier local JSON database must be retained.
+6. Configure encrypted off-site backups and test a restore before any real patient data is stored.
 
-Migration sequence:
-
-1. Build an asynchronous repository interface and retain the JSON adapter for local tests.
-2. Add a PostgreSQL adapter with parameterized SQL and explicit transactions.
-3. Import existing JSON data with counts/checksums and a rollback export.
-4. Verify users, organizations, appointments, orders, cases, audit history, settings, and
-   sessions before switching the production read/write path.
-5. Add scheduled encrypted exports/backups to a separate owner-controlled destination.
-6. Only then enable PostgreSQL in production using Render environment variables.
-
-## Safety gates
-
-- Do not create a temporary Render Free Postgres database as the permanent solution:
-  Render documents a 30-day expiry and no backups for Free Postgres.
-- Do not store patient information or authentication secrets in a public Git repository.
-- Do not enable a new database backend until migration and restore tests pass.
-- This document does not claim the production data has already been migrated.
+Supabase Free storage is persistent while the project remains active, but does not provide independent point-in-time backups. This integration does not enable live emergency dispatch or real payments; those remain OFF / sandbox-only.

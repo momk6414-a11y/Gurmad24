@@ -130,7 +130,9 @@ class App {
     req.params = {}; route.keys.forEach((k, i) => { req.params[k] = decodeURIComponent(m[i + 1]); });
     req.query = Object.fromEntries(url.searchParams);
     req.body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method) ? await this.readBody(req) : {};
-    const out = await route.handler(req, res, this);
+    let out;
+    try { out = await route.handler(req, res, this); }
+    finally { if (this.ctx.store && typeof this.ctx.store.flush === 'function') await this.ctx.store.flush(); }
     if (res.writableEnded) return;
     if (out && out.__raw) return this.text(res, out.status || 200, out.body, out.type, out.headers);
     if (out && out.__status) return this.json(res, out.__status, out.body);
