@@ -24,6 +24,42 @@ test('registration requires consent, strong password and unique email', async ()
   assert.equal((await t.client().post('/api/auth/register', { name: 'A B', email: 'A@X.test', password: 'Passw0rd12', consent: true })).status, 409);
 });
 
+test('organisation registration assigns usable roles to every supported organisation type', async () => {
+  for (const [orgType, expectedRole] of [
+    ['hospital', 'hospital_admin'],
+    ['ambulance', 'provider_admin'],
+    ['lab', 'provider_admin'],
+    ['police', 'provider_admin'],
+    ['fire', 'provider_admin'],
+  ]) {
+    const email = `${orgType}@org-test.local`;
+    const c = t.client();
+    const registered = await c.post('/api/auth/register-org', {
+      name: 'Portal Manager',
+      email,
+      password: 'StrongPass123',
+      consent: true,
+      orgType,
+      orgName: `${orgType} service`,
+    });
+    assert.equal(registered.status, 201, `${orgType} registration should succeed`);
+    assert.equal(registered.data.user.role, expectedRole);
+    assert.equal(registered.data.org.type, orgType);
+    assert.equal(registered.data.org.status, 'pending');
+    assert.equal((await c.get('/api/org')).status, 200);
+    if (expectedRole === 'provider_admin') {
+      assert.equal((await c.get('/api/org/requests')).status, 200);
+      assert.equal((await c.get('/api/org/cards')).status, 403);
+    } else {
+      assert.equal((await c.get('/api/org/cards')).status, 200);
+    }
+    await c.post('/api/auth/logout');
+    const login = await t.client().post('/api/auth/login', { email, password: 'StrongPass123' });
+    assert.equal(login.status, 200);
+    assert.equal(login.data.user.role, expectedRole);
+  }
+});
+
 test('login, session cookie flags, me and logout', async () => {
   const c = t.client();
   const r = await c.post('/api/auth/login', { email: 'a@x.test', password: 'Passw0rd12' });
