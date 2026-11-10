@@ -4,7 +4,7 @@ const S = require('../security');
 const D = require('../domain');
 const { created, SESSION_TTL_MS } = require('../app');
 
-const ORG_ROLE = { hospital: 'hospital_admin', ambulance: 'provider_admin', lab: 'provider_admin' };
+const ORG_ROLE = { hospital: 'hospital_admin', ambulance: 'provider_admin', lab: 'provider_admin', police: 'provider_admin', fire: 'provider_admin' };
 
 module.exports = function (app) {
   const { store } = app.ctx;
