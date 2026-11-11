@@ -900,7 +900,7 @@ export const tile = (label, value, sub, onclick) =>
       icon(tileIcon(label), 18),
       t(label)
     ),
-    h('b', value),
+    h('b', value == null ? '' : String(value)),
     sub ? h('small', sub) : null
   );
 
