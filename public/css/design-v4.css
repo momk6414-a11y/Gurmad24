@@ -123,3 +123,59 @@ input:focus,select:focus,textarea:focus{border-color:var(--mint);outline:none;bo
   .top-actions{gap:6px}
   .top-actions .btn.sm{padding:0 10px;font-size:13px;min-height:38px}
 }
+
+
+/* ---- PR #28: green live-state + restrained motion system ---- */
+/* A real/production status is healthy, not an error: reserve red for danger and SOS. */
+.demo-banner.real{
+  background:var(--ok-bg);
+  color:var(--ok-ink);
+  border:1px solid color-mix(in srgb,var(--ok-ink) 22%,transparent);
+}
+
+/* Consistent keyframes: quick entrance, gentle emphasis and accessible loading pulse. */
+@keyframes g24-enter{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes g24-soft-pulse{
+  0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--mint) 0%,transparent)}
+  50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--mint) 13%,transparent)}
+}
+@keyframes g24-sheen{
+  from{background-position:100% 0}
+  to{background-position:-100% 0}
+}
+
+/* Keep motion subtle and avoid shifting the layout. */
+.shell > .page-head,
+.shell > .hero2,
+.shell > .panel,
+.shell > .grid,
+.shell > .page-banner{
+  animation:g24-enter .32s ease-out both;
+}
+.tile.click{
+  transition:border-color .18s ease,background-color .18s ease,box-shadow .18s ease;
+}
+.btn:not(:disabled),.tabs a,.chip{
+  transition:background-color .18s ease,color .18s ease,border-color .18s ease,transform .18s ease;
+}
+.btn:not(:disabled):active{transform:translateY(1px) scale(.985)}
+.loading .skel{
+  background-image:linear-gradient(100deg,var(--panel) 25%,var(--panel2) 45%,var(--panel) 65%);
+  background-size:220% 100%;
+  animation:g24-sheen 1.35s ease-in-out infinite;
+}
+.badge.ok{border:1px solid color-mix(in srgb,var(--ok-ink) 18%,transparent)}
+
+/* Emergency/SOS stays red by design; only healthy/live states use green. */
+.sos,.sos-btn,.btn.danger,.badge.bad{animation:none}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
