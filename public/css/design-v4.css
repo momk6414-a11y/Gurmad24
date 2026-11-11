@@ -4,9 +4,9 @@
 /* ---- tokens: dark default, light via system preference (same switch as app.css) ---- */
 :root{
   --bg:#0A1717;--bg2:#0E1F1F;--panel:#102626;--panel2:#142E2D;--line:#1F3B3A;--ink:#E5F2EF;--muted:#8FABA8;
-  --mint:#2BC9A0;--mint-ink:#06201B;--gold:#E9B454;--red:#FF7B70;--blue:#7DB4EA;
+  --mint:#2BC9A0;--mint-ink:#06201B;--gold:#2BC9A0;--red:#FF7B70;--blue:#7FE3C6;
   --brand-soft:#123A33;--brand-strong:#7FE3C6;
-  --ok-bg:#123A33;--ok-ink:#7FE3C6;--warn-bg:#372D14;--warn-ink:#E9B454;--bad-bg:#3B1D1B;--bad-ink:#FF9C93;--info-bg:#172B40;--info-ink:#8CBFEF;
+  --ok-bg:#123A33;--ok-ink:#7FE3C6;--warn-bg:#123A33;--warn-ink:#7FE3C6;--bad-bg:#3B1D1B;--bad-ink:#FF9C93;--info-bg:#123A33;--info-ink:#7FE3C6;
   --hero-a:#0B2E2D;--hero-b:#0E5A4D;--r:20px;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.28);
   --font-display:ui-rounded,"SF Pro Rounded","Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
@@ -14,9 +14,9 @@
 }
 @media (prefers-color-scheme:light){:root{
   --bg:#EEF6F4;--bg2:#E6F1EE;--panel:#FFFFFF;--panel2:#F5FAF8;--line:#D9E8E5;--ink:#0D2B2C;--muted:#5A7576;
-  --mint:#0B8F72;--mint-ink:#FFFFFF;--gold:#A8690B;--red:#C23A31;--blue:#235FA6;
+  --mint:#0B8F72;--mint-ink:#FFFFFF;--gold:#0B8F72;--red:#C23A31;--blue:#066A55;
   --brand-soft:#DAF2EA;--brand-strong:#066A55;
-  --ok-bg:#DAF2EA;--ok-ink:#066A55;--warn-bg:#FBEFD6;--warn-ink:#8A5608;--bad-bg:#FBE3E0;--bad-ink:#B3261E;--info-bg:#DFEBF8;--info-ink:#1D528F;
+  --ok-bg:#DAF2EA;--ok-ink:#066A55;--warn-bg:#DAF2EA;--warn-ink:#066A55;--bad-bg:#FBE3E0;--bad-ink:#B3261E;--info-bg:#DAF2EA;--info-ink:#066A55;
   --hero-a:#0A3B3A;--hero-b:#0B6B5B;
   --shadow:0 1px 2px rgba(10,50,48,.06),0 6px 18px rgba(10,50,48,.07);
 }}
