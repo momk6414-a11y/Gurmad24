@@ -1,0 +1,125 @@
+/* GURMAD 24 - design v4 (clean health look). Loaded after app.css: tokens + component restyle only,
+   no behaviour changes. System fonts only (CSP has no font host). Delete this file + its <link> to revert. */
+
+/* ---- tokens: dark default, light via system preference (same switch as app.css) ---- */
+:root{
+  --bg:#0A1717;--bg2:#0E1F1F;--panel:#102626;--panel2:#142E2D;--line:#1F3B3A;--ink:#E5F2EF;--muted:#8FABA8;
+  --mint:#2BC9A0;--mint-ink:#06201B;--gold:#E9B454;--red:#FF7B70;--blue:#7DB4EA;
+  --brand-soft:#123A33;--brand-strong:#7FE3C6;
+  --ok-bg:#123A33;--ok-ink:#7FE3C6;--warn-bg:#372D14;--warn-ink:#E9B454;--bad-bg:#3B1D1B;--bad-ink:#FF9C93;--info-bg:#172B40;--info-ink:#8CBFEF;
+  --hero-a:#0B2E2D;--hero-b:#0E5A4D;--r:20px;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.28);
+  --font-display:ui-rounded,"SF Pro Rounded","Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --hh:63px;
+}
+@media (prefers-color-scheme:light){:root{
+  --bg:#EEF6F4;--bg2:#E6F1EE;--panel:#FFFFFF;--panel2:#F5FAF8;--line:#D9E8E5;--ink:#0D2B2C;--muted:#5A7576;
+  --mint:#0B8F72;--mint-ink:#FFFFFF;--gold:#A8690B;--red:#C23A31;--blue:#235FA6;
+  --brand-soft:#DAF2EA;--brand-strong:#066A55;
+  --ok-bg:#DAF2EA;--ok-ink:#066A55;--warn-bg:#FBEFD6;--warn-ink:#8A5608;--bad-bg:#FBE3E0;--bad-ink:#B3261E;--info-bg:#DFEBF8;--info-ink:#1D528F;
+  --hero-a:#0A3B3A;--hero-b:#0B6B5B;
+  --shadow:0 1px 2px rgba(10,50,48,.06),0 6px 18px rgba(10,50,48,.07);
+}}
+
+body{background:var(--bg);font-size:15.5px}
+h1,h2,h3,h4{font-family:var(--font-display);letter-spacing:-.015em}
+a{color:var(--mint)}
+:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+
+/* ---- header ---- */
+.top{position:sticky;top:0;z-index:25;max-width:none;margin:0;width:100%;padding:10px max(16px,calc((100vw - 1180px)/2 + 16px));background:var(--panel);border-bottom:1px solid var(--line)}
+.logo-img{box-shadow:none;border-radius:13px}
+.brand b{font-family:var(--font-display);font-weight:800;letter-spacing:.1em;font-size:16px;white-space:nowrap}
+.brand small{font-size:11.5px}
+.seg{background:var(--panel2);padding:3px;border:1px solid var(--line)}
+.seg button{border-radius:999px;padding:6px 14px}
+.seg button[aria-pressed=true]{background:var(--mint);color:var(--mint-ink)}
+
+/* ---- pilot banner: soft rounded notice instead of a full-width strip ---- */
+.demo-banner{width:calc(100% - 32px);max-width:1148px;margin:14px auto 0;border-radius:14px;background:var(--warn-bg);color:var(--warn-ink);font-size:12.5px;line-height:1.45;padding:10px 14px;font-weight:600}
+.demo-banner.real{background:var(--bad-bg);color:var(--bad-ink)}
+
+/* ---- navigation ---- */
+.tabs{background:var(--panel);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+.tabs a{border-radius:14px;padding:8px 8px;font-size:11.5px;font-weight:600}
+.tabs a[aria-current=page]{background:var(--brand-soft);color:var(--brand-strong)}
+@media (min-width:860px){.tabs{top:var(--hh);background:var(--panel);border-bottom:1px solid var(--line);z-index:24}.tabs a{font-size:14px;border-radius:999px}}
+
+/* ---- page structure ---- */
+.page-head h2{font-size:clamp(26px,4.6vw,34px);font-weight:800;letter-spacing:-.025em}
+.page-head p{font-size:15px}
+.eyebrow{color:var(--brand-strong)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.panel-head h3{font-size:19px}
+.page-banner{border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+.sec-title{font-weight:800}
+
+/* ---- stat tiles (dashboards): icon chip, label, big number, chevron when clickable ---- */
+.tile{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 14px 16px;box-shadow:var(--shadow);min-width:0}
+.tile .tile-title{gap:10px;min-height:40px;font-size:13.5px;color:var(--muted);align-items:center;padding-right:18px}
+.tile .tile-title svg{flex:0 0 34px;width:34px;height:34px;padding:8px;border-radius:10px;background:var(--brand-soft);color:var(--brand-strong)}
+.tile b{font-family:var(--font-display);font-weight:800;font-size:36px;line-height:1.05;margin-top:6px;font-variant-numeric:tabular-nums}
+.tile small{font-size:12.5px}
+.tile.click:hover{border-color:var(--mint);transform:none}
+.tile.click:active{transform:scale(.98)}
+.tile.click::after{content:"";position:absolute;right:16px;top:24px;width:7px;height:7px;border-top:2px solid var(--muted);border-right:2px solid var(--muted);transform:rotate(45deg);opacity:.7}
+
+/* ---- buttons, chips, badges ---- */
+.btn{border-radius:14px;font-weight:700;box-shadow:none;min-height:44px}
+.btn.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--ink)}
+.btn.danger{background:var(--bad-bg);color:var(--bad-ink)}
+.btn.sm{border-radius:11px}
+.chip{background:var(--panel);border-color:var(--line);color:var(--muted);font-weight:500}
+.chip[aria-pressed=true]{background:var(--mint);border-color:var(--mint);color:var(--mint-ink);font-weight:600}
+.badge{background:var(--panel2);color:var(--muted);font-weight:600;padding:3px 10px}
+.badge.ok{background:var(--ok-bg);color:var(--ok-ink)}.badge.warn,.badge.demo{background:var(--warn-bg);color:var(--warn-ink)}
+.badge.bad{background:var(--bad-bg);color:var(--bad-ink)}.badge.info{background:var(--info-bg);color:var(--info-ink)}.badge.mute{background:var(--panel2);color:var(--muted)}
+.note{background:var(--warn-bg);border:0;color:var(--warn-ink);border-radius:14px}
+
+/* ---- forms ---- */
+input,select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:13px;min-height:46px}
+input:focus,select:focus,textarea:focus{border-color:var(--mint);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--mint) 25%,transparent)}
+.field label{font-weight:600}
+.form-error:not(:empty){background:var(--bad-bg);border-color:transparent;color:var(--bad-ink)}
+
+/* ---- tables ---- */
+.rt th{text-transform:uppercase;letter-spacing:.06em;font-size:11px}
+.rt td{border-bottom:1px solid var(--line)}
+@media(max-width:720px){.rt tr{background:var(--panel2);border-radius:14px}}
+
+/* ---- modal + toast ---- */
+.backdrop{background:rgba(4,20,20,.55)}
+.modal{border:0;border-radius:24px 24px 0 0;box-shadow:var(--shadow)}@media(min-width:700px){.modal{border-radius:24px}}
+.toast{background:var(--ink);color:var(--bg);border-radius:14px;font-weight:600}.toast.err{background:var(--bad-bg);color:var(--bad-ink)}
+
+/* ---- landing hero + step cards ---- */
+.hero2{background:linear-gradient(135deg,var(--hero-a),var(--hero-b));border:0;color:#E8FBF5;border-radius:26px;box-shadow:var(--shadow)}
+.hero2 h1{color:#fff;font-weight:800;letter-spacing:-.03em}.hero2 p{color:#CFEEE6}.hero2 .eyebrow{color:#6FF0C8}
+.hero2 .btn{background:#6FF0C8;color:#06302A}.hero2 .btn.ghost{background:transparent;color:#E8FBF5;border:1px solid rgba(255,255,255,.4)}
+.hero2 .stats-row b{color:#6FF0C8}.hero2 .stats-row span{color:#CFEEE6}
+.hero2-img{border-radius:20px;box-shadow:0 18px 40px rgba(0,0,0,.28)}
+.step,.who,.trust{background:var(--panel);border-radius:20px;box-shadow:var(--shadow)}
+.step-ic,.who-ic{background:var(--brand-soft);border:0;color:var(--brand-strong)}
+.step-n{color:var(--brand-strong)}
+.hc{background:var(--panel);border-radius:20px;box-shadow:var(--shadow)}
+.hc:hover{transform:none;border-color:var(--mint)}
+.hc .price{font-family:var(--font-display);color:var(--brand-strong)}
+.hc .sym{background:var(--brand-soft);color:var(--brand-strong)}
+
+/* ---- emergency: SOS, tracking steps, map frame ---- */
+.sos{background:var(--bad-bg);border-color:transparent}
+.sos-btn{box-shadow:0 10px 26px color-mix(in srgb,var(--red) 40%,transparent)}
+.svc{border-radius:16px;border-width:1.5px;background:var(--panel2)}
+.steps li.now .dotn{box-shadow:0 0 0 5px color-mix(in srgb,var(--mint) 25%,transparent)}
+.tmap,.livemap{border-radius:18px}
+.rcount{border-radius:16px;background:var(--panel);box-shadow:var(--shadow)}
+.footer{font-size:12px}
+
+/* ---- narrow phones: keep brand, language switch and log out on one row ---- */
+@media (max-width:430px){
+  .top{gap:8px;padding:8px 12px}
+  .brand b{font-size:14px;letter-spacing:.06em}
+  .seg button{padding:6px 11px}
+  .top-actions{gap:6px}
+  .top-actions .btn.sm{padding:0 10px;font-size:13px;min-height:38px}
+}
