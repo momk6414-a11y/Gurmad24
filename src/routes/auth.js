@@ -38,7 +38,7 @@ module.exports = function (app) {
   app.post('/api/auth/register-org', { summary: 'Register a hospital / ambulance / lab (starts in PENDING verification)' }, (req, res) => {
     if (!app.limiter.check('auth:' + req.ip, app.ctx.config.rateLimit.authPerMin)) throw new HttpError(429, 'rate_limited');
     const b = validate({
-      ...base, orgType: v.enum(['hospital', 'ambulance', 'lab', 'police', 'fire'], { required: true }), orgName: v.str({ min: 2, max: 100, required: true }),
+      ...base, orgType: v.enum(['hospital', 'ambulance', 'lab'], { required: true }), orgName: v.str({ min: 2, max: 100, required: true }),
       area: v.str({ max: 60, default: '' }), phone: v.str({ max: 30, default: '' }), description: v.str({ max: 500, default: '' }),
     }, req.body);
     if (!b.consent) throw new HttpError(400, 'validation_failed', { consent: 'required' });

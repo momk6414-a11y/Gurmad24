@@ -520,7 +520,7 @@ export function register() {
 }
 export function registerOrg() {
   return h('div', head('Register a hospital / provider', 'Your organisation will be reviewed by an administrator before it appears publicly.'), panel(null, form([
-    { name: 'orgType', label: 'Organisation type', type: 'select', options: [['hospital', 'Hospital'], ['ambulance', 'Ambulance / medical transport'], ['lab', 'Laboratory / diagnostics'], ['police', 'Police station'], ['fire', 'Fire station']], required: true },
+    { name: 'orgType', label: 'Organisation type', type: 'select', options: [['hospital', 'Hospital'], ['ambulance', 'Ambulance / medical transport'], ['lab', 'Laboratory / diagnostics']], required: true },
     { name: 'orgName', label: 'Organisation name', required: true, max: 100 }, { name: 'area', label: 'City / area', max: 60, default: 'Gaalkacyo' }, { name: 'phone', label: 'Public phone', type: 'tel', max: 30 }, { name: 'description', label: 'Short description', type: 'textarea', max: 500 },
     { name: 'name', label: 'Your full name', required: true, max: 80 }, { name: 'email', label: 'Your email', type: 'email', required: true }, { name: 'password', label: 'Password', type: 'password', required: true, hint: 'At least 8 characters with letters and numbers.', autocomplete: 'new-password' }, consent],
   { submit: 'Submit registration', onSubmit: async v => { const r = await POST('/auth/register-org', { ...v, lang: S.lang }); toast(t('Registered. Waiting for administrator verification.')); await afterAuth(r.user); } })));

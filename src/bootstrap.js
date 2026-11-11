@@ -6,9 +6,13 @@ const { App } = require('./app');
 const migrations = require('./migrations');
 const seed = require('./seed');
 const catalog = require('./catalog');
+const D = require('./domain');
 
 function wire(config, store, overrides = {}) {
   store.migrate(migrations);
+  // Enforce the institutional-pilot safety lock even if a previous database stored realMode=true.
+  D.settings(store).realMode = false;
+  store.save();
   const app = new App({ store, config });
   const log = overrides.quiet ? () => {} : console.log;
   for (const r of ['auth', 'public', 'patient', 'org', 'ops', 'admin']) require('./routes/' + r)(app);
