@@ -7,7 +7,7 @@ const { HttpError } = require('./validate');
 const { sha, RateLimiter } = require('./security');
 
 const MIME = {
-  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.txt': 'text/plain; charset=utf-8',
 };
 const SESSION_COOKIE = 'g24s';
@@ -150,7 +150,7 @@ class App {
       const ext = path.extname(file);
       // App code and artwork always revalidate (ETag), so a deploy shows up on the next load.
       // Binary images keep a short cache.
-      const revalidate = ['.html', '.js', '.css', '.svg', '.webmanifest'].includes(ext);
+      const revalidate = ['.html', '.js', '.mjs', '.css', '.svg', '.webmanifest'].includes(ext);
       const etag = '"' + require('crypto').createHash('sha1').update(data).digest('hex').slice(0, 20) + '"';
       if (revalidate && req.headers['if-none-match'] === etag) {
         res.writeHead(304, { ETag: etag, 'Cache-Control': 'no-cache' });

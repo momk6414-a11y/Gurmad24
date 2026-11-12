@@ -2,6 +2,7 @@
 import { SS, S, t, h, icon, GET, POST, api, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, link, fdate, setLang } from '../core.js';
 import { receiptNode, cardPass } from './shared.js';
 import { liveMap, osmLink, PLACES } from '../map.js';
+import { placeTrust } from '../place-trust.mjs';
 
 export const APPT_CATS = [['general', 'General visit'], ['checkup', 'Check-up'], ['lab_test', 'Lab test'], ['follow_up', 'Follow-up'], ['other', 'Other']];
 export const CASE_CATS = [['general', 'General help request'], ['transport', 'Patient transport'], ['accident', 'Accident'], ['maternal', 'Maternal'], ['other', 'Other'], ['fire', 'Fire'], ['rescue', 'Rescue'], ['crime', 'Crime or threat'], ['disturbance', 'Disturbance']];
@@ -436,8 +437,13 @@ export async function puntlandMap() {
     const x = selected;
     if (!x) { card.replaceChildren(h('p', { class: 'hint' }, t('Select a place on the map or in the list to see its details.'))); return; }
     const tel = x.phone ? x.phone.replace(/[^+\d]/g, '') : '';
+    const trust = placeTrust(x);
     card.replaceChildren(h('div', { class: 'pm-card u-' + x.type },
-      h('div', { class: 'pm-card-h' }, h('span', { class: 'pm-dot' }, icon(typeIcon(x), 16)), h('div', h('b', x.name), h('small', t(typeLabel(x)) + (x.area ? ' - ' + x.area : '')))),
+      h('div', { class: 'pm-card-h' },
+        h('span', { class: 'pm-dot' }, icon(typeIcon(x), 16)),
+        h('div', h('b', x.name), h('small', t(typeLabel(x)) + (x.area ? ' - ' + x.area : ''))),
+        h('span', { class: 'badge ' + trust.badge }, t(trust.label))),
+      h('p', { class: 'hint' }, t(trust.notice)),
       x.reference ? h('p', x.detail) : null,
       x.reference ? h('small', { class: 'hint' }, t('Source: {s}', { s: x.source })) : null,
       x.address ? h('p', icon('pin', 14), ' ', x.address) : null,
@@ -452,24 +458,24 @@ export async function puntlandMap() {
   function drawList() {
     const v = visible(); count.textContent = t('{n} places', { n: v.length });
     listBox.replaceChildren(...(v.length ? v.map(x => h('button', { type: 'button', role: 'listitem', class: 'pm-row u-' + x.type, 'aria-current': selected && selected.id === x.id ? 'true' : null, onclick: () => choose(x) },
-      h('span', { class: 'pm-dot' }, icon(typeIcon(x), 14)), h('span', { class: 'pm-txt' }, h('b', x.name), h('small', t(typeLabel(x)) + (x.area ? ' - ' + x.area : '') + (hasPos(x) ? '' : ' - ' + t('no map position')))))) : [h('p', { class: 'hint', style: 'padding:12px' }, t('No places match.'))]));
+      h('span', { class: 'pm-dot' }, icon(typeIcon(x), 14)), h('span', { class: 'pm-txt' }, h('b', x.name), h('small', t(typeLabel(x)) + (x.area ? ' - ' + x.area : '') + ' · ' + t(placeTrust(x).label) + (hasPos(x) ? '' : ' - ' + t('no map position')))))) : [h('p', { class: 'hint', style: 'padding:12px' }, t('No places match.'))]));
   }
-  function drawMap() { mopts.markers = visible().filter(hasPos).map(x => ({ ...x, label: x.name })); map.update([], { refit: false }); map.select(selected && selected.id); }
+  function drawMap() { mopts.markers = visible().filter(hasPos).map(x => ({ ...x, label: x.name, ariaLabel: t(placeTrust(x).ariaLabel, { name: x.name }) })); map.update([], { refit: false }); map.select(selected && selected.id); }
   function drawChips() {
     chips.replaceChildren(...TYPES.map(([k, l]) => h('button', { type: 'button', class: 'chip u-' + k, 'aria-pressed': active.has(k), onclick: () => { if (active.has(k)) active.delete(k); else active.add(k); refresh(); } }, h('span', { class: 'cdot-t' }), t(l) + ' (' + facilities.filter(f => f.type === k).length + ')')),
-      h('button', { type: 'button', class: 'chip', 'aria-pressed': showRefs, onclick: () => { showRefs = !showRefs; refresh(); } }, t('Reference places') + ' (' + refs.length + ')'));
+      h('button', { type: 'button', class: 'chip', 'aria-pressed': showRefs, onclick: () => { showRefs = !showRefs; refresh(); } }, t('Directory references (unverified)') + ' (' + refs.length + ')'));
   }
   function refresh() { drawChips(); drawMap(); drawList(); }
   const search = h('input', { type: 'search', placeholder: t('Search places'), 'aria-label': t('Search places'), oninput: e => { query = e.target.value; drawMap(); drawList(); } });
   const region = h('select', { 'aria-label': t('Go to'), onchange: e => { const v = e.target.value; if (v === '') map.querySelector('.tm-pl').click(); else { const pl = PLACES[Number(v)]; map.flyTo(pl.lat, pl.lng, 12); } } },
     h('option', { value: '' }, t('All Puntland')), PLACES.map((pl, i) => h('option', { value: String(i) }, pl.name)));
   refresh(); detail();
-  return h('div', head('Puntland map', 'Hospitals, ambulance, police and fire stations registered with GURMAD 24, on real satellite imagery.'),
+  return h('div', head('Puntland map', 'Verified facilities and optional Gaalkacyo directory references on satellite imagery.'),
     h('div', { class: 'pm-tools' }, search, region), chips,
     h('div', { class: 'pm' },
       h('div', { class: 'pm-map' }, map, h('div', { class: 'legend' }, TYPES.map(([k, l]) => h('span', { class: 'rtag u-' + k }, icon(k, 15), t(l))))),
       h('aside', { class: 'pm-side' }, panel('Selected place', card), h('div', count, listBox))),
-    h('small', { class: 'hint' }, t('Places come from the GURMAD 24 register. Imagery: Esri and partners; streets: OpenStreetMap. Confirm a place before travelling; this map is not a live dispatch tool.')));
+    h('small', { class: 'hint' }, t('Verified facilities shown here come from the GURMAD 24 register. Optional Gaalkacyo reference points come from public directories or mapping documents and are not verified operational facilities. Confirm their details directly before relying on them. This map is not a live dispatch tool.')));
 }
 export async function system() {
   const draw = o => {
