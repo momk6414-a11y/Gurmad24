@@ -148,13 +148,21 @@ module.exports = function (app) {
 
   // ---------- Settings (commissions, fees) - everything configurable, nothing hard-wired
   app.get('/api/admin/settings', { auth: A, summary: 'Platform settings (commission rates in basis points)' }, () => ({ settings: D.settings(store), paymentProviders: listProviders() }));
-  // ---- Real mode: while OFF every emergency request is a simulation. Only an admin can turn it on.
-  app.put('/api/admin/real-mode', { auth: A, summary: 'Turn real (non-simulated) emergency requests on or off. Audited.' }, req => {
-    const b = validate({ enabled: v.bool({ required: true }), confirm: v.str({ max: 20, default: '' }) }, req.body);
-    if (b.enabled && b.confirm !== 'SHIDO') throw new HttpError(400, 'validation_failed', { confirm: 'type_SHIDO' });
-    D.settings(store).realMode = !!b.enabled; D.settings(store).realModeAt = new Date().toISOString(); store.save();
-    app.audit(req, b.enabled ? 'realmode.on' : 'realmode.off', 'settings', null); app.secEvent(req, b.enabled ? 'real_mode_on' : 'real_mode_off', {});
-    return { realMode: !!D.settings(store).realMode };
+  // Institutional pilot safety lock: live dispatch cannot be enabled from this application.
+  // Keep this endpoint only so an administrator can explicitly force the setting OFF.
+  app.put('/api/admin/real-mode', { auth: A, summary: 'Keep live dispatch OFF during institutional pilot. Enabling is blocked.' }, req => {
+    const b = validate({ enabled: v.bool({ required: true }) }, req.body);
+    if (b.enabled) {
+      app.audit(req, 'realmode.enable_blocked', 'settings', null);
+      app.secEvent(req, 'real_mode_enable_blocked', { reason: 'institutional_confirmation_required' });
+      throw new HttpError(403, 'forbidden');
+    }
+    D.settings(store).realMode = false;
+    D.settings(store).realModeAt = new Date().toISOString();
+    store.save();
+    app.audit(req, 'realmode.off', 'settings', null);
+    app.secEvent(req, 'real_mode_off', {});
+    return { realMode: false };
   });
 
   app.get('/api/admin/security', { auth: A, summary: 'Security overview: checks, recent security events, 2FA coverage' }, req => {
