@@ -75,23 +75,22 @@ test('forbidden and cross-origin attempts are logged; hardened headers present',
   assert.match((await t.client().get('/.well-known/security.txt')).data, /Contact:/);
 });
 
-test('real mode: off by default, only admin can turn on (typed confirmation), real requests are queued without autopilot', async () => {
+test('institutional pilot safety lock: live dispatch stays OFF for every role and requests remain simulated', async () => {
   const c = t.client(); const op = await H.demo(t, 'operator');
   assert.equal((await c.get('/api/config')).data.realMode, false);
-  assert.equal((await op.put('/api/admin/real-mode', { enabled: true, confirm: 'SHIDO' })).status, 403);
-  assert.equal((await adm.put('/api/admin/real-mode', { enabled: true })).status, 400);
-  t.app.limiter.reset();
-  assert.equal((await adm.put('/api/admin/real-mode', { enabled: true, confirm: 'SHIDO' })).data.realMode, true);
-  assert.equal((await c.get('/api/config')).data.realMode, true);
-  const area = (await c.get('/api/config')).data.areas[0].id;
-  t.app.limiter.reset();
-  const r = await c.post('/api/emergency/simulate', { category: 'general', areaId: area });
-  assert.equal(r.status, 201); assert.equal(r.data.case.mode, 'REAL'); assert.equal(r.data.notice, 'REAL_REQUEST_QUEUED_FOR_OPERATORS');
-  const rec = t.store.find('cases', x => x.code === r.data.case.code); assert.equal(rec.autopilot, false);
-  const tr = (await c.get(`/api/emergency/track/${r.data.case.code}?token=${encodeURIComponent(r.data.case.trackToken)}`)).data.track;
-  assert.equal(tr.mode, 'REAL'); assert.equal(tr.unit, null); assert.equal(tr.status, 'received');
-  await adm.put('/api/admin/real-mode', { enabled: false });
+  assert.equal((await c.get('/api/config')).data.liveDispatch, false);
+  assert.equal((await op.put('/api/admin/real-mode', { enabled: true })).status, 403);
+  assert.equal((await adm.put('/api/admin/real-mode', { enabled: true })).status, 403);
   assert.equal((await c.get('/api/config')).data.realMode, false);
+  const area = (await c.get('/api/config')).data.areas[0].id;
+  const r = await c.post('/api/emergency/simulate', { category: 'general', areaId: area });
+  assert.equal(r.status, 201); assert.equal(r.data.case.mode, 'SIMULATION');
+  assert.equal(r.data.notice, 'SIMULATION_ONLY_NO_REAL_HELP_SENT');
+  const rec = t.store.find('cases', x => x.code === r.data.case.code); assert.equal(rec.autopilot, true);
+  const tr = (await c.get(`/api/emergency/track/${r.data.case.code}?token=${encodeURIComponent(r.data.case.trackToken)}`)).data.track;
+  assert.equal(tr.mode, 'SIMULATION');
+  assert.equal(tr.unit, null);
+  assert.equal((await adm.put('/api/admin/real-mode', { enabled: false })).data.realMode, false);
 });
 
 test('2FA setup is idempotent (same pending key) unless reset, so a retry never invalidates the key already in the app', async () => {

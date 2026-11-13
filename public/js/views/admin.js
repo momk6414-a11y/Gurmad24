@@ -157,17 +157,11 @@ export async function audit({ query }) {
 
 export async function security() {
   const d = await GET('/admin/security'); const L = d.last24h;
-  const realBox = () => {
-    const state = h('b', d.realMode ? t('ON: requests are REAL') : t('OFF: all requests are simulations'));
-    const btn = h('button', { class: d.realMode ? 'btn danger' : 'btn', onclick: () => {
-      let m; m = modal(d.realMode ? t('Turn real mode OFF') : t('Turn real mode ON'), h('div',
-        d.realMode ? h('p', t('New requests will be simulations again.')) : h('p', t('Real requests are NOT simulated. Only enable this when operators are on duty and real responders are connected. Type SHIDO to confirm.')),
-        form(d.realMode ? [] : [{ name: 'confirm', label: 'Type SHIDO', required: true, max: 20 }], { submit: d.realMode ? 'Turn off' : 'Turn on', cancel: () => m.close(),
-          onSubmit: async v => { await PUT('/admin/real-mode', { enabled: !d.realMode, confirm: v.confirm || '' }); m.close(); toast(t('Saved.')); go('/admin/security'); location.reload(); } })));
-    } }, d.realMode ? t('Turn real mode OFF') : t('Turn real mode ON'));
-    return panel('Real mode', h('div', h('p', state), h('p', { class: 'hint' }, t('Admin only. Every change is written to the audit log.')), btn));
-  };
-  return h('div', head('Security', 'Protection status, recent security events and real-mode control.'),
+  const realBox = () => panel('Live dispatch', h('div',
+    h('b', t('OFF — institutional pilot only')),
+    h('p', { class: 'hint' }, t('Emergency requests are simulations only. Live dispatch cannot be enabled here; written institutional approval and a separately verified dispatch integration are required.')),
+  ));
+  return h('div', head('Security', 'Protection status, recent security events and live-dispatch pilot lock.'),
     h('div', { class: 'grid g4 keep2' }, tile(t('Security score'), d.score + '%'), tile(t('Failed logins (24h)'), String(L.loginFailed)), tile(t('Locked accounts (24h)'), String(L.locked)), tile(t('Blocked requests (24h)'), String(L.rateLimited + L.badOrigin + L.forbidden + L.ipBlocked))),
     h('div', { class: 'grid g2', style: 'margin-top:14px' },
       panel('Protection checks', h('div', d.checks.map(c => h('div', { class: 'chk' + (c.ok ? '' : ' bad') }, h('i', c.ok ? '✓' : '!'), h('div', t(c.text), !c.ok && c.action ? h('small', t(c.action)) : null))))),

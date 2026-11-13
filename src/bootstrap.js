@@ -6,9 +6,39 @@ const { App } = require('./app');
 const migrations = require('./migrations');
 const seed = require('./seed');
 const catalog = require('./catalog');
+const D = require('./domain');
+
+function lockLegacyActiveCases(store) {
+  const now = new Date().toISOString();
+  let changed = 0;
+  for (const c of store.filter('cases', x => x.mode === 'REAL' && !['closed', 'cancelled'].includes(x.status))) {
+    // Old REAL records were only queued in-app; there is no verified dispatch integration.
+    // Re-label active records conservatively, preserve the original mode for audit, and
+    // never let the demo autopilot advance a legacy request during the pilot.
+    c.legacyMode = 'REAL';
+    c.mode = 'SIMULATION';
+    c.autopilot = false;
+    c.legacyModeDisabledAt = now;
+    c.history = Array.isArray(c.history) ? c.history : [];
+    c.history.push({
+      ts: now,
+      status: c.status,
+      by: 'system',
+      note: 'Pilot safety lock: legacy REAL mode was downgraded to SIMULATION; no integrated dispatch is configured.',
+    });
+    changed++;
+  }
+  if (changed) store.save();
+  return changed;
+}
 
 function wire(config, store, overrides = {}) {
   store.migrate(migrations);
+  lockLegacyActiveCases(store);
+  // Live dispatch is not integrated or institutionally approved in this pilot.
+  // Force legacy persisted settings OFF on every process start.
+  D.settings(store).realMode = false;
+  store.save();
   const app = new App({ store, config });
   const log = overrides.quiet ? () => {} : console.log;
   for (const r of ['auth', 'public', 'patient', 'org', 'ops', 'admin']) require('./routes/' + r)(app);
