@@ -24,6 +24,9 @@ function load(overrides = {}) {
   const env = { ...process.env, ...overrides };
   const dataDir = path.resolve(env.DATA_DIR || path.join(__dirname, '..', 'data'));
   fs.mkdirSync(dataDir, { recursive: true });
+  // Production and Render terminate public traffic over HTTPS; protect session cookies by default.
+  // COOKIE_SECURE remains an explicit override for controlled local/proxy test environments.
+  const secureCookiesByDefault = bool(env.RENDER, false) || String(env.NODE_ENV || '').toLowerCase() === 'production';
   let secret = env.SESSION_SECRET;
   if (!secret) {
     const f = path.join(dataDir, '.secret');
@@ -40,7 +43,7 @@ function load(overrides = {}) {
     seedDemoData: bool(env.SEED_DEMO_DATA, true),
     demoPassword: env.DEMO_PASSWORD || '',
     anthropicKey: env.ANTHROPIC_API_KEY || '', anthropicModel: env.ANTHROPIC_MODEL || '',
-    cookieSecure: bool(env.COOKIE_SECURE, false),
+    cookieSecure: bool(env.COOKIE_SECURE, secureCookiesByDefault),
     trustProxy: bool(env.TRUST_PROXY, false),
     retentionDays: Number(env.RETENTION_DAYS || 365),
     persistentStorage: bool(env.PERSISTENT_STORAGE, !env.RENDER),
