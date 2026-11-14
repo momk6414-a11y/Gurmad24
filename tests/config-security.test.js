@@ -43,7 +43,7 @@ test('production login sends Secure session cookie and HSTS without extra config
       password: 'AdminPass123',
     });
     assert.equal(response.status, 200);
-    assert.match(response.headers.get('set-cookie') || '', /(?:^|;\\s*)Secure(?:;|$)/i);
+    assert.match(response.headers.get('set-cookie') || '', /(?:^|;\s*)Secure(?:;|$)/i);
     assert.match(response.headers.get('strict-transport-security') || '', /^max-age=15552000; includeSubDomains$/i);
   } finally {
     await t.stop();
