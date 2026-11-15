@@ -1,12 +1,37 @@
 # GURMAD 24
 
-Emergency-coordination (simulation) and digital-healthcare marketplace platform for the Gaalkacyo pilot. Somali + English. **Demo/sandbox only** — see `docs/STATUS.md`.
+name: GURMAD 24 Tests
 
-```bash
-cp .env.example .env     # set ADMIN_EMAIL / ADMIN_PASSWORD
-npm start                # http://localhost:8080   (Node 18+, zero dependencies)
-npm test                 # 33 automated tests
-npm run docs             # regenerate docs/API.md from the live routes
-npm run backup           # manual database backup
-```
-Full instructions in Somali: `README_SOMALI.md`.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gurmad24-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Run automated tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run GURMAD 24 tests
+        run: npm test
