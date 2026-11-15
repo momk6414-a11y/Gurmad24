@@ -15,5 +15,12 @@ test('map distinguishes public directory references from verified GURMAD 24 faci
   assert.equal(registered.badge, 'ok');
   assert.match(registered.notice, /verified facility register/i);
   assert.equal(registered.ariaLabel, 'Verified GURMAD 24 facility: {name}');
+
+  const demo = placeTrust({ demo: true });
+  assert.equal(demo.label, 'Demo seed — not a real facility');
+  assert.equal(demo.badge, 'warn');
+  assert.match(demo.notice, /not a real hospital/i);
+  assert.equal(demo.ariaLabel, 'Demo facility, not real or verified: {name}');
   assert.notEqual(directory.badge, registered.badge);
+  assert.notEqual(demo.badge, registered.badge);
 });
