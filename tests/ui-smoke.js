@@ -32,9 +32,19 @@ const { chromium } = require('playwright');
   if (!locationNotice.includes('GURMAD 24')) errors.push('map: current-location privacy notice was not shown');
   // Puntland map: list selection opens place details with a call link and directions.
   await guest.locator('.pm-row').first().click();
+  const demoPlaceDetails = await guest.locator('.pm-card').innerText().catch(() => '');
+  if (!/Demo seed|Tijaabo/i.test(demoPlaceDetails)) errors.push('map: synthetic seed facility was not labelled as demo');
   await guest.waitForSelector('.pm-card a[href^="tel:"]', { timeout: 5000 }).catch(() => errors.push('map: place details did not open'));
+  const firstPhoneHref = await guest.locator('.pm-card a[href^="tel:"]').getAttribute('href').catch(() => '');
+  if (!/\d/.test(firstPhoneHref)) errors.push('map: place phone link did not retain its digits');
   await guest.fill('.pm-tools input', 'zzzz-no-match');
   await guest.waitForFunction(() => document.querySelectorAll('.pm-row').length === 0, null, { timeout: 3000 }).catch(() => errors.push('map: search did not filter the list'));
+  await guest.fill('.pm-tools input', '');
+  await guest.locator('.chip').filter({ hasText: 'Tixraacyada directory-ga' }).click();
+  await guest.locator('.pm-row').filter({ hasText: 'University Teaching Hospital Galkayo' }).click();
+  const referenceDetails = await guest.locator('.pm-card').innerText();
+  if (!/lama xaqiijin/i.test(referenceDetails)) errors.push('map: directory POI was not clearly labelled unverified');
+  if (!referenceDetails.includes('Public place directory')) errors.push('map: directory POI source was not shown');
   // Marketplace cards expose a working details action.
   await guest.goto(t.base + '/#/cards'); await guest.reload();
   await guest.locator('#view .hc button.ghost').first().click();

@@ -7,7 +7,7 @@ const { spawnSync } = require('child_process');
 
 const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
 test('all public JavaScript files parse as ES modules', () => {
-  const files = walk(path.join(__dirname, '..', 'public')).filter(f => f.endsWith('.js'));
+  const files = walk(path.join(__dirname, '..', 'public')).filter(f => f.endsWith('.js') || f.endsWith('.mjs'));
   assert.ok(files.length >= 10);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'g24-syn-'));
   for (const f of files) {

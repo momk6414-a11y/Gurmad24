@@ -2,6 +2,7 @@
 import { SS, S, t, h, icon, GET, POST, api, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, link, fdate, setLang } from '../core.js';
 import { receiptNode, cardPass } from './shared.js';
 import { liveMap, osmLink, PLACES } from '../map.js';
+import { placeTrust } from '../place-trust.mjs';
 
 export const APPT_CATS = [['general', 'General visit'], ['checkup', 'Check-up'], ['lab_test', 'Lab test'], ['follow_up', 'Follow-up'], ['other', 'Other']];
 export const CASE_CATS = [['general', 'General help request'], ['transport', 'Patient transport'], ['accident', 'Accident'], ['maternal', 'Maternal'], ['other', 'Other'], ['fire', 'Fire'], ['rescue', 'Rescue'], ['crime', 'Crime or threat'], ['disturbance', 'Disturbance']];
@@ -81,7 +82,7 @@ export function cardTile(c, { compare = true } = {}) {
   const sel = S.cmp.includes(c.id);
   return h('article', { class: 'hc' },
     h('img', { class: 'art', src: '/img/card-' + ['mint', 'blue', 'violet'][String(c.id).split('').reduce((a, ch) => a + ch.charCodeAt(0), 0) % 3] + '.svg', alt: '', width: 320, height: 112, loading: 'lazy' }),
-    h('div', { class: 'hosp' }, c.hospital ? c.hospital.name : '', verified(c.hospital && c.hospital.verified)),
+    h('div', { class: 'hosp' }, c.hospital ? c.hospital.name : '', c.hospital && c.hospital.demo ? h('span', { class: 'badge warn' }, t('Demo facility — not verified')) : verified(c.hospital && c.hospital.verified)),
     h('h4', c.name), h('div', { class: 'price' }, money(c.priceCents), h('small', { style: 'font-size:12px;color:var(--muted);font-weight:500' }, ' ' + t('{n} days', { n: c.validityDays }))),
     h('div', { class: 'meta' }, (c.included || []).slice(0, 2).join(' - ')), h('div', { class: 'card-facts' }, h('span', t('{n} included services', { n: (c.included || []).length })), h('span', t('{n} exclusions', { n: (c.excluded || []).length }))), h('span', { class: 'badge demo' }, t('Demo price')),
     h('div', { class: 'row' }, h('button', { class: 'btn sm', type: 'button', onclick: () => orderFlow(c) }, icon('bag', 16), t('Buy now')),
@@ -119,7 +120,7 @@ export async function cards() {
     catch (e) { out.replaceChildren(emptyState(errText(e))); }
   }
   let tm; q.oninput = () => { clearTimeout(tm); tm = setTimeout(load, 250); }; [hs, max, sort].forEach(x => { x.onchange = load; });
-  wrap.append(head('Health Cards Marketplace', 'Cards published and approved by verified hospitals.'), notInsurance(), h('div', { class: 'filters' }, q, hs, max, sort), out);
+  wrap.append(head('Health Cards Marketplace', 'Published cards from verified hospitals; synthetic demo examples are labelled and are not real offers.'), notInsurance(), h('div', { class: 'filters' }, q, hs, max, sort), out);
   load(); return wrap;
 }
 
@@ -129,7 +130,8 @@ export async function cardDetail({ id }) {
   return h('div', head(c.name, hsp.name),
     h('div', { class: 'grid g2' },
       panel(null, h('div',
-        h('div', { class: 'hosp', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, h('b', hsp.name), verified(hsp.verified), h('span', { class: 'badge demo' }, t('DEMO'))),
+        h('div', { class: 'hosp', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, h('b', hsp.name), hsp.demo ? h('span', { class: 'badge warn' }, t('Demo facility — not verified')) : verified(hsp.verified), h('span', { class: 'badge demo' }, t('DEMO'))),
+        hsp.demo ? h('p', { class: 'hint' }, t('Synthetic demo facility. This is not a real hospital, provider or emergency service. It is not operational and must not be used for care, calls or dispatch.')) : null,
         h('div', { class: 'price', style: 'font-size:34px;font-weight:850;color:var(--mint);margin:8px 0' }, money(c.priceCents)),
         h('dl', { class: 'kv' }, h('dt', t('Validity')), h('dd', t('{n} days from purchase', { n: c.validityDays })), h('dt', t('Eligibility')), h('dd', c.eligibility || '-'),
           h('dt', t('Hospital contact')), h('dd', hsp.phone ? h('a', { class: 'tel', href: 'tel:' + hsp.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), hsp.phone) : '-')),
@@ -188,7 +190,7 @@ export async function verifyCard({ code }) {
 export async function compare() {
   if (S.cmp.length < 2) return h('div', head('Compare cards'), emptyState('Select 2 or 3 cards in the marketplace first.', h('a', { class: 'btn', href: '#/cards' }, t('Browse cards'))));
   const { cards: cs } = await GET('/cards/compare?ids=' + S.cmp.join(','));
-  const rows = [['Hospital', c => c.hospital.name], ['Price', c => money(c.priceCents)], ['Validity', c => t('{n} days', { n: c.validityDays })], ['Included services', c => list(c.included)], ['Not included', c => list(c.excluded)],
+  const rows = [['Hospital', c => c.hospital.name], ['Facility status', c => c.hospital.demo ? t('Demo facility — not verified') : c.hospital.verified ? t('Verified') : t('Pending')], ['Price', c => money(c.priceCents)], ['Validity', c => t('{n} days', { n: c.validityDays })], ['Included services', c => list(c.included)], ['Not included', c => list(c.excluded)],
     ['Eligibility', c => c.eligibility || '-'], ['Refund and cancellation policy', c => c.refundPolicy], ['Terms and conditions', c => c.terms]];
   return h('div', head('Compare cards'), notInsurance(), panel(null, h('div', { class: 'table-wrap' }, h('table', { class: 'rt' },
     h('thead', h('tr', h('th', ''), cs.map(c => h('th', c.name)))),
@@ -201,14 +203,15 @@ export async function hospitals() {
   const out = h('div', { class: 'grid g3' }); const q = h('input', { type: 'search', placeholder: t('Search hospitals'), 'aria-label': t('Search') });
   async function load() { const r = await GET('/hospitals?q=' + encodeURIComponent(q.value)); out.replaceChildren(...(r.hospitals.length ? r.hospitals.map(orgTile) : [emptyState('No hospitals found.')])); }
   let tm; q.oninput = () => { clearTimeout(tm); tm = setTimeout(load, 250); }; load();
-  return h('div', head('Hospital directory', 'Only administrator-verified hospitals are listed.'), h('div', { class: 'field' }, q), out);
+  return h('div', head('Hospital directory', 'Only administrator-verified hospitals are marked verified; synthetic demo examples are labelled separately and are not real facilities.'), h('div', { class: 'field' }, q), out);
 }
-const orgTile = o => h('article', { class: 'hc' }, h('img', { class: 'art', src: '/img/org-' + (o.type === 'hospital' ? 'hospital' : o.type === 'lab' ? 'lab' : 'ambulance') + '.svg', alt: '', width: 320, height: 112, loading: 'lazy' }), h('h4', o.name), h('div', { class: 'hosp' }, o.area, verified(o.verified)),
+const orgTile = o => h('article', { class: 'hc' }, h('img', { class: 'art', src: '/img/org-' + (o.type === 'hospital' ? 'hospital' : o.type === 'lab' ? 'lab' : 'ambulance') + '.svg', alt: '', width: 320, height: 112, loading: 'lazy' }), h('h4', o.name), h('div', { class: 'hosp' }, o.area, o.demo ? h('span', { class: 'badge warn' }, t('Demo facility — not verified')) : verified(o.verified)),
   h('div', { class: 'meta' }, o.description), o.type === 'hospital' ? h('a', { class: 'btn sm', href: '#/hospitals/' + o.id }, t('View details')) : (o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : null));
 
 export async function hospitalDetail({ id }) {
   const r = await GET('/hospitals/' + id); const o = r.hospital;
   return h('div', head(o.name, o.area, h('button', { class: 'btn', onclick: () => appointmentModal(o, r.services) }, icon('calendar'), t('Request appointment'))),
+    o.demo ? demoNote('Synthetic demo facility. This is not a real hospital, provider or emergency service. It is not operational and must not be used for care, calls or dispatch.') : null,
     h('div', { class: 'grid g2' },
       panel('About', h('div', h('p', o.description || '-'), h('dl', { class: 'kv' }, h('dt', t('Address')), h('dd', o.address || '-'), h('dt', t('Hours')), h('dd', o.hours || '-'), h('dt', t('Phone')), h('dd', o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : '-')))),
       panel('Services and prices', r.services.length ? table([{ label: 'Service', key: 'name' }, { label: 'Price', render: s => money(s.priceCents) }], r.services) : emptyState('No services listed.'))),
@@ -392,7 +395,7 @@ function requestForm(box, areas) {
 function showForm(box, areas) { box.replaceChildren(requestForm(box, areas)); }
 
 export async function emergency() {
-  const [hsr, cfg, hot] = await Promise.all([GET('/hospitals'), GET('/config'), hotlines()]); const hs = hsr.hospitals; const box = h('div');
+  const [hsr, cfg, hot] = await Promise.all([GET('/hospitals'), GET('/config'), hotlines()]); const hs = hsr.hospitals.filter(o => o.verified && !o.demo); const box = h('div');
   const saved = loadTrack();
   if (saved) trackPanel(box, saved, () => showForm(box, cfg.areas)); else showForm(box, cfg.areas);
   return h('div', head('Emergency'), hot,
@@ -406,8 +409,8 @@ export async function puntlandMap() {
   const [hs, ps] = await Promise.all([GET('/hospitals').catch(() => ({ hospitals: [] })), GET('/providers').catch(() => ({ providers: [] }))]);
   const TYPES = [['hospital', 'Hospital'], ['ambulance', 'Ambulance'], ['police', 'Police'], ['fire', 'Fire brigade']];
   const facilities = [
-    ...hs.hospitals.map(o => ({ id: o.id, type: 'hospital', kind: 'hospital', name: o.name, area: o.area, phone: o.phone, address: o.address, hours: o.hours, available: true, lat: o.lat, lng: o.lng })),
-    ...ps.providers.filter(p => ['ambulance', 'police', 'fire'].includes(p.type)).map(p => ({ id: p.id, type: p.type, kind: 'station', name: p.name, area: p.area, phone: p.phone, address: p.address, hours: p.hours, available: p.available, lat: p.lat, lng: p.lng })),
+    ...hs.hospitals.map(o => ({ id: o.id, type: 'hospital', kind: 'hospital', name: o.name, area: o.area, phone: o.phone, address: o.address, hours: o.hours, available: true, lat: o.lat, lng: o.lng, demo: !!o.demo, verified: !!o.verified })),
+    ...ps.providers.filter(p => ['ambulance', 'police', 'fire'].includes(p.type)).map(p => ({ id: p.id, type: p.type, kind: 'station', name: p.name, area: p.area, phone: p.phone, address: p.address, hours: p.hours, available: p.available, lat: p.lat, lng: p.lng, demo: !!p.demo, verified: !!p.verified })),
   ];
   // Reference points (Gaalkacyo) from public map references: hidden by default, never a dispatch registry.
   const refs = [
@@ -436,8 +439,13 @@ export async function puntlandMap() {
     const x = selected;
     if (!x) { card.replaceChildren(h('p', { class: 'hint' }, t('Select a place on the map or in the list to see its details.'))); return; }
     const tel = x.phone ? x.phone.replace(/[^+\d]/g, '') : '';
+    const trust = placeTrust(x);
     card.replaceChildren(h('div', { class: 'pm-card u-' + x.type },
-      h('div', { class: 'pm-card-h' }, h('span', { class: 'pm-dot' }, icon(typeIcon(x), 16)), h('div', h('b', x.name), h('small', t(typeLabel(x)) + (x.area ? ' - ' + x.area : '')))),
+      h('div', { class: 'pm-card-h' },
+        h('span', { class: 'pm-dot' }, icon(typeIcon(x), 16)),
+        h('div', h('b', x.name), h('small', t(typeLabel(x)) + (x.area ? ' - ' + x.area : ''))),
+        h('span', { class: 'badge ' + trust.badge }, t(trust.label))),
+      h('p', { class: 'hint' }, t(trust.notice)),
       x.reference ? h('p', x.detail) : null,
       x.reference ? h('small', { class: 'hint' }, t('Source: {s}', { s: x.source })) : null,
       x.address ? h('p', icon('pin', 14), ' ', x.address) : null,
@@ -452,35 +460,37 @@ export async function puntlandMap() {
   function drawList() {
     const v = visible(); count.textContent = t('{n} places', { n: v.length });
     listBox.replaceChildren(...(v.length ? v.map(x => h('button', { type: 'button', role: 'listitem', class: 'pm-row u-' + x.type, 'aria-current': selected && selected.id === x.id ? 'true' : null, onclick: () => choose(x) },
-      h('span', { class: 'pm-dot' }, icon(typeIcon(x), 14)), h('span', { class: 'pm-txt' }, h('b', x.name), h('small', t(typeLabel(x)) + (x.area ? ' - ' + x.area : '') + (hasPos(x) ? '' : ' - ' + t('no map position')))))) : [h('p', { class: 'hint', style: 'padding:12px' }, t('No places match.'))]));
+      h('span', { class: 'pm-dot' }, icon(typeIcon(x), 14)), h('span', { class: 'pm-txt' }, h('b', x.name), h('small', t(typeLabel(x)) + (x.area ? ' - ' + x.area : '') + ' · ' + t(placeTrust(x).label) + (hasPos(x) ? '' : ' - ' + t('no map position')))))) : [h('p', { class: 'hint', style: 'padding:12px' }, t('No places match.'))]));
   }
-  function drawMap() { mopts.markers = visible().filter(hasPos).map(x => ({ ...x, label: x.name })); map.update([], { refit: false }); map.select(selected && selected.id); }
+  function drawMap() { mopts.markers = visible().filter(hasPos).map(x => ({ ...x, label: x.name, ariaLabel: t(placeTrust(x).ariaLabel, { name: x.name }) })); map.update([], { refit: false }); map.select(selected && selected.id); }
   function drawChips() {
     chips.replaceChildren(...TYPES.map(([k, l]) => h('button', { type: 'button', class: 'chip u-' + k, 'aria-pressed': active.has(k), onclick: () => { if (active.has(k)) active.delete(k); else active.add(k); refresh(); } }, h('span', { class: 'cdot-t' }), t(l) + ' (' + facilities.filter(f => f.type === k).length + ')')),
-      h('button', { type: 'button', class: 'chip', 'aria-pressed': showRefs, onclick: () => { showRefs = !showRefs; refresh(); } }, t('Reference places') + ' (' + refs.length + ')'));
+      h('button', { type: 'button', class: 'chip', 'aria-pressed': showRefs, onclick: () => { showRefs = !showRefs; refresh(); } }, t('Directory references (unverified)') + ' (' + refs.length + ')'));
   }
   function refresh() { drawChips(); drawMap(); drawList(); }
   const search = h('input', { type: 'search', placeholder: t('Search places'), 'aria-label': t('Search places'), oninput: e => { query = e.target.value; drawMap(); drawList(); } });
   const region = h('select', { 'aria-label': t('Go to'), onchange: e => { const v = e.target.value; if (v === '') map.querySelector('.tm-pl').click(); else { const pl = PLACES[Number(v)]; map.flyTo(pl.lat, pl.lng, 12); } } },
     h('option', { value: '' }, t('All Puntland')), PLACES.map((pl, i) => h('option', { value: String(i) }, pl.name)));
   refresh(); detail();
-  return h('div', head('Puntland map', 'Hospitals, ambulance, police and fire stations registered with GURMAD 24, on real satellite imagery.'),
+  return h('div', head('Puntland map', 'Verified facilities, clearly labelled demo examples and optional Gaalkacyo directory references on satellite imagery.'),
     h('div', { class: 'pm-tools' }, search, region), chips,
     h('div', { class: 'pm' },
       h('div', { class: 'pm-map' }, map, h('div', { class: 'legend' }, TYPES.map(([k, l]) => h('span', { class: 'rtag u-' + k }, icon(k, 15), t(l))))),
       h('aside', { class: 'pm-side' }, panel('Selected place', card), h('div', count, listBox))),
-    h('small', { class: 'hint' }, t('Places come from the GURMAD 24 register. Imagery: Esri and partners; streets: OpenStreetMap. Confirm a place before travelling; this map is not a live dispatch tool.')));
+    h('small', { class: 'hint' }, t('Verified facilities shown here come from the GURMAD 24 register. Synthetic demo entries are not real or operational and are labelled separately. Optional Gaalkacyo reference points come from public directories or mapping documents and are not verified operational facilities. Confirm their details directly before relying on them. This map is not a live dispatch tool.')));
 }
 export async function system() {
   const draw = o => {
-    const f = o.facilities, c = o.cases;
+    const f = o.facilities, df = o.demoFacilities || {}, c = o.cases;
     const row = (ic, label, total, avail) => h('div', { class: 'tile' }, h('span', icon(ic, 16), ' ', t(label)), h('b', total), h('small', avail === undefined ? ' ' : t('Available now') + ': ' + avail));
     return h('div',
       h('div', { class: 'live-dot' }, h('i'), t('System active'), ' - ', t('updates every few seconds')),
       h('div', { class: 'grid g4 keep2' }, tile(t('Requests today'), c.today), tile(t('Active requests'), c.active), tile(t('Total requests'), c.total), tile(t('Avg minutes to arrival'), c.avgMinutesToHandover === null ? '-' : c.avgMinutesToHandover)),
       h('h3', { class: 'sec-title' }, t('Services connected')),
       h('div', { class: 'grid g4 keep2' }, row('hospital', 'Hospital', f.hospital), row('ambulance', 'Ambulance', f.ambulance, o.available.ambulance), row('police', 'Police', f.police, o.available.police), row('fire', 'Fire brigade', f.fire, o.available.fire)),
-      h('div', { class: 'grid g3 keep2', style: 'margin-top:14px' }, tile(t('Health cards'), o.cards), tile(t('Orders'), o.orders), tile(t('Appointments'), o.appointments)),
+      h('h3', { class: 'sec-title' }, t('Demo facilities (not real or operational)')),
+      h('div', { class: 'grid g4 keep2' }, row('hospital', 'Demo hospitals', df.hospital || 0), row('ambulance', 'Demo ambulance providers', df.ambulance || 0), row('police', 'Demo police stations', df.police || 0), row('fire', 'Demo fire stations', df.fire || 0)),
+      h('div', { class: 'grid g4 keep2', style: 'margin-top:14px' }, tile(t('Health cards'), o.cards), tile(t('Demo cards'), o.demoCards || 0), tile(t('Orders'), o.orders), tile(t('Appointments'), o.appointments)),
       panel('Areas', table([{ label: 'Area', key: 'name' }, { label: 'Active requests', render: a => a.active }], o.areas)));
   };
   const box = h('div'); let o = await GET('/overview'); box.replaceChildren(draw(o));

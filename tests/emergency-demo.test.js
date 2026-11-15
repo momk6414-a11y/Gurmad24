@@ -13,11 +13,14 @@ const make = (body) => { t.app.limiter.reset(); return t.client().post('/api/eme
 const ageCase = (code, seconds) => { const c = t.store.find('cases', x => x.code === code); c.createdAt = new Date(Date.now() - seconds * 1000).toISOString(); };
 const track = (c, code, token) => c.get(`/api/emergency/track/${code}?token=${encodeURIComponent(token)}`);
 
-test('police and fire demo stations exist, are verified and have coordinates', async () => {
+test('police and fire demo stations are available for simulation but never marked verified', async () => {
   const ps = (await op.get('/api/ops/providers')).data.providers;
   for (const type of ['ambulance', 'police', 'fire']) assert.ok(ps.some(p => p.type === type && p.lat !== null && p.lng !== null), type);
   assert.equal((await op.get('/api/ops/providers?type=fire')).data.providers.every(p => p.type === 'fire'), true);
-  assert.ok((await t.client().get('/api/providers?type=police')).data.providers.length >= 1);
+  const publicPolice = (await t.client().get('/api/providers?type=police')).data.providers;
+  assert.ok(publicPolice.length >= 1);
+  assert.equal(publicPolice[0].demo, true);
+  assert.equal(publicPolice[0].verified, false);
   assert.deepEqual((await t.client().get('/api/config')).data.responderTypes, ['ambulance', 'police', 'fire']);
 });
 
@@ -108,24 +111,38 @@ test('map: CSP allows the two tile hosts and public lists expose coordinates', a
   if (csp) { assert.match(csp, /server\.arcgisonline\.com/); assert.match(csp, /tile\.openstreetmap\.org/); }
   const p = r.data.providers[0];
   assert.equal(typeof p.lat, 'number'); assert.equal(typeof p.lng, 'number');
+  assert.equal(p.demo, true); assert.equal(p.verified, false);
   const hs = (await t.client().get('/api/hospitals')).data.hospitals;
-  assert.ok(hs.some(x => typeof x.lat === 'number'));
+  assert.ok(hs.some(x => typeof x.lat === 'number' && x.demo === true && x.verified === false));
 });
 
 test('public overview: live aggregate counts, no personal data', async () => {
   const r = await t.client().get('/api/overview');
   assert.equal(r.status, 200);
   const o = r.data;
-  assert.ok(o.facilities.hospital >= 1 && o.facilities.police >= 1 && o.facilities.fire >= 1);
+  assert.equal(o.facilities.hospital, 0); assert.equal(o.facilities.police, 0); assert.equal(o.facilities.fire, 0);
+  assert.ok(o.demoFacilities.hospital >= 1 && o.demoFacilities.police >= 1 && o.demoFacilities.fire >= 1);
+  assert.match(o.dataNote, /pilot\/demo records/i);
   assert.equal(typeof o.cases.active, 'number');
   assert.ok(Array.isArray(o.areas) && o.areas.length > 0);
   assert.equal(/trackToken|phone|email|@/.test(JSON.stringify(o)), false);
 });
 
-test('assistant answers from live data in Somali and English, never diagnoses', async () => {
+test('assistant answers only from verified non-demo facilities and never diagnoses', async () => {
+  const admin = await H.admin(t);
+  const registerAndVerify = async (orgType, orgName, email, phone) => {
+    const r = await t.client().post('/api/auth/register-org', {
+      orgType, orgName, area: 'Gaalkacyo', phone, name: 'Verified Test Manager',
+      email, password: 'VerifiedTest123', consent: true,
+    });
+    assert.equal(r.status, 201);
+    assert.equal((await admin.patch('/api/admin/orgs/' + r.data.org.id, { status: 'verified' })).status, 200);
+  };
+  await registerAndVerify('hospital', 'Verified Test Hospital', 'verified-hospital@assistant.test', '+252611111111');
+  await registerAndVerify('ambulance', 'Verified Test Ambulance', 'verified-ambulance@assistant.test', '+252611222222');
   const ask = (message, lang) => { t.app.limiter.reset(); return t.client().post('/api/assistant', { message, lang }); };
-  let r = await ask('Isbitaalka ugu dhow', 'so'); assert.equal(r.status, 200); assert.ok(r.data.items.length >= 1); assert.equal(r.data.lang, 'so');
-  r = await ask('How do I request an ambulance?', 'en'); assert.equal(r.data.lang, 'en'); assert.ok(r.data.items.some(i => i.tel) && r.data.actions.some(a => a.href === '#/emergency'));
+  let r = await ask('Isbitaalka ugu dhow', 'so'); assert.equal(r.status, 200); assert.ok(r.data.items.some(i => i.name === 'Verified Test Hospital')); assert.equal(r.data.lang, 'so');
+  r = await ask('How do I request an ambulance?', 'en'); assert.equal(r.data.lang, 'en'); assert.ok(r.data.items.some(i => i.name === 'Verified Test Ambulance' && i.tel) && r.data.actions.some(a => a.href === '#/emergency'));
   r = await ask('I have chest pain and trouble breathing', 'en'); assert.match(r.data.reply, /not a doctor/i);
   r = await ask('Kaararka ugu jaban', 'so'); assert.ok(r.data.reply.length > 10);
   r = await ask('', 'so'); assert.equal(r.status, 400);
