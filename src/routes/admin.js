@@ -44,6 +44,13 @@ module.exports = function (app) {
   });
   app.get('/api/admin/reports/revenue', { auth: A, summary: 'Revenue report by month or year (?period=month|year&year=YYYY)' }, req => revenue(req.query.period === 'year' ? 'year' : 'month', req.query.year));
 
+  // ---------- Push notifications (admin test: sends only to the admin's own phones)
+  app.post('/api/admin/push/test', { auth: A, summary: 'Send a test push notification to my own registered phones' }, async req => {
+    const r = await app.ctx.push.sendToUser(store, req.user, { title: 'GURMAD 24', body: 'Tijaabo: notifications way shaqeynayaan.' });
+    app.audit(req, 'push.test', 'user', req.user.id, { sent: r.sent });
+    return r;
+  });
+
   // ---------- Users & roles
   app.get('/api/admin/users', { auth: A, summary: 'List users' }, () => ({ users: store.col('users').map(userAdminView) }));
   app.post('/api/admin/users', { auth: A, summary: 'Create a user with a role (operator, admin, org staff...)' }, req => {

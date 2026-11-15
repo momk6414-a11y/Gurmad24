@@ -7,6 +7,9 @@ import * as O from './views/org.js';
 import * as OPS from './views/ops.js';
 import * as A from './views/admin.js';
 import { mountAssistant } from './assistant.js';
+import { initPush, stopPush } from './native.js';
+
+const pushApi = (_method, path, body) => POST(path, body);
 
 const ROLE_HOME = { patient: '/', hospital_admin: '/org', provider_admin: '/org', operator: '/ops', admin: '/admin' };
 const ORG = ['hospital_admin', 'provider_admin'];
@@ -197,6 +200,7 @@ function bannerFor(path) {
 
 async function logout() {
   try {
+    await stopPush(pushApi);
     await POST('/auth/logout');
   } catch (_) {
     // Ignore logout network errors.
@@ -216,6 +220,7 @@ async function loadMe() {
     const r = await GET('/auth/me');
     S.user = r.user;
     S.org = r.org || null;
+    if (S.user) initPush(pushApi); // native app only; no-op in the browser
 
     if (S.user && S.user.lang && !LS_get('g24-lang')) {
       setLang(S.user.lang);

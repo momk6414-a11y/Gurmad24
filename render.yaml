@@ -1,7 +1,9 @@
 
-# GURMAD 24 - Render Free Demo
-# Xogta Free plan-ku waa ku-meel-gaar.
-# Ha gelin xog bukaan oo dhab ah.
+# GURMAD 24 - Render service
+# Xogta waxaa lagu kaydiyaa Supabase (joogto ah) marka SUPABASE_URL iyo
+# SUPABASE_SERVICE_ROLE_KEY la dejiyo (hoos). Haddii aan la dejin, waxay ku noqonaysaa
+# faylka JSON ee /tmp, kaas oo Free plan-ku tirtiro marka uu dib u bilaabmo.
+# Ha gelin xog bukaan oo dhab ah ilaa kayd (backup) iyo dib-u-eegis sharci la dhammeeyo.
 services:
   - type: web
     name: gurmad24
@@ -17,9 +19,15 @@ services:
         value: "true"
       - key: COOKIE_SECURE
         value: "true"
-      # Free plan = NO persistent disk: data is wiped on every restart/deploy.
-      # To keep data: upgrade the plan, add a disk (e.g. 1GB at /var/data), then set
-      #   DATA_DIR=/var/data  and  PERSISTENT_STORAGE=true   (and remove the /tmp value above).
+      # Persistent storage = Supabase (see docs/SUPABASE_SETUP.md). Set the two secrets below
+      # in the Render dashboard; they are NOT stored in this file (sync: false).
+      # The /tmp DATA_DIR above is only the fallback when Supabase is not configured.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # Free plan sleeps after ~15 min idle (first request then takes 30-60s). To keep it awake:
+      # change `plan: free` to `plan: starter` (paid) or ping /api/health every 10 min.
       - key: DEMO_MODE
         value: "true"
       - key: SEED_DEMO_DATA

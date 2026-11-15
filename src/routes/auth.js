@@ -1,4 +1,5 @@
 'use strict';
+const PUSH = require('../push');
 const { v, validate, HttpError } = require('../validate');
 const S = require('../security');
 const D = require('../domain');
@@ -85,6 +86,18 @@ module.exports = function (app) {
     return { user: D.userView(u) };
   });
 
+  // ---- Push notification device tokens (Android app). See docs/PUSH_NOTIFICATIONS.md
+  app.post('/api/me/devices', { auth: true, summary: 'Register this phone for push notifications (Android app)' }, req => {
+    const b = validate({ token: v.str({ min: 20, max: 4096, required: true }), platform: v.enum(PUSH.PLATFORMS, { required: true }) }, req.body);
+    PUSH.registerToken(store, req.user, b.token, b.platform);
+    return { ok: true };
+  });
+  app.post('/api/me/devices/remove', { auth: true, summary: 'Stop push notifications on this phone' }, req => {
+    const b = validate({ token: v.str({ min: 20, max: 4096, required: true }) }, req.body);
+    PUSH.removeToken(store, req.user, b.token);
+    return { ok: true };
+  });
+
   app.post('/api/auth/logout', { auth: true, summary: 'Log out (destroys session)' }, (req, res) => {
     store.remove('sessions', req.session.id); app.setSessionCookie(res, '', true);
     app.audit(req, 'auth.logout', 'user', req.user.id);
@@ -158,7 +171,7 @@ module.exports = function (app) {
     if (req.user.role === 'admin' && store.filter('users', u => u.role === 'admin' && u.active).length <= 1) throw new HttpError(409, 'last_admin');
     const u = req.user;
     app.audit(req, 'user.deleted', 'user', u.id);
-    u.name = 'Deleted user'; u.email = `deleted-${u.id}@invalid.local`; u.active = false; u.deletedAt = new Date().toISOString(); u.passwordHash = '';
+    u.name = 'Deleted user'; u.email = `deleted-${u.id}@invalid.local`; u.active = false; u.deletedAt = new Date().toISOString(); u.passwordHash = ''; u.deviceTokens = [];
     for (const a of store.filter('appointments', x => x.userId === u.id)) { a.contactPhone = ''; a.note = ''; }
     for (const s of store.filter('sessions', x => x.userId === u.id)) store.remove('sessions', s.id);
     store.save(); app.setSessionCookie(res, '', true);

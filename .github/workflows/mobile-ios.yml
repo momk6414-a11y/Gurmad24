@@ -17,6 +17,8 @@ jobs:
       - run: npm install
       - name: Create iOS project (only if not committed yet)
         run: '[ -d ios ] || npx cap add ios'
+      - name: Generate icons and splash screens from mobile/assets
+        run: npx capacitor-assets generate --ios
       - run: npx cap sync ios
       - name: Build for simulator (unsigned compile check)
         working-directory: mobile/ios/App

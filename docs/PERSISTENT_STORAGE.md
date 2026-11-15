@@ -1,10 +1,14 @@
 # Persistent data storage — current status
 
-GURMAD 24 now includes a server-side Supabase PostgreSQL adapter on branch `feature/supabase-persistent-store`. It is deliberately **not activated in production yet**: Render must receive the two secret environment variables described in [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) after the code is reviewed and merged.
+GURMAD 24 includes a server-side Supabase PostgreSQL adapter (`src/supabase-store.js`). **Status (2026-11-15):** the live service `gurmad24.onrender.com` reports `storage: supabase-postgres` and `storagePersistent: true` on `/api/health`, i.e. it is active in production.
 
-## Current production limitation
+## If Supabase is not configured
 
-Until both Supabase variables are configured, Render Free continues to use `DATA_DIR/db.json`. Render Free's local filesystem is ephemeral, so writes may be lost on restart, redeploy, or spin-down.
+Without both `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (see [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)), the app falls back to `DATA_DIR/db.json`. On Render Free that filesystem is ephemeral, so writes may be lost on restart, redeploy, or spin-down. `render.yaml` declares both variables (`sync: false`) so a Blueprint sync keeps them set.
+
+## Always-on (no cold start)
+
+Data persistence and availability are separate: Render Free still sleeps after ~15 minutes idle, and the first request afterwards takes 30-60 seconds (the mobile app shows its offline page if that load fails). Fix by moving to a paid plan (`plan: starter`) or by pinging `/api/health` every 10 minutes from an uptime monitor.
 
 ## Implemented integration
 
