@@ -36,11 +36,11 @@ jobs:
             if [ -z "${!v}" ]; then echo "::error::Missing secret for $v (see mobile/README_SOMALI.md)"; missing=1; fi
           done
           exit $missing
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
@@ -72,7 +72,7 @@ jobs:
           jarsigner -verify "$AAB" | tail -1
           cp "$AAB" gurmad24-release.aab
           rm -f "$RUNNER_TEMP/upload.jks"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: gurmad24-release-aab
           path: mobile/gurmad24-release.aab
