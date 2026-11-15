@@ -32,6 +32,8 @@ const { chromium } = require('playwright');
   if (!locationNotice.includes('GURMAD 24')) errors.push('map: current-location privacy notice was not shown');
   // Puntland map: list selection opens place details with a call link and directions.
   await guest.locator('.pm-row').first().click();
+  const demoPlaceDetails = await guest.locator('.pm-card').innerText().catch(() => '');
+  if (!/Demo seed|Tijaabo/i.test(demoPlaceDetails)) errors.push('map: synthetic seed facility was not labelled as demo');
   await guest.waitForSelector('.pm-card a[href^="tel:"]', { timeout: 5000 }).catch(() => errors.push('map: place details did not open'));
   const firstPhoneHref = await guest.locator('.pm-card a[href^="tel:"]').getAttribute('href').catch(() => '');
   if (!/\d/.test(firstPhoneHref)) errors.push('map: place phone link did not retain its digits');
