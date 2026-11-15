@@ -51,7 +51,8 @@ function answer(store, config, message, langHint) {
   const q = norm(message);
   const lang = has(q, SOMALI_HINT) ? 'so' : (langHint === 'so' && !/[a-z]{4,}\s+[a-z]{4,}\s+(the|please|what|how)/.test(q) ? 'so' : (has(q, ['hello', 'help', 'what', 'how', 'where', 'please', 'hospital', 'emergency', 'card']) ? 'en' : (langHint === 'en' ? 'en' : 'so')));
   const L = T[lang];
-  const orgs = store.col('orgs').filter(o => o.status === 'verified');
+  const orgs = store.col('orgs').filter(o => o.status === 'verified' && !o.isDemoSeed);
+  const verifiedOrgIds = new Set(orgs.map(o => o.id));
   const out = { lang, reply: '', actions: [], items: [] };
   const act = (label, href) => out.actions.push({ label, href });
   const area = R.AREAS.find(a => q.includes(norm(a.name)));
@@ -80,7 +81,7 @@ function answer(store, config, message, langHint) {
     return out;
   }
   if (has(q, ['kaar', 'card', 'qiimo', 'price', 'cost', 'jaban', 'cheap', 'caymis', 'insurance', 'package'])) {
-    const cs = store.col('cards').filter(c => c.status === 'published').sort((a, b) => a.priceCents - b.priceCents).slice(0, 3);
+    const cs = store.col('cards').filter(c => c.status === 'published' && verifiedOrgIds.has(c.hospitalId)).sort((a, b) => a.priceCents - b.priceCents).slice(0, 3);
     const cur = (store.data.settings || {}).currency || 'USD';
     out.reply = L.cards + ': ' + (cs.length ? cs.map(c => `${c.name} - ${(c.priceCents / 100).toFixed(2)} ${cur}`).join('; ') : '-') + '. ' + L.cardsNote;
     act(lang === 'so' ? 'Fiiri kaararka' : 'Browse cards', '#/cards'); return out;
