@@ -16,7 +16,8 @@ function ratesFor(store, org) {
 const userView = u => ({ id: u.id, name: u.name, email: u.email, role: u.role, orgId: u.orgId || null, lang: u.lang || 'so', active: u.active, createdAt: u.createdAt, twoFactor: !!(u.totp && u.totp.enabled) });
 
 function orgPublic(o) {
-  return { id: o.id, type: o.type, name: o.name, area: o.area, address: o.address || '', phone: o.phone || '', email: o.publicEmail || '', description: o.description || '', hours: o.hours || '', verified: o.status === 'verified', available: o.type === 'hospital' ? undefined : !!o.available, serviceAreas: o.serviceAreas || [], lat: o.lat ?? null, lng: o.lng ?? null };
+  const demo = !!o.isDemoSeed;
+  return { id: o.id, type: o.type, name: o.name, area: o.area, address: o.address || '', phone: o.phone || '', email: o.publicEmail || '', description: o.description || '', hours: o.hours || '', verified: o.status === 'verified' && !demo, demo, available: o.type === 'hospital' ? undefined : !!o.available, serviceAreas: o.serviceAreas || [], lat: o.lat ?? null, lng: o.lng ?? null };
 }
 const orgPrivate = o => ({ ...orgPublic(o), status: o.status, statusNote: o.statusNote || '', contract: o.contract, createdAt: o.createdAt });
 
@@ -25,7 +26,8 @@ function cardView(store, c, org) {
   return {
     id: c.id, name: c.name, priceCents: c.priceCents, currency: settings(store).currency, included: c.included, excluded: c.excluded,
     validityDays: c.validityDays, eligibility: c.eligibility, terms: c.terms, refundPolicy: c.refundPolicy, status: c.status,
-    hospital: org ? { id: org.id, name: org.name, verified: org.status === 'verified', area: org.area, phone: org.phone || '', email: org.publicEmail || '', address: org.address || '' } : null,
+    hospital: org ? { id: org.id, name: org.name, verified: org.status === 'verified' && !org.isDemoSeed, demo: !!org.isDemoSeed, area: org.area, phone: org.phone || '', email: org.publicEmail || '', address: org.address || '' } : null,
+    demo: !!c.isDemoSeed || !!(org && org.isDemoSeed),
     hospitalApprovedAt: c.hospitalApprovedAt || null, updatedAt: c.updatedAt,
     notInsurance: true, // Health cards are hospital service products, NOT insurance (shown in UI)
   };
