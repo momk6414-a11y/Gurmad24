@@ -7,6 +7,13 @@ const DIRECTORY_REFERENCE = Object.freeze({
   ariaLabel: 'Directory reference, not verified: {name}',
 });
 
+const DEMO_SEED = Object.freeze({
+  label: 'Demo seed — not a real facility',
+  badge: 'warn',
+  notice: 'Synthetic demo facility. This is not a real hospital, provider or emergency service. It is not operational and must not be used for care, calls or dispatch.',
+  ariaLabel: 'Demo facility, not real or verified: {name}',
+});
+
 const VERIFIED_REGISTER = Object.freeze({
   label: 'Verified GURMAD 24 register',
   badge: 'ok',
@@ -15,5 +22,6 @@ const VERIFIED_REGISTER = Object.freeze({
 });
 
 export function placeTrust(place) {
+  if (place && place.demo === true) return DEMO_SEED;
   return place && place.reference === true ? DIRECTORY_REFERENCE : VERIFIED_REGISTER;
 }
