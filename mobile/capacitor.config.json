@@ -1,0 +1,19 @@
+{
+  "appId": "so.gurmad24.app",
+  "appName": "GURMAD 24",
+  "webDir": "www",
+  "server": {
+    "url": "https://gurmad24.onrender.com",
+    "cleartext": false,
+    "errorPath": "offline.html"
+  },
+  "android": { "allowMixedContent": false },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#06191f",
+      "showSpinner": false
+    },
+    "StatusBar": { "backgroundColor": "#071c22", "style": "DARK" }
+  }
+}
