@@ -36,6 +36,7 @@ jobs:
       GS_B64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
       VERSION_NAME: ${{ inputs.version_name }}
     steps:
+      - uses: actions/checkout@v4
       - name: Check signing secrets exist
         run: |
           missing=0
@@ -43,7 +44,6 @@ jobs:
             if [ -z "${!v}" ]; then echo "::error::Missing secret for $v (see mobile/README_SOMALI.md)"; missing=1; fi
           done
           exit $missing
-      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
