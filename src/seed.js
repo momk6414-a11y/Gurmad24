@@ -30,11 +30,22 @@ function seedDemoData(app, options = {}) {
   // A single synthetic hospital is created only for isolated automated tests.
   // Production never receives the old A/B/C sample hospitals.
   if (options.testFixtures) {
-    org('hospital', 'Isbitaal Tijaabo (Test Fixture)', 'Gaalkacyo', {
+    const testHospital = org('hospital', 'Isbitaal Tijaabo (Test Fixture)', 'Gaalkacyo', {
       description: 'Automated test fixture only.',
       hours: 'Test fixture',
       phone: '0000000000',
     });
+    // Keep a small synthetic catalogue for marketplace integration tests only.
+    for (const [index, name] of ['Test fixture card one', 'Test fixture card two'].entries()) {
+      store.insert('cards', {
+        id: store.id('cd_'), hospitalId: testHospital.id, name, priceCents: 1000 + index * 500,
+        included: ['Automated test item'], excluded: ['Not a real service'], validityDays: 30,
+        eligibility: 'Test only', terms: 'Automated test fixture only.',
+        refundPolicy: 'Automated test fixture only.', status: 'published',
+        hospitalApprovedAt: now, approvedBy: 'test-fixture', createdAt: now, updatedAt: now,
+        isDemoSeed: true,
+      });
+    }
   }
 
   const svc = (o, name, priceCents, note = '') => store.insert('services', { id: store.id('sv_'), orgId: o.id, name, priceCents, note, active: true, createdAt: now });
