@@ -61,11 +61,27 @@ export async function servicesPage() {
 // ---------- Appointments
 export async function appointments() {
   const { appointments: as } = await GET('/org/appointments');
-  const act = (a, status) => { if (status === 'completed' && S.org && S.org.type === 'lab') { let m; m = modal(t('Complete appointment'), form([{ name: 'amountCents', label: 'Amount charged to the patient (USD)', type: 'money', hint: 'Used to calculate the partnership commission.' }], { submit: 'Mark completed', cancel: () => m.close(), onSubmit: async v => { await PATCH('/org/appointments/' + a.id, { status, ...v }); m.close(); refresh(); } })); return; }
-    PATCH('/org/appointments/' + a.id, { status }).then(() => { toast(t('Updated.')); refresh(); }).catch(e => toast(errText(e), 'err')); };
-  return h('div', head('Appointment requests', 'Patients see only the status and your note. You see their name and the phone they provided.'),
-    panel(null, table([{ label: 'Patient', key: 'patientName' }, { label: 'Phone', render: a => a.contactPhone || '-' }, { label: 'Reason type', render: a => catName(a.category) }, { label: 'Service', render: a => a.serviceName || '-' }, { label: 'Preferred date', render: a => fdate(a.preferredDate) }, { label: 'Note', render: a => a.note || '-' }, { label: 'Status', render: a => badge(a.status) },
-      { label: '', render: a => h('div', { class: 'actions' }, a.status === 'requested' ? h('button', { class: 'btn sm', onclick: () => act(a, 'confirmed') }, t('Confirm')) : null, a.status === 'confirmed' ? h('button', { class: 'btn sm', onclick: () => act(a, 'completed') }, t('Complete')) : null, ['requested', 'confirmed'].includes(a.status) ? h('button', { class: 'btn sm ghost', onclick: () => act(a, 'declined') }, t('Decline')) : null) }], as, { empty: 'No appointment requests yet.' })));
+  const act = (a, status) => {
+    if (status === 'completed' && S.org && S.org.type === 'lab') {
+      let m; m = modal(t('Complete appointment'), form([{ name: 'amountCents', label: 'Amount charged to the patient (USD)', type: 'money', hint: 'Used to calculate the partnership commission.' }], { submit: 'Mark completed', cancel: () => m.close(), onSubmit: async v => { await PATCH('/org/appointments/' + a.id, { status, ...v }); m.close(); refresh(); } }));
+      return;
+    }
+    PATCH('/org/appointments/' + a.id, { status }).then(() => { toast(t('Updated.')); refresh(); }).catch(e => toast(errText(e), 'err'));
+  };
+  const cards = as.map(a => h('article', { class: 'panel appointment-card' },
+    h('div', { class: 'appointment-card-head' }, h('div', h('small', t('APPOINTMENT REQUEST')), h('h3', a.patientName)), badge(a.status)),
+    h('dl', { class: 'kv' }, h('dt', t('Phone')), h('dd', a.contactPhone || '-'), h('dt', t('Reason type')), h('dd', catName(a.category)), h('dt', t('Service')), h('dd', a.serviceName || '-'), h('dt', t('Preferred date')), h('dd', fdate(a.preferredDate))),
+    a.note ? h('p', h('b', t('Patient note: ')), a.note) : null,
+    a.visitConsentAt ? h('p', { class: 'muted' }, t('Patient has consented to a visit card.')) : null,
+    h('div', { class: 'actions' },
+      a.status === 'requested' ? h('button', { class: 'btn sm', onclick: () => act(a, 'confirmed') }, t('Confirm')) : null,
+      a.status === 'confirmed' ? h('button', { class: 'btn sm', onclick: () => act(a, 'completed') }, t('Complete')) : null,
+      ['requested', 'confirmed'].includes(a.status) ? h('button', { class: 'btn sm ghost', onclick: () => act(a, 'declined') }, t('Decline')) : null
+    )
+  ));
+  return h('div', head('Appointment requests', 'Review patient requests, confirm a time, and update their status.'),
+    cards.length ? h('div', { class: 'grid g2' }, cards) : emptyState('No appointment requests yet.')
+  );
 }
 
 // ---------- Private doctor visit cards
