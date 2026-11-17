@@ -1,0 +1,11 @@
+/* Gurmad brand tokens — shared across the app. */
+:root {
+  --g-brand-blue: #0B3D91;
+  --g-brand-green: #2EB82E;
+  --g-brand-white: #FFFFFF;
+  --g-brand-ice: #E8F1FB;
+  --g-font-family: "Poppins", "Montserrat", system-ui, sans-serif;
+  --g-font-bold: 700;
+  --g-font-regular: 400;
+  --g-shadow-soft: 0 18px 48px rgba(11, 61, 145, .12);
+}

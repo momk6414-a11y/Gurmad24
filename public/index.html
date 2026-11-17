@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0B8F72">
+<meta name="theme-color" content="#FFFFFF">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,11 +14,26 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/brand-tokens.css">
+<link rel="stylesheet" href="/css/splash.css">
 <link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/css/design-v4.css">
 <title>GURMAD 24</title>
 </head>
 <body>
+<div class="gurmad-splash" id="gurmadSplash" role="status" aria-label="Gurmad — Gargaar degdeg ah, meel kasta.">
+  <div class="gurmad-splash__content">
+    <img class="gurmad-splash__logo" src="/assets/gurmad-logo.svg" width="184" height="184" alt="">
+    <h1 class="gurmad-splash__name">Gurmad</h1>
+    <p class="gurmad-splash__tagline">Gargaar degdeg ah, meel kasta.</p>
+  </div>
+  <svg class="gurmad-splash__waves" viewBox="0 0 1440 260" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 105C250 165 420 198 690 155S1120 45 1440 112V260H0Z" fill="#E8F1FB"/>
+    <path d="M0 145C270 205 480 225 740 174S1160 90 1440 145V260H0Z" fill="#2EB82E"/>
+    <path d="M0 174C280 225 510 240 770 195S1190 125 1440 176V260H0Z" fill="#0B3D91"/>
+    <path d="M0 205C300 245 530 255 800 220S1200 168 1440 205V260H0Z" fill="#0B3D91"/>
+  </svg>
+</div>
 <a class="skip" href="#view">Skip to content</a>
 <header class="top" id="top"></header>
 <div class="demo-banner" id="demoBanner" role="note"></div>
@@ -27,6 +42,7 @@
 <footer class="footer" id="footer"></footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <noscript><p style="padding:20px">GURMAD 24 needs JavaScript. / GURMAD 24 wuxuu u baahan yahay JavaScript.</p></noscript>
+<script src="/js/splash.js"></script>
 <script type="module" src="/js/app.js"></script>
 </body>
 </html>
