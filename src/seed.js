@@ -77,7 +77,7 @@ function seedDemoData(app, options = {}) {
 // Disable synthetic demo logins in production without deleting their audit/history rows.
 function disableDemoUsers(app) {
   const { store } = app.ctx;
-  const targets = store.filter('users', u => /@demo\\.gurmad24\\.test$/i.test(String(u.email || '')) && u.active !== false);
+  const targets = store.filter('users', u => /@demo\.gurmad24\.test$/i.test(String(u.email || '')) && u.active !== false);
   if (!targets.length) return 0;
   const ids = new Set(targets.map(u => u.id));
   for (const u of targets) {
