@@ -24,16 +24,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#0B3D91"
     },
-    "plugins": [
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/splash.png",
-          "imageWidth": 150,
-          "resizeMode": "contain",
-          "backgroundColor": "#0B3D91"
-        }
-      ]
-    ]
+    "plugins": []
   }
 }
