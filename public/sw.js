@@ -2,13 +2,19 @@
 // GURMAD 24 - Service Worker
 // Version 18: refreshes old app cache and keeps API/personal data uncached.
 
-const CACHE = 'g24-v22';
+const CACHE = 'g24-v23';
 
 const SHELL = [
   '/',
   '/index.html',
   '/css/app.css',
   '/css/design-v4.css',
+  '/css/brand-tokens.css',
+  '/css/splash.css',
+  '/js/splash.js',
+  '/assets/gurmad-logo.svg',
+  '/fonts/Poppins-Regular.ttf',
+  '/fonts/Poppins-Bold.ttf',
   '/js/app.js',
   '/js/core.js',
   '/js/i18n.js',
