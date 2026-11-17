@@ -125,7 +125,7 @@ test('mandatory staff MFA blocks all staff data routes until authenticator enrol
 test('production demo-account switch disables synthetic users and revokes their sessions', async () => {
   const guarded = await H.start({ DISABLE_DEMO_ACCOUNTS: 'true' });
   try {
-    const demoUsers = guarded.store.filter('users', u => /@demo\\.gurmad24\\.test$/i.test(String(u.email || '')));
+    const demoUsers = guarded.store.filter('users', u => /@demo\.gurmad24\.test$/i.test(String(u.email || '')));
     assert.ok(demoUsers.length > 0);
     assert.ok(demoUsers.every(u => u.active === false && u.passwordHash === ''));
     assert.equal(guarded.store.filter('sessions', s => demoUsers.some(u => u.id === s.userId)).length, 0);
