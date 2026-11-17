@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, RefreshControl, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { apiRequest } from './src/api/client';
 import { colors } from './src/theme/tokens';
@@ -93,9 +93,9 @@ export default function App() {
   const [splash, setSplash] = useState(true);
   const data = useHospitals();
   useEffect(() => { const t = setTimeout(() => setSplash(false), 900); return () => clearTimeout(t); }, []);
-  if (splash) return <><StatusBar barStyle="light-content" backgroundColor={colors.navy} /><Splash /></>;
+  if (splash) return <><StatusBar barStyle="light-content" /><Splash /></>;
   const openWeb = () => setTab('web');
-  return <SafeAreaView style={styles.safe}><StatusBar barStyle="dark-content" backgroundColor={colors.background} /><View style={styles.shell}>
+  return <SafeAreaView style={styles.safe}><StatusBar barStyle="dark-content" /><View style={styles.shell}>
     {tab === 'home' ? <Home data={data} openHospitals={() => setTab('hospitals')} openWeb={openWeb} /> : null}
     {tab === 'hospitals' ? <Hospitals data={data} /> : null}
     {tab === 'activity' ? <SimplePage title="Hawlahayga" subtitle="La soco codsiyadaada iyo tikidyada." onOpenWeb={openWeb} /> : null}
