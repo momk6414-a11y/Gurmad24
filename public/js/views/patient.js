@@ -101,3 +101,21 @@ function deleteAccount() {
   let m; m = modal(t('Delete my account'), h('div', h('p', t('This cannot be undone. Enter your password to confirm.')), form([{ name: 'password', label: 'Password', type: 'password', required: true }], { submit: 'Delete permanently', cancel: () => m.close(),
     onSubmit: async v => { await POST('/auth/delete-account', v); m.close(); S.user = null; window.dispatchEvent(new CustomEvent('g24-auth')); toast(t('Account deleted.')); go('/'); } })));
 }
+
+
+// ---------- My private doctor visit cards
+export async function visits() {
+  const { visits: records } = await GET('/visits');
+  const cards = records.map(v => h('article', { class: 'panel visit-card' },
+    h('div', { class: 'visit-card-head' }, h('div', h('small', t('MY HEALTH VISIT CARD')), h('h3', v.hospitalName)), badge(fdate(v.visitDate))),
+    h('p', h('b', v.doctorName), v.specialty ? ' · ' + v.specialty : ''),
+    v.service ? h('p', h('b', t('Service: ')), v.service) : null,
+    h('p', v.summary),
+    v.followUpDate ? h('p', { class: 'muted' }, t('Follow-up: {date}', { date: fdate(v.followUpDate) })) : null,
+    h('button', { class: 'btn sm ghost', onclick: () => window.print() }, t('Print / save PDF'))
+  ));
+  return h('div', head('My visit cards', 'Private summaries of visits you consented to record.'),
+    demoNote('Only you and the hospital that created the card can see these visit details.'),
+    cards.length ? h('div', { class: 'grid g2' }, cards) : emptyState('No visit cards yet.')
+  );
+}
