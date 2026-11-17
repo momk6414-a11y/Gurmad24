@@ -8,6 +8,8 @@ test('public Gaalkacyo directory exposes 17 unverified public listings with the 
   const response = await app.client().get('/api/hospitals');
   assert.equal(response.status, 200);
   assert.equal(response.data.directory.length, 17);
+  assert.equal(response.data.directory.filter(h => h.hours.startsWith('24 saac')).length, 11);
+  assert.equal(response.data.directory.find(h => h.name === 'Galkayo General Hospital').publicEmail, 'galkayohospital@gmail.com');
   assert.ok(response.data.directory.every(h => h.directoryOnly && h.verified === false));
   assert.equal(response.data.directory.find(h => h.name === 'Digfeer Eye Specialist Hospital').phone, '+252 90 765 8641');
   const samePhone = response.data.directory.filter(h => h.phone === '+252 61 782 0040');
