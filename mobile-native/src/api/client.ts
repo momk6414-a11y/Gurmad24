@@ -27,7 +27,6 @@ export async function apiRequest<T>(
       Accept: 'application/json',
       ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
     },
-    credentials: 'include',
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   });
 
