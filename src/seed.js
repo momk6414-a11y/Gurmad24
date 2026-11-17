@@ -36,7 +36,7 @@ function seedDemoData(app, options = {}) {
       phone: '0000000000',
     });
     // Keep a small synthetic catalogue for marketplace integration tests only.
-    for (const [index, name] of ['Test fixture card one', 'Test fixture card two'].entries()) {
+    for (const [index, name] of ['Test fixture card one', 'Test fixture card two', 'Test fixture card three', 'Test fixture card four'].entries()) {
       store.insert('cards', {
         id: store.id('cd_'), hospitalId: testHospital.id, name, priceCents: 1000 + index * 500,
         included: ['Automated test item'], excluded: ['Not a real service'], validityDays: 30,
