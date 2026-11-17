@@ -13,9 +13,27 @@
     "android": {
       "package": "so.gurmad24.app",
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF"
+        "foregroundImage": "./assets/icon-foreground.png",
+        "backgroundColor": "#0B3D91"
       },
       "edgeToEdgeEnabled": true
-    }
+    },
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B3D91"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 150,
+          "resizeMode": "contain",
+          "backgroundColor": "#0B3D91"
+        }
+      ]
+    ]
   }
 }
