@@ -92,7 +92,7 @@ module.exports = function (app) {
   // ---------- My hospital visit cards. Records are visible only to their patient.
   app.get('/api/visits', { auth: P, summary: 'My own hospital visit cards' }, req => ({
     visits: store.filter('visits', v => v.userId === req.user.id).sort((a, b) => b.visitDate.localeCompare(a.visitDate)).map(v => ({
-      id: v.id, doctorName: v.doctorName, specialty: v.specialty, visitDate: v.visitDate,
+      id: v.id, appointmentId: v.appointmentId, doctorName: v.doctorName, specialty: v.specialty, visitDate: v.visitDate,
       service: v.service, summary: v.summary, followUpDate: v.followUpDate,
       hospitalName: (store.get('orgs', v.orgId) || {}).name || 'Hospital',
     })),
