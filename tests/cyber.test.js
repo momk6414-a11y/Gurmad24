@@ -107,6 +107,7 @@ test('mandatory staff MFA blocks all staff data routes until authenticator enrol
   const guarded = await H.start({ REQUIRE_STAFF_2FA: 'true' });
   try {
     const staff = await H.admin(guarded);
+    assert.equal((await staff.get('/api/auth/me')).data.securitySetupRequired, true);
     let r = await staff.get('/api/admin/security');
     assert.equal(r.status, 403); assert.equal(r.data.error, 'staff_2fa_required');
     assert.equal((await staff.get('/api/auth/sessions')).status, 200);
