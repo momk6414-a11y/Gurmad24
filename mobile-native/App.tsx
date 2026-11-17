@@ -24,7 +24,7 @@ const draftHospitals: Hospital[] = [
   { id: 'draft-shifo-specialist', name: 'Shifo Specialist Hospital', area: 'Gaalkacyo', phone: '+252 90 686 0404', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
   { id: 'draft-wadani', name: 'Wadani Specialist Hospital', area: 'Gaalkacyo', phone: '+252 90 776 6666', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
   { id: 'draft-wadatal', name: 'Wadatal General Hospital', area: 'Gaalkacyo', phone: '+252 61 976 6665', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-;
+];
 const tabs = [
   { key: 'home', label: 'Hoyga', icon: '⌂' }, { key: 'hospitals', label: 'Isbitaallo', icon: '✚' },
   { key: 'activity', label: 'Hawlahayga', icon: '◷' }, { key: 'account', label: 'Akoon', icon: '○' },
