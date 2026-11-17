@@ -516,7 +516,7 @@ export function login() {
   panel('New here?', h('div', h('p', t('Create a free account to order health cards and request appointments.')), h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/register' }, t('Create patient account')), h('a', { class: 'btn ghost', href: '#/register-org' }, t('Register a hospital / provider')))))));
 }
 export async function afterAuth(user, securitySetupRequired = false) {
-  S.user = user; S.authKnown = true; // known immediately: do not bounce back to login while the session reloads
+  S.user = user; S.securitySetupRequired = !!securitySetupRequired; S.authKnown = true; // known immediately: do not bounce back to login while the session reloads
   window.dispatchEvent(new CustomEvent('g24-auth'));
   const after = SS.get('g24-after'); SS.del('g24-after');
   const home = { patient: '/', hospital_admin: '/org', provider_admin: '/org', operator: '/ops', admin: '/admin' }[user.role];
