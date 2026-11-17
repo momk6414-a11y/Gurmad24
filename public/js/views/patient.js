@@ -35,7 +35,7 @@ export async function orderDetail({ id }) {
 export async function appointments() {
   const { appointments: as } = await GET('/appointments');
   return h('div', head('My appointments', 'Requests sent to hospitals and laboratories.', h('a', { class: 'btn', href: '#/hospitals' }, icon('plus'), t('New request'))),
-    panel(null, table([{ label: 'Where', key: 'orgName' }, { label: 'Reason type', render: a => catName(a.category) }, { label: 'Preferred date', render: a => fdate(a.preferredDate) }, { label: 'Status', render: a => badge(a.status) }, { label: 'Hospital note', render: a => a.orgNote || '-' },
+    panel(null, table([{ label: 'Where', key: 'orgName' }, { label: 'Reason type', render: a => catName(a.category) }, { label: 'Preferred date', render: a => fdate(a.preferredDate) }, { label: 'Status', render: a => badge(a.status) }, { label: 'Visit card', render: a => a.visitConsentAt ? badge('Consent given') : ['requested', 'confirmed'].includes(a.status) ? h('button', { class: 'btn sm ghost', onclick: async () => { await POST('/appointments/' + a.id + '/visit-consent', { consent: true }); toast(t('Consent saved.')); window.dispatchEvent(new HashChangeEvent('hashchange')); } }, t('Allow visit card')) : '-' }, { label: 'Hospital note', render: a => a.orgNote || '-' },
       { label: '', render: a => ['requested', 'confirmed'].includes(a.status) ? h('button', { class: 'btn sm ghost', onclick: async () => { if (await confirmBox(t('Cancel this appointment request?'))) { await POST(`/appointments/${a.id}/cancel`); toast(t('Cancelled.')); window.dispatchEvent(new HashChangeEvent('hashchange')); } } }, t('Cancel')) : null }], as,
     { empty: 'No appointment requests yet.' })));
 }
