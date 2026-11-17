@@ -58,26 +58,45 @@ module.exports = function (app) {
   app.post('/api/appointments', { auth: P, summary: 'Request an appointment at a verified hospital/lab' }, req => {
     const b = validate({
       orgId: v.str({ required: true, max: 60 }), serviceId: v.str({ max: 60 }), category: v.enum(APPT_CATEGORIES, { required: true }),
-      preferredDate: v.date({ required: true }), contactPhone: v.str({ max: 30, default: '' }), note: v.str({ max: 140, default: '' }),
+      preferredDate: v.date({ required: true }), contactPhone: v.str({ max: 30, default: '' }), note: v.str({ max: 140, default: '' }), visitConsent: v.bool({ default: false }),
     }, req.body);
     const org = store.get('orgs', b.orgId);
     if (!org || org.status !== 'verified' || !['hospital', 'lab'].includes(org.type)) throw new HttpError(404, 'org_unavailable');
     if (b.preferredDate < new Date().toISOString().slice(0, 10)) throw new HttpError(400, 'validation_failed', { preferredDate: 'in_past' });
     if (b.serviceId) { const s = store.get('services', b.serviceId); if (!s || s.orgId !== org.id || !s.active) throw new HttpError(400, 'validation_failed', { serviceId: 'invalid' }); }
     const now = new Date().toISOString();
-    const a = store.insert('appointments', { id: store.id('ap_'), userId: req.user.id, orgId: org.id, serviceId: b.serviceId || null, category: b.category, preferredDate: b.preferredDate, contactPhone: b.contactPhone, note: b.note, status: 'requested', orgNote: '', amountCents: null, createdAt: now, updatedAt: now });
+    const a = store.insert('appointments', { id: store.id('ap_'), userId: req.user.id, orgId: org.id, serviceId: b.serviceId || null, category: b.category, preferredDate: b.preferredDate, contactPhone: b.contactPhone, note: b.note, visitConsentAt: b.visitConsent ? now : null, status: 'requested', orgNote: '', amountCents: null, createdAt: now, updatedAt: now });
     app.audit(req, 'appointment.request', 'appointment', a.id, { orgId: org.id });
     return created({ appointment: a });
   });
   app.get('/api/appointments', { auth: P, summary: 'My appointment requests' }, req => ({
     appointments: store.filter('appointments', a => a.userId === req.user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(a => ({ ...a, orgName: (store.get('orgs', a.orgId) || {}).name })),
   }));
+  app.post('/api/appointments/:id/visit-consent', { auth: P, summary: 'Give or withdraw consent for a hospital visit card' }, req => {
+    const a = own('appointments', req.params.id, req.user.id);
+    if (!['requested', 'confirmed'].includes(a.status)) throw new HttpError(409, 'appointment_not_active');
+    if (store.find('visits', v => v.appointmentId === a.id)) throw new HttpError(409, 'visit_card_already_created');
+    const b = validate({ consent: v.bool({ required: true }) }, req.body);
+    a.visitConsentAt = b.consent ? new Date().toISOString() : null;
+    a.updatedAt = new Date().toISOString(); store.save();
+    app.audit(req, b.consent ? 'visit.consent' : 'visit.consent_withdraw', 'appointment', a.id);
+    return { appointment: { id: a.id, visitConsentAt: a.visitConsentAt } };
+  });
   app.post('/api/appointments/:id/cancel', { auth: P, summary: 'Cancel my appointment request' }, req => {
     const a = own('appointments', req.params.id, req.user.id);
     if (!['requested', 'confirmed'].includes(a.status)) throw new HttpError(409, 'cannot_cancel');
     a.status = 'cancelled'; a.updatedAt = new Date().toISOString(); store.save(); app.audit(req, 'appointment.cancel', 'appointment', a.id);
     return { appointment: a };
   });
+
+  // ---------- My hospital visit cards. Records are visible only to their patient.
+  app.get('/api/visits', { auth: P, summary: 'My own hospital visit cards' }, req => ({
+    visits: store.filter('visits', v => v.userId === req.user.id).sort((a, b) => b.visitDate.localeCompare(a.visitDate)).map(v => ({
+      id: v.id, doctorName: v.doctorName, specialty: v.specialty, visitDate: v.visitDate,
+      service: v.service, summary: v.summary, followUpDate: v.followUpDate,
+      hospitalName: (store.get('orgs', v.orgId) || {}).name || 'Hospital',
+    })),
+  }));
 
   // ---------- Support / complaints
   app.post('/api/complaints', { auth: P, summary: 'Contact support or file a complaint' }, req => {
