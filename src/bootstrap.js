@@ -24,6 +24,10 @@ function wire(config, store, overrides = {}) {
   seed.ensureResponderDemo(app);
   catalog.applyToAll(store);
   seed.seedDemoUsers(app, config, log);
+  if (config.disableDemoAccounts) {
+    const disabled = seed.disableDemoUsers(app);
+    if (disabled) log(`Disabled ${disabled} synthetic demo accounts and revoked their sessions.`);
+  }
   seed.runRetention(store, config.retentionDays);
 
   const timers = [];
