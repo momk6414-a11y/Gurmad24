@@ -6,8 +6,11 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  StyleProp,
   Text,
+  TextStyle,
   View,
+  ViewStyle,
 } from 'react-native';
 import { colors, radius, spacing } from './src/theme/tokens';
 
@@ -28,7 +31,7 @@ const tabs = [
 type TabKey = (typeof tabs)[number]['key'];
 type ServiceTone = (typeof services)[number]['tone'];
 
-const iconStyles: Record<ServiceTone, object> = {
+const iconStyles: Record<ServiceTone, StyleProp<ViewStyle>> = {
   blue: styles.icon_blue,
   green: styles.icon_green,
   purple: styles.icon_purple,
