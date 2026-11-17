@@ -74,6 +74,24 @@ function seedDemoData(app, options = {}) {
 }
 
 
+// Disable synthetic demo logins in production without deleting their audit/history rows.
+function disableDemoUsers(app) {
+  const { store } = app.ctx;
+  const targets = store.filter('users', u => /@demo\.gurmad24\.test$/i.test(String(u.email || '')) && u.active !== false);
+  if (!targets.length) return 0;
+  const ids = new Set(targets.map(u => u.id));
+  for (const u of targets) {
+    u.active = false;
+    u.passwordHash = '';
+    u.totp = null;
+    u.disabledReason = 'demo_account_disabled';
+    u.disabledAt = new Date().toISOString();
+  }
+  for (const s of store.filter('sessions', x => ids.has(x.userId))) store.remove('sessions', s.id);
+  store.save();
+  return targets.length;
+}
+
 // Remove only the three explicitly synthetic hospital fixtures and their dependent demo catalogue entries.
 // Real hospitals and historical orders are intentionally left untouched.
 function removeDemoHospitals(app) {
@@ -139,4 +157,4 @@ function runRetention(store, days) {
   if (n) store.save(); return n;
 }
 
-module.exports = { ensureAdmin, seedDemoData, removeDemoHospitals, ensureResponderDemo, seedDemoUsers, runRetention };
+module.exports = { ensureAdmin, seedDemoData, removeDemoHospitals, ensureResponderDemo, seedDemoUsers, disableDemoUsers, runRetention };

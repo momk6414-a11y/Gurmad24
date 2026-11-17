@@ -222,6 +222,7 @@ async function loadMe() {
     const r = await GET('/auth/me');
     S.user = r.user;
     S.org = r.org || null;
+    S.securitySetupRequired = !!r.securitySetupRequired;
     if (S.user) initPush(pushApi); // native app only; no-op in the browser
 
     if (S.user && S.user.lang && !LS_get('g24-lang')) {
@@ -246,6 +247,11 @@ async function render(keepScroll) {
 
   const route = ROUTES.find(r => r.re.test(path));
   chrome();
+
+  if (S.securitySetupRequired && path !== '/account') {
+    go('/account');
+    return;
+  }
 
   if (!route) {
     view.replaceChildren(

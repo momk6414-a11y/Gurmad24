@@ -50,7 +50,8 @@ module.exports = function (app) {
     const u = createUser({ name: b.name, email: b.email, password: b.password, lang: b.lang, role: ORG_ROLE[b.orgType], orgId: org.id, strictEmail: true });
     app.audit({ ...req, user: u }, 'org.register', 'org', org.id, { type: org.type });
     startSession(req, res, u);
-    return created({ user: D.userView(u), org: D.orgPrivate(org) });
+    const securitySetupRequired = !!(app.ctx.config.requireStaff2fa && u.role !== 'patient' && !(u.totp && u.totp.enabled));
+    return created({ user: D.userView(u), org: securitySetupRequired ? null : D.orgPrivate(org), securitySetupRequired });
   });
 
   app.post('/api/auth/login', { summary: 'Log in (sets httpOnly session cookie). Locks after 5 failures / 15 min' }, (req, res) => {
@@ -83,7 +84,7 @@ module.exports = function (app) {
     fails.delete(key);
     startSession(req, res, u);
     app.audit({ ...req, user: u }, 'auth.login', 'user', u.id);
-    return { user: D.userView(u) };
+    return { user: D.userView(u), securitySetupRequired: !!(app.ctx.config.requireStaff2fa && u.role !== 'patient' && !(u.totp && u.totp.enabled)) };
   });
 
   // ---- Push notification device tokens (Android app). See docs/PUSH_NOTIFICATIONS.md
@@ -107,7 +108,8 @@ module.exports = function (app) {
   app.get('/api/auth/me', { summary: 'Current user (null if not logged in)' }, req => {
     const u = app.loadUser(req);
     if (!u) return { user: null };
-    return { user: D.userView(u), org: u.orgId ? D.orgPrivate(store.get('orgs', u.orgId)) : null };
+    const securitySetupRequired = !!(app.ctx.config.requireStaff2fa && u.role !== 'patient' && !(u.totp && u.totp.enabled));
+    return { user: D.userView(u), org: securitySetupRequired ? null : (u.orgId ? D.orgPrivate(store.get('orgs', u.orgId)) : null), securitySetupRequired };
   });
 
   app.post('/api/auth/change-password', { auth: true, summary: 'Change own password (logs out other sessions)' }, req => {
@@ -120,8 +122,9 @@ module.exports = function (app) {
     return { ok: true };
   });
 
-  // ---- Two-step login (authenticator app). Optional for everyone, recommended for staff and admins.
+  // ---- Authenticator-based two-step login. Staff MFA can be made mandatory by configuration.
   app.post('/api/auth/2fa/setup', { auth: true, summary: 'Start authenticator setup: returns a secret to add to an authenticator app. Repeating it returns the same pending secret unless reset=true' }, req => {
+    if (!app.limiter.check('2fa-setup:' + req.user.id, 5, 15 * 60000)) throw new HttpError(429, 'rate_limited');
     if (req.user.totp && req.user.totp.enabled) throw new HttpError(409, 'already_enabled');
     const reset = !!(req.body && req.body.reset);
     if (!req.user.totp || reset) { req.user.totp = { secret: S.newTotpSecret(), enabled: false, lastStep: 0 }; store.save(); }
@@ -129,9 +132,14 @@ module.exports = function (app) {
     return { secret, serverTime: new Date().toISOString(), uri: `otpauth://totp/GURMAD%2024:${encodeURIComponent(req.user.email)}?secret=${secret}&issuer=GURMAD%2024&algorithm=SHA1&digits=6&period=30` };
   });
   app.post('/api/auth/2fa/enable', { auth: true, summary: 'Confirm authenticator setup with a 6-digit code' }, req => {
+    if (!app.limiter.check('2fa-enable:' + req.user.id, 10, 5 * 60000)) {
+      app.secEvent(req, '2fa_setup_rate_limited', {});
+      throw new HttpError(429, 'rate_limited');
+    }
     const b = validate({ code: v.str({ max: 12, required: true }) }, req.body);
     if (!req.user.totp || req.user.totp.enabled) throw new HttpError(409, 'not_in_setup');
-    const st = S.totpCheck(req.user.totp.secret, b.code); if (!st) throw new HttpError(400, 'invalid_code');
+    const st = S.totpCheck(req.user.totp.secret, b.code);
+    if (!st) { app.secEvent(req, 'bad_2fa_setup_code', {}); throw new HttpError(400, 'invalid_code'); }
     req.user.totp.enabled = true; req.user.totp.lastStep = st; store.save(); app.secEvent(req, '2fa_enabled', {}); return { ok: true };
   });
   app.post('/api/auth/2fa/disable', { auth: true, summary: 'Turn off two-step login (needs password and a current code)' }, req => {

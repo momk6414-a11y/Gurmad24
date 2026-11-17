@@ -179,7 +179,7 @@ module.exports = function (app) {
       { id: 'lockout', ok: true, text: 'Lockout: 5 failures per account, 25 per IP, per 15 min' },
       { id: 'ratelimit', ok: true, text: 'Rate limits on login, requests, assistant and API' },
       { id: 'audit', ok: true, text: 'Audit log of sensitive actions (including voice listening)' },
-      { id: '2fa', ok: staff.length > 0 && staff2fa === staff.length, text: `Two-step login for staff: ${staff2fa}/${staff.length}`, action: 'Enable in Account' },
+      { id: '2fa', ok: staff.length > 0 && staff2fa === staff.length, text: `${cfg.requireStaff2fa ? 'Required' : 'Recommended'} authenticator MFA for staff: ${staff2fa}/${staff.length}`, action: 'Enable in Account' },
       { id: 'demo', ok: demoUsers === 0, text: `Demo accounts active: ${demoUsers}`, action: 'Set SEED_DEMO_DATA=false and remove demo users before real use' },
       { id: 'backup', ok: !!cfg.autoBackup, text: 'Automatic data backups' },
       { id: 'retention', ok: cfg.retentionDays <= 365, text: `Personal data retention: ${cfg.retentionDays} days` },

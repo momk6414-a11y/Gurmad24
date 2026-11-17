@@ -1,0 +1,78 @@
+name: Encrypted GURMAD24 database backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 2 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gurmad24-encrypted-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+    steps:
+      - name: Install PostgreSQL 17 client and GPG
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes ca-certificates curl gnupg
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor --yes -o /usr/share/keyrings/postgresql.gpg
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client-17
+          pg_dump --version
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$SUPABASE_DB_URL" ]]; then
+            echo "::error::Add the SUPABASE_DB_URL repository secret."
+            exit 1
+          fi
+          if [[ ${#BACKUP_ENCRYPTION_KEY} -lt 32 ]]; then
+            echo "::error::BACKUP_ENCRYPTION_KEY must contain at least 32 characters."
+            exit 1
+          fi
+
+      - name: Dump and encrypt database
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          file="gurmad24-${stamp}.dump.gpg"
+          printf '%s' "$BACKUP_ENCRYPTION_KEY" > /tmp/gurmad24-backup-passphrase
+          chmod 600 /tmp/gurmad24-backup-passphrase
+          pg_dump --format=custom --no-owner --no-acl "$SUPABASE_DB_URL" \
+            | gpg --batch --yes --pinentry-mode loopback \
+                --passphrase-file /tmp/gurmad24-backup-passphrase \
+                --symmetric --cipher-algo AES256 --s2k-mode 3 \
+                --s2k-digest-algo SHA512 --output "$file"
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-file /tmp/gurmad24-backup-passphrase \
+            --decrypt --output /tmp/gurmad24-verify.dump "$file"
+          pg_restore --list /tmp/gurmad24-verify.dump >/dev/null
+          rm -f /tmp/gurmad24-verify.dump /tmp/gurmad24-backup-passphrase
+          echo "BACKUP_FILE=$file" >> "$GITHUB_ENV"
+
+      - name: Store encrypted backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gurmad24-encrypted-db-backup
+          path: ${{ env.BACKUP_FILE }}
+          if-no-files-found: error
+          retention-days: 90

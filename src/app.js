@@ -120,6 +120,19 @@ class App {
       if (!req.user) throw new HttpError(401, 'auth_required');
       if (Array.isArray(route.auth) && !route.auth.includes(req.user.role)) { this.secEvent(req, 'forbidden', { path: url.pathname }); throw new HttpError(403, 'forbidden'); }
     }
+    // Staff may sign in once with their password to enrol an authenticator, but cannot
+    // access operational or patient data until a TOTP factor has been confirmed.
+    if (this.ctx.config.requireStaff2fa && req.user && req.user.role !== 'patient'
+        && !(req.user.totp && req.user.totp.enabled)) {
+      const setupOnly = new Set([
+        '/api/auth/me', '/api/auth/sessions', '/api/auth/2fa/setup',
+        '/api/auth/2fa/enable', '/api/auth/change-password', '/api/auth/logout',
+      ]);
+      if (!setupOnly.has(url.pathname)) {
+        this.secEvent(req, 'staff_2fa_required', { path: url.pathname });
+        throw new HttpError(403, 'staff_2fa_required');
+      }
+    }
     if (!['GET', 'HEAD'].includes(req.method)) {
       // CSRF defence: same-origin only (+ SameSite=Lax cookie, JSON-only bodies)
       const origin = req.headers.origin;
