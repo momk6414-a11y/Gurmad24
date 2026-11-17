@@ -120,8 +120,9 @@ module.exports = function (app) {
     return { ok: true };
   });
 
-  // ---- Two-step login (authenticator app). Optional for everyone, recommended for staff and admins.
+  // ---- Authenticator-based two-step login. Staff MFA can be made mandatory by configuration.
   app.post('/api/auth/2fa/setup', { auth: true, summary: 'Start authenticator setup: returns a secret to add to an authenticator app. Repeating it returns the same pending secret unless reset=true' }, req => {
+    if (!app.limiter.check('2fa-setup:' + req.user.id, 5, 15 * 60000)) throw new HttpError(429, 'rate_limited');
     if (req.user.totp && req.user.totp.enabled) throw new HttpError(409, 'already_enabled');
     const reset = !!(req.body && req.body.reset);
     if (!req.user.totp || reset) { req.user.totp = { secret: S.newTotpSecret(), enabled: false, lastStep: 0 }; store.save(); }
@@ -129,9 +130,14 @@ module.exports = function (app) {
     return { secret, serverTime: new Date().toISOString(), uri: `otpauth://totp/GURMAD%2024:${encodeURIComponent(req.user.email)}?secret=${secret}&issuer=GURMAD%2024&algorithm=SHA1&digits=6&period=30` };
   });
   app.post('/api/auth/2fa/enable', { auth: true, summary: 'Confirm authenticator setup with a 6-digit code' }, req => {
+    if (!app.limiter.check('2fa-enable:' + req.user.id, 10, 5 * 60000)) {
+      app.secEvent(req, '2fa_setup_rate_limited', {});
+      throw new HttpError(429, 'rate_limited');
+    }
     const b = validate({ code: v.str({ max: 12, required: true }) }, req.body);
     if (!req.user.totp || req.user.totp.enabled) throw new HttpError(409, 'not_in_setup');
-    const st = S.totpCheck(req.user.totp.secret, b.code); if (!st) throw new HttpError(400, 'invalid_code');
+    const st = S.totpCheck(req.user.totp.secret, b.code);
+    if (!st) { app.secEvent(req, 'bad_2fa_setup_code', {}); throw new HttpError(400, 'invalid_code'); }
     req.user.totp.enabled = true; req.user.totp.lastStep = st; store.save(); app.secEvent(req, '2fa_enabled', {}); return { ok: true };
   });
   app.post('/api/auth/2fa/disable', { auth: true, summary: 'Turn off two-step login (needs password and a current code)' }, req => {
