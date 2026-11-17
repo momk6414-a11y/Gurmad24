@@ -26,7 +26,7 @@ function useHospitals() {
       const result = await apiRequest<{ hospitals?: Hospital[] }>('/api/hospitals');
       const live = Array.isArray(result.hospitals) ? result.hospitals : [];
       if (live.length) {
-        const merged = live.map(h => {
+        const merged: Hospital[] = live.map(h => {
           const draft = draftHospitals.find(d => d.name.toLowerCase() === h.name.toLowerCase());
           return { ...draft, ...h, phone: h.phone || (draft && draft.phone), isLocalDraft: !h.phone && !!(draft && draft.phone) };
         });
