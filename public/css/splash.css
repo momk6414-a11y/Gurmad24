@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+@import url('/css/brand-tokens.css');
+
+.gurmad-splash {
+  position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center;
+  overflow: hidden; min-height: 100svh; padding: max(28px, env(safe-area-inset-top)) 24px max(30px, env(safe-area-inset-bottom));
+  background: radial-gradient(ellipse at 50% 34%, rgba(232,241,251,.95) 0%, rgba(255,255,255,1) 58%);
+  opacity: 1; visibility: visible; transition: opacity .38s ease, visibility .38s ease;
+  isolation: isolate;
+}
+.gurmad-splash::before {
+  content: ""; position: absolute; z-index: -1; width: min(110vw, 680px); aspect-ratio: 1;
+  top: 13%; left: 50%; transform: translateX(-50%); border-radius: 50%;
+  background: radial-gradient(circle, rgba(46,184,46,.07), rgba(11,61,145,.035) 48%, transparent 70%);
+}
+.gurmad-splash__content {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  width: min(100%, 420px); transform: translateY(-2vh);
+}
+.gurmad-splash__logo {
+  display: block; width: clamp(132px, 35vw, 184px); height: auto;
+  filter: drop-shadow(0 12px 22px rgba(11,61,145,.13));
+  opacity: 0; transform: scale(.82);
+  animation: gurmad-logo-enter 1.5s cubic-bezier(.2,.75,.25,1) .08s forwards;
+}
+.gurmad-splash__name {
+  margin: 23px 0 7px; color: var(--g-brand-blue); font-family: var(--g-font-family);
+  font-size: clamp(40px, 10vw, 54px); font-weight: 800; line-height: 1.08;
+  letter-spacing: -.055em; opacity: 0; transform: translateY(10px);
+  animation: gurmad-text-enter .55s ease .45s forwards;
+}
+.gurmad-splash__name::first-letter { color: var(--g-brand-green); }
+.gurmad-splash__tagline {
+  margin: 0; color: #35527d; font-family: var(--g-font-family);
+  font-size: clamp(14px, 3.7vw, 17px); font-weight: 400; line-height: 1.55;
+  letter-spacing: .005em; opacity: 0; transform: translateY(8px);
+  animation: gurmad-text-enter .55s ease .68s forwards;
+}
+.gurmad-splash__waves { position: absolute; left: 0; right: 0; bottom: -1px; width: 100%; height: clamp(105px, 21vh, 190px); }
+.gurmad-splash.is-leaving { opacity: 0; visibility: hidden; pointer-events: none; }
+body.gurmad-splash-active { overflow: hidden; }
+@keyframes gurmad-logo-enter { to { opacity: 1; transform: scale(1); } }
+@keyframes gurmad-text-enter { to { opacity: 1; transform: translateY(0); } }
+@media (max-height: 620px) {
+  .gurmad-splash__content { transform: translateY(-5vh) scale(.86); }
+  .gurmad-splash__logo { width: 112px; }
+  .gurmad-splash__name { margin-top: 12px; }
+  .gurmad-splash__waves { height: 88px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gurmad-splash, .gurmad-splash * { animation: none !important; transition: none !important; }
+  .gurmad-splash__logo, .gurmad-splash__name, .gurmad-splash__tagline { opacity: 1; transform: none; }
+}
