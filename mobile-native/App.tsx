@@ -71,7 +71,7 @@ function Home({ data, openHospitals, openWeb }: { data: ReturnType<typeof useHos
   </ScrollView>;
 }
 function Hospitals({ data }: { data: ReturnType<typeof useHospitals> }) {
-  return <ScrollView contentContainerStyle={styles.content} refreshing={data.refreshing} onRefresh={data.reload}>
+  return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={data.reload} tintColor={colors.green} />}>
     <Text style={styles.pageEyebrow}>GURMAD 24 DIRECTORY</Text><Text style={styles.pageTitle}>Isbitaallada</Text><Text style={styles.pageSub}>Xarumaha caafimaadka iyo adeegyada ay bixiyaan.</Text>
     {!data.fromServer ? <View style={styles.notice}><Text style={styles.noticeIcon}>i</Text><View style={{ flex: 1 }}><Text style={styles.noticeTitle}>Xog hordhac ah</Text><Text style={styles.noticeCopy}>Xogta mashruuca wali laguma darin diiwaanka server-ka. Jiid shaashadda si aad u cusboonaysiiso.</Text></View></View> : null}
     {data.loading ? <ActivityIndicator color={colors.green} /> : data.items.map(h => <HospitalCard key={h.id} item={h} />)}
