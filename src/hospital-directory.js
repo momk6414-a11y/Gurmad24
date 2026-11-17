@@ -4,6 +4,7 @@
 // Preserve each public listing as published; identical phone numbers are flagged, not silently merged.
 const SOURCE = 'https://isbitaal.com/isbitaal/gaalkacyo/';
 const NOTE = 'Liis dadweyne oo aan weli isbitaalka si toos ah looga xaqiijin. Wac si aad u hubiso magaca, lambarka, goobta iyo adeegyada.';
+const OPEN_24H = new Set(['daacad', 'daryeel', 'galkayo-hospital-galmudug', 'gmc', 'horeeye', 'modern', 'mudug-regional', 'ramadan', 'royal-family', 'shifo', 'wadani']);
 const rows = [
   ['daacad', 'Daacad Hospital', '+252 61 220 5599'],
   ['daru-dabib', 'Daru-Dabib Hospital', '+252 61 404 0207'],
@@ -31,7 +32,10 @@ const DIRECTORY = rows.map(([id, name, phone, serviceNote = '', address = '', du
   area: 'Gaalkacyo',
   phone,
   address: address || null,
-  description: serviceNote || 'Adeegyada iyo takhasuska isbitaalka lagama helin faahfaahinta liiska dadweynaha.',
+  publicEmail: id === 'galkayo-general' ? 'galkayohospital@gmail.com' : null,
+  facilityType: 'Isbitaal',
+  hours: OPEN_24H.has(id) ? '24 saac (sida ku qoran liiska dadweynaha)' : 'Saacadaha lama sheegin',
+  description: serviceNote || (id === 'galkayo-general' || id === 'wadatal' ? 'Isbitaal guud; faahfaahinta adeegyada lama sheegin.' : 'Adeegyada iyo takhasuska isbitaalka lagama helin faahfaahinta liiska dadweynaha.'),
   verified: false,
   directoryOnly: true,
   verificationStatus: 'public_listing_unverified',
