@@ -4,7 +4,7 @@ import { WebView } from 'react-native-webview';
 import { apiRequest } from './src/api/client';
 import { colors } from './src/theme/tokens';
 
-type Hospital = { id: string; name: string; area?: string; address?: string; phone?: string; description?: string; verificationNote?: string; source?: string; verified?: boolean; isLocalDraft?: boolean };
+type Hospital = { id: string; name: string; area?: string; address?: string; phone?: string; description?: string; verificationNote?: string; source?: string; verified?: boolean; hours?: string; publicEmail?: string; isLocalDraft?: boolean };
 const draftHospitals: Hospital[] = [];
 const tabs = [
   { key: 'home', label: 'Hoyga', icon: '⌂' }, { key: 'hospitals', label: 'Isbitaallo', icon: '✚' },
@@ -54,6 +54,8 @@ function HospitalCard({ item }: { item: Hospital }) {
     {item.verificationNote ? <Text style={styles.verificationNote}>{item.verificationNote}</Text> : null}
     {item.source ? <Pressable onPress={() => Linking.openURL('https://isbitaal.com/isbitaal/gaalkacyo/')} accessibilityRole="link"><Text style={styles.sourceText}>Xigasho: Isbitaal.com  ·  Eeg diiwaanka ↗</Text></Pressable> : null}
     <Text style={styles.address}>⌖  {item.address || item.area || 'Goobta lama sheegin'}</Text>
+    {item.hours ? <Text style={styles.hospitalArea}>Saacadaha: {item.hours}</Text> : null}
+    {item.publicEmail ? <Pressable onPress={() => Linking.openURL('mailto:' + item.publicEmail)}><Text style={styles.sourceText}>{item.publicEmail}</Text></Pressable> : null}
     {item.phone ? <Pressable style={styles.callButton} onPress={() => Linking.openURL('tel:' + item.phone).catch(() => Alert.alert('Wicitaan', 'Telefoonka lagama furi karin.'))}><Text style={styles.callText}>☎  {item.phone}  ·  Wac</Text></Pressable> : null}
   </View>;
 }
