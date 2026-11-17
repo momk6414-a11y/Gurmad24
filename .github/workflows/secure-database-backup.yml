@@ -23,7 +23,7 @@ jobs:
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update
-          sudo apt-get install --yes postgresql-client
+          sudo apt-get install --yes postgresql-client gnupg
 
       - name: Validate required secrets
         shell: bash
@@ -44,14 +44,19 @@ jobs:
           set -euo pipefail
           umask 077
           stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-          file="gurmad24-${stamp}.dump.enc"
+          file="gurmad24-${stamp}.dump.gpg"
+          printf '%s' "$BACKUP_ENCRYPTION_KEY" > /tmp/gurmad24-backup-passphrase
+          chmod 600 /tmp/gurmad24-backup-passphrase
           pg_dump --format=custom --no-owner --no-acl "$SUPABASE_DB_URL" \
-            | openssl enc -aes-256-cbc -salt -pbkdf2 -iter 310000 \
-                -pass env:BACKUP_ENCRYPTION_KEY -out "$file"
-          openssl enc -d -aes-256-cbc -pbkdf2 -iter 310000 \
-            -pass env:BACKUP_ENCRYPTION_KEY -in "$file" -out /tmp/gurmad24-verify.dump
+            | gpg --batch --yes --pinentry-mode loopback \
+                --passphrase-file /tmp/gurmad24-backup-passphrase \
+                --symmetric --cipher-algo AES256 --s2k-mode 3 \
+                --s2k-digest-algo SHA512 --output "$file"
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-file /tmp/gurmad24-backup-passphrase \
+            --decrypt --output /tmp/gurmad24-verify.dump "$file"
           pg_restore --list /tmp/gurmad24-verify.dump >/dev/null
-          rm -f /tmp/gurmad24-verify.dump
+          rm -f /tmp/gurmad24-verify.dump /tmp/gurmad24-backup-passphrase
           echo "BACKUP_FILE=$file" >> "$GITHUB_ENV"
 
       - name: Store encrypted backup artifact
