@@ -19,6 +19,8 @@ function wire(config, store, overrides = {}) {
   }
   seed.ensureAdmin(app, config, log);
   if (config.seedDemoData) seed.seedDemoData(app);
+  const removedDemoHospitals = seed.removeDemoHospitals(app);
+  if (removedDemoHospitals) log(`Removed ${removedDemoHospitals} synthetic demo hospitals.`);
   seed.ensureResponderDemo(app);
   catalog.applyToAll(store);
   seed.seedDemoUsers(app, config, log);
