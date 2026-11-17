@@ -33,11 +33,20 @@ export async function orderDetail({ id }) {
 }
 
 export async function appointments() {
-  const { appointments: as } = await GET('/appointments');
-  return h('div', head('My appointments', 'Requests sent to hospitals and laboratories.', h('a', { class: 'btn', href: '#/hospitals' }, icon('plus'), t('New request'))),
-    panel(null, table([{ label: 'Where', key: 'orgName' }, { label: 'Reason type', render: a => catName(a.category) }, { label: 'Preferred date', render: a => fdate(a.preferredDate) }, { label: 'Status', render: a => badge(a.status) }, { label: 'Hospital note', render: a => a.orgNote || '-' },
-      { label: '', render: a => ['requested', 'confirmed'].includes(a.status) ? h('button', { class: 'btn sm ghost', onclick: async () => { if (await confirmBox(t('Cancel this appointment request?'))) { await POST(`/appointments/${a.id}/cancel`); toast(t('Cancelled.')); window.dispatchEvent(new HashChangeEvent('hashchange')); } } }, t('Cancel')) : null }], as,
-    { empty: 'No appointment requests yet.' })));
+  const [{ appointments: as }, { visits: records }] = await Promise.all([GET('/appointments'), GET('/visits')]);
+  const recordedAppointments = new Set(records.map(v => v.appointmentId));
+  const cards = as.map(a => h('article', { class: 'panel appointment-card' },
+    h('div', { class: 'appointment-card-head' }, h('div', h('small', t('APPOINTMENT CARD')), h('h3', a.orgName)), badge(a.status)),
+    h('dl', { class: 'kv' }, h('dt', t('Reason type')), h('dd', catName(a.category)), h('dt', t('Preferred date')), h('dd', fdate(a.preferredDate)), h('dt', t('Service')), h('dd', a.serviceName || '-')),
+    a.orgNote ? h('p', h('b', t('Hospital note: ')), a.orgNote) : null,
+    h('div', { class: 'actions' },
+      a.visitConsentAt ? (recordedAppointments.has(a.id) ? badge('Visit card saved') : h('button', { class: 'btn sm ghost', onclick: async () => { await POST('/appointments/' + a.id + '/visit-consent', { consent: false }); toast(t('Consent withdrawn.')); window.dispatchEvent(new HashChangeEvent('hashchange')); } }, t('Withdraw visit-card consent'))) : ['requested', 'confirmed'].includes(a.status) ? h('button', { class: 'btn sm ghost', onclick: async () => { await POST('/appointments/' + a.id + '/visit-consent', { consent: true }); toast(t('Consent saved.')); window.dispatchEvent(new HashChangeEvent('hashchange')); } }, t('Allow visit card')) : null,
+      ['requested', 'confirmed'].includes(a.status) ? h('button', { class: 'btn sm danger', onclick: async () => { if (await confirmBox(t('Cancel this appointment request?'))) { await POST('/appointments/' + a.id + '/cancel'); toast(t('Cancelled.')); window.dispatchEvent(new HashChangeEvent('hashchange')); } } }, t('Cancel')) : null
+    )
+  ));
+  return h('div', head('My appointments', 'Your appointment cards and their current status.', h('a', { class: 'btn', href: '#/hospitals' }, icon('plus'), t('New request'))),
+    cards.length ? h('div', { class: 'grid g2' }, cards) : emptyState('No appointment requests yet.')
+  );
 }
 
 export async function support() {
@@ -100,4 +109,22 @@ export function account() {
 function deleteAccount() {
   let m; m = modal(t('Delete my account'), h('div', h('p', t('This cannot be undone. Enter your password to confirm.')), form([{ name: 'password', label: 'Password', type: 'password', required: true }], { submit: 'Delete permanently', cancel: () => m.close(),
     onSubmit: async v => { await POST('/auth/delete-account', v); m.close(); S.user = null; window.dispatchEvent(new CustomEvent('g24-auth')); toast(t('Account deleted.')); go('/'); } })));
+}
+
+
+// ---------- My private doctor visit cards
+export async function visits() {
+  const { visits: records } = await GET('/visits');
+  const cards = records.map(v => h('article', { class: 'panel visit-card' },
+    h('div', { class: 'visit-card-head' }, h('div', h('small', t('MY HEALTH VISIT CARD')), h('h3', v.hospitalName)), badge(fdate(v.visitDate))),
+    h('p', h('b', v.doctorName), v.specialty ? ' · ' + v.specialty : ''),
+    v.service ? h('p', h('b', t('Service: ')), v.service) : null,
+    h('p', v.summary),
+    v.followUpDate ? h('p', { class: 'muted' }, t('Follow-up: {date}', { date: fdate(v.followUpDate) })) : null,
+    h('button', { class: 'btn sm ghost', onclick: () => window.print() }, t('Print / save PDF'))
+  ));
+  return h('div', head('My visit cards', 'Private summaries of visits you consented to record.'),
+    demoNote('Only you and the hospital that created the card can see these visit details.'),
+    cards.length ? h('div', { class: 'grid g2' }, cards) : emptyState('No visit cards yet.')
+  );
 }

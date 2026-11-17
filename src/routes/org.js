@@ -157,6 +157,41 @@ module.exports = function (app) {
     return { appointment: a };
   });
 
+  // ---------- Patient visit cards. A patient must explicitly consent on their own appointment.
+  app.get('/api/org/visits', { auth: ['hospital_admin'], summary: 'Visit cards belonging to my hospital' }, req => {
+    const hosp = hospitalOnly(req);
+    return {
+      visits: store.filter('visits', v => v.orgId === hosp.id).sort((a, b) => b.visitDate.localeCompare(a.visitDate)).map(v => {
+        const u = store.get('users', v.userId);
+        return { id: v.id, appointmentId: v.appointmentId, patientName: u ? u.name : 'Patient', doctorName: v.doctorName, specialty: v.specialty, visitDate: v.visitDate, service: v.service, summary: v.summary, followUpDate: v.followUpDate, createdAt: v.createdAt };
+      }),
+    };
+  });
+  app.post('/api/org/visits', { auth: ['hospital_admin'], summary: 'Create a patient visit card after the patient has consented' }, req => {
+    const o = hospitalOnly(req);
+    const b = validate({
+      appointmentId: v.str({ required: true, max: 60 }),
+      doctorName: v.str({ required: true, min: 2, max: 80 }),
+      specialty: v.str({ max: 80, default: '' }),
+      visitDate: v.date({ required: true }),
+      service: v.str({ max: 120, default: '' }),
+      summary: v.str({ required: true, min: 5, max: 800 }),
+      followUpDate: v.date(),
+    }, req.body);
+    const a = store.get('appointments', b.appointmentId);
+    if (!a || a.orgId !== o.id || !['confirmed', 'completed'].includes(a.status)) throw new HttpError(404, 'appointment_not_available');
+    if (!a.visitConsentAt) throw new HttpError(403, 'patient_consent_required');
+    if (store.find('visits', v => v.appointmentId === a.id)) throw new HttpError(409, 'visit_card_exists');
+    const record = store.insert('visits', {
+      id: store.id('vs_'), appointmentId: a.id, orgId: o.id, userId: a.userId,
+      doctorName: b.doctorName, specialty: b.specialty, visitDate: b.visitDate,
+      service: b.service, summary: b.summary, followUpDate: b.followUpDate || null,
+      createdAt: new Date().toISOString(),
+    });
+    app.audit(req, 'visit.create', 'visit', record.id, { appointmentId: a.id });
+    return created({ visit: { ...record, userId: undefined } });
+  });
+
   // ---------- Complaints / support for my organisation
   app.get('/api/org/complaints', { auth: ORG_ROLES, summary: 'Complaints about my organisation' }, req => ({ complaints: store.filter('complaints', c => c.orgId === req.user.orgId).map(c => ({ ...c, userId: undefined })) }));
   app.post('/api/org/complaints/:id/respond', { auth: ORG_ROLES, summary: 'Respond to a complaint' }, req => {

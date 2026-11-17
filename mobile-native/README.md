@@ -7,7 +7,9 @@ The native client is built with React Native + Expo. It uses the existing GURMAD
 - Public hospital directory data is requested from the existing `/api/hospitals` endpoint.
 - The **Web App** tab opens `https://gurmad24.onrender.com` inside the app, so the existing website workflows continue to use the same backend.
 - `EXPO_PUBLIC_API_URL` can override the API origin for a different environment.
-- Digfeer Hospital and Modern Hospital project-supplied details are shown as provisional fallback data until they are entered and approved in the shared backend.
+- The native directory includes 16 provisional Gaalkacyo hospital listings from [Isbitaal.com](https://isbitaal.com/isbitaal/gaalkacyo/), plus project-supplied Digfeer/Modern details. These are explicitly marked as public-directory leads; the directory itself says its phone numbers have not yet been confirmed by each facility. They are not written to the backend and should not be treated as institution-verified.
+- The directory merges verified records returned by `/api/hospitals` with unmatched provisional entries. It does not silently copy provisional phone numbers into verified backend records.
+- Digfeer phone was confirmed by the project owner as `+252 90 765 8641`, matching the public directory. The exact address and current service list remain unverified.
 
 ## Run locally
 

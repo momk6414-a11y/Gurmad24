@@ -14,10 +14,10 @@ export async function dashboard() {
   const { org } = await GET('/org'); S.org = org;
   const wrap = h('div', head(org.name, ({ hospital: 'Hospital portal', lab: 'Laboratory portal', police: 'Police station portal', fire: 'Fire station portal' }[org.type] || 'Ambulance provider portal'), badge(org.status)), verifyBanner(org));
   if (org.type === 'hospital') {
-    const [sales, cards, ap, cm] = await Promise.all([GET('/org/reports/sales'), GET('/org/cards'), GET('/org/appointments'), GET('/org/complaints')]);
+    const [sales, cards, ap, cm, vr] = await Promise.all([GET('/org/reports/sales'), GET('/org/cards'), GET('/org/appointments'), GET('/org/complaints'), GET('/org/visits')]);
     wrap.append(h('div', { class: 'grid g4 keep2' }, tile('Published cards', cards.cards.filter(c => c.status === 'published').length, null, () => go('/org/cards')), tile('Orders', sales.report.orders, null, () => go('/org/sales')),
       tile('Gross sales (demo)', money(sales.report.grossCents), t('Open sales report'), () => go('/org/sales')), tile('Net to hospital (demo)', money(sales.report.netCents), t('Open sales report'), () => go('/org/sales')),
-      tile('Appointment requests', ap.appointments.filter(a => a.status === 'requested').length, null, () => go('/org/appointments')), tile('Open complaints', cm.complaints.filter(c => c.status !== 'resolved').length, null, () => go('/org/complaints'))));
+      tile('Appointment requests', ap.appointments.filter(a => a.status === 'requested').length, null, () => go('/org/appointments')), tile('Visit cards', vr.visits.length, null, () => go('/org/visits')), tile('Open complaints', cm.complaints.filter(c => c.status !== 'resolved').length, null, () => go('/org/complaints'))));
   } else {
     const resp = ['ambulance', 'police', 'fire'].includes(org.type);
     const [rq, ap] = await Promise.all([resp ? GET('/org/requests') : { requests: [] }, resp && org.type !== 'ambulance' ? { appointments: [] } : GET('/org/appointments')]);
@@ -61,11 +61,66 @@ export async function servicesPage() {
 // ---------- Appointments
 export async function appointments() {
   const { appointments: as } = await GET('/org/appointments');
-  const act = (a, status) => { if (status === 'completed' && S.org && S.org.type === 'lab') { let m; m = modal(t('Complete appointment'), form([{ name: 'amountCents', label: 'Amount charged to the patient (USD)', type: 'money', hint: 'Used to calculate the partnership commission.' }], { submit: 'Mark completed', cancel: () => m.close(), onSubmit: async v => { await PATCH('/org/appointments/' + a.id, { status, ...v }); m.close(); refresh(); } })); return; }
-    PATCH('/org/appointments/' + a.id, { status }).then(() => { toast(t('Updated.')); refresh(); }).catch(e => toast(errText(e), 'err')); };
-  return h('div', head('Appointment requests', 'Patients see only the status and your note. You see their name and the phone they provided.'),
-    panel(null, table([{ label: 'Patient', key: 'patientName' }, { label: 'Phone', render: a => a.contactPhone || '-' }, { label: 'Reason type', render: a => catName(a.category) }, { label: 'Service', render: a => a.serviceName || '-' }, { label: 'Preferred date', render: a => fdate(a.preferredDate) }, { label: 'Note', render: a => a.note || '-' }, { label: 'Status', render: a => badge(a.status) },
-      { label: '', render: a => h('div', { class: 'actions' }, a.status === 'requested' ? h('button', { class: 'btn sm', onclick: () => act(a, 'confirmed') }, t('Confirm')) : null, a.status === 'confirmed' ? h('button', { class: 'btn sm', onclick: () => act(a, 'completed') }, t('Complete')) : null, ['requested', 'confirmed'].includes(a.status) ? h('button', { class: 'btn sm ghost', onclick: () => act(a, 'declined') }, t('Decline')) : null) }], as, { empty: 'No appointment requests yet.' })));
+  const act = (a, status) => {
+    if (status === 'completed' && S.org && S.org.type === 'lab') {
+      let m; m = modal(t('Complete appointment'), form([{ name: 'amountCents', label: 'Amount charged to the patient (USD)', type: 'money', hint: 'Used to calculate the partnership commission.' }], { submit: 'Mark completed', cancel: () => m.close(), onSubmit: async v => { await PATCH('/org/appointments/' + a.id, { status, ...v }); m.close(); refresh(); } }));
+      return;
+    }
+    PATCH('/org/appointments/' + a.id, { status }).then(() => { toast(t('Updated.')); refresh(); }).catch(e => toast(errText(e), 'err'));
+  };
+  const cards = as.map(a => h('article', { class: 'panel appointment-card' },
+    h('div', { class: 'appointment-card-head' }, h('div', h('small', t('APPOINTMENT REQUEST')), h('h3', a.patientName)), badge(a.status)),
+    h('dl', { class: 'kv' }, h('dt', t('Phone')), h('dd', a.contactPhone || '-'), h('dt', t('Reason type')), h('dd', catName(a.category)), h('dt', t('Service')), h('dd', a.serviceName || '-'), h('dt', t('Preferred date')), h('dd', fdate(a.preferredDate))),
+    a.note ? h('p', h('b', t('Patient note: ')), a.note) : null,
+    a.visitConsentAt ? h('p', { class: 'muted' }, t('Patient has consented to a visit card.')) : null,
+    h('div', { class: 'actions' },
+      a.status === 'requested' ? h('button', { class: 'btn sm', onclick: () => act(a, 'confirmed') }, t('Confirm')) : null,
+      a.status === 'confirmed' ? h('button', { class: 'btn sm', onclick: () => act(a, 'completed') }, t('Complete')) : null,
+      ['requested', 'confirmed'].includes(a.status) ? h('button', { class: 'btn sm ghost', onclick: () => act(a, 'declined') }, t('Decline')) : null
+    )
+  ));
+  return h('div', head('Appointment requests', 'Review patient requests, confirm a time, and update their status.'),
+    cards.length ? h('div', { class: 'grid g2' }, cards) : emptyState('No appointment requests yet.')
+  );
+}
+
+// ---------- Private doctor visit cards
+export async function visits() {
+  const [{ visits: records }, { appointments: ap }] = await Promise.all([GET('/org/visits'), GET('/org/appointments')]);
+  const recorded = new Set(records.map(v => v.appointmentId));
+  const eligible = ap.filter(a => a.visitConsentAt && ['confirmed', 'completed'].includes(a.status) && !recorded.has(a.id));
+  const create = a => {
+    let m;
+    m = modal(t('Create visit card'), h('div',
+      demoNote('This is private health information. Only this hospital and the patient can access it. Record only necessary visit details.'),
+      h('p', { class: 'muted' }, t('Patient: {name} · Appointment: {date}', { name: a.patientName, date: fdate(a.preferredDate) })),
+      form([
+        { name: 'doctorName', label: 'Doctor name', required: true, max: 80 },
+        { name: 'specialty', label: 'Department / specialty', max: 80 },
+        { name: 'visitDate', label: 'Visit date', type: 'date', required: true, default: new Date().toISOString().slice(0, 10) },
+        { name: 'service', label: 'Service provided', max: 120 },
+        { name: 'summary', label: 'Visit summary for the patient', type: 'textarea', required: true, rows: 4, max: 800 },
+        { name: 'followUpDate', label: 'Follow-up date (optional)', type: 'date' },
+      ], { submit: 'Save visit card', cancel: () => m.close(), onSubmit: async v => { await POST('/org/visits', { ...v, appointmentId: a.id }); m.close(); toast(t('Visit card saved.')); refresh(); } })
+    ), { wide: true });
+  };
+  const card = v => h('article', { class: 'panel visit-card' },
+    h('div', { class: 'visit-card-head' }, h('div', h('small', t('PATIENT VISIT CARD')), h('h3', v.patientName)), badge(fdate(v.visitDate))),
+    h('p', h('b', v.doctorName), v.specialty ? ' · ' + v.specialty : ''),
+    v.service ? h('p', h('b', t('Service: ')), v.service) : null,
+    h('p', v.summary),
+    v.followUpDate ? h('p', { class: 'muted' }, t('Follow-up: {date}', { date: fdate(v.followUpDate) })) : null
+  );
+  return h('div', head('Doctor visit cards', 'Create a visit summary only after the patient has given consent.'),
+    demoNote('Do not record emergencies, full medical histories or unnecessary sensitive details here.'),
+    panel('Appointments ready for a visit card', eligible.length ? h('div', { class: 'table-wrap' }, table([
+      { label: 'Patient', key: 'patientName' }, { label: 'Date', render: a => fdate(a.preferredDate) },
+      { label: 'Service', key: 'serviceName' }, { label: 'Status', render: a => badge(a.status) },
+      { label: '', render: a => h('button', { class: 'btn sm', onclick: () => create(a) }, t('Create visit card')) },
+    ], eligible)) : emptyState('No appointments with patient consent are ready.')),
+    h('div', { class: 'section-title' }, t('Saved visit cards')),
+    records.length ? h('div', { class: 'grid g2' }, records.map(card)) : emptyState('No visit cards yet.')
+  );
 }
 
 // ---------- Sales / revenue

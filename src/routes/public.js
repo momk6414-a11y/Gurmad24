@@ -1,6 +1,7 @@
 'use strict';
 const { v, validate, HttpError } = require('../validate');
 const D = require('../domain');
+const hospitalDirectory = require('../hospital-directory');
 const { created } = require('../app');
 
 const R = require('../responders');
@@ -62,9 +63,12 @@ module.exports = function (app) {
     return { found: true, state: D.cardState(o), cardName: o.cardSnapshot.name, hospitalName: o.cardSnapshot.hospitalName, validUntil: o.validUntil, holder: D.initials(u && u.name), included: o.cardSnapshot.included, usedTimes: (o.redemptions || []).length, sandbox: true };
   });
 
-  app.get('/api/hospitals', { summary: 'Verified hospital directory (?q=)' }, req => {
+  app.get('/api/hospitals', { summary: 'Verified hospitals plus clearly labelled public directory leads (?q=)' }, req => {
     const q = (req.query.q || '').toLowerCase();
-    return { hospitals: store.filter('orgs', o => o.type === 'hospital' && o.status === 'verified' && (!q || (o.name + ' ' + o.area).toLowerCase().includes(q))).map(D.orgPublic) };
+    return {
+      hospitals: store.filter('orgs', o => o.type === 'hospital' && o.status === 'verified' && (!q || (o.name + ' ' + o.area).toLowerCase().includes(q))).map(D.orgPublic),
+      directory: hospitalDirectory.list(q),
+    };
   });
   app.get('/api/hospitals/:id', { summary: 'Hospital detail with published cards and services' }, req => {
     const o = store.get('orgs', req.params.id);
