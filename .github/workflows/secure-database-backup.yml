@@ -28,7 +28,8 @@ jobs:
           sudo install -d /usr/share/postgresql-common/pgdg
           curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
             | sudo gpg --dearmor --yes -o /usr/share/keyrings/postgresql.gpg
-          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
           sudo apt-get install --yes postgresql-client-17
