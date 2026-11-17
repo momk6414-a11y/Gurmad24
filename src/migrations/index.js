@@ -29,7 +29,7 @@ module.exports = [
       for (const u of db.users) { if (u.consentAt === undefined) u.consentAt = u.createdAt || null; if (u.deletedAt === undefined) u.deletedAt = null; }
     },
   },
-  ,{
+  {
     id: 4, name: 'patient-visit-records',
     up(db) {
       if (!Array.isArray(db.visits)) db.visits = [];
