@@ -102,3 +102,34 @@ test('2FA setup is idempotent (same pending key) unless reset, so a retry never 
   const code = S.totpAt(r.secret, Math.floor(Date.now() / 30000));
   assert.equal((await c.post('/api/auth/2fa/enable', { code })).status, 200);
 });
+
+test('mandatory staff MFA blocks all staff data routes until authenticator enrolment; patients are unaffected', async () => {
+  const guarded = await H.start({ REQUIRE_STAFF_2FA: 'true' });
+  try {
+    const staff = await H.admin(guarded);
+    let r = await staff.get('/api/admin/security');
+    assert.equal(r.status, 403); assert.equal(r.data.error, 'staff_2fa_required');
+    assert.equal((await staff.get('/api/auth/sessions')).status, 200);
+    const setup = await staff.post('/api/auth/2fa/setup');
+    assert.equal(setup.status, 200);
+    const code = S.totpAt(setup.data.secret, Math.floor(Date.now() / 30000));
+    assert.equal((await staff.post('/api/auth/2fa/enable', { code })).status, 200);
+    assert.equal((await staff.get('/api/admin/security')).status, 200);
+    const patient = await H.newPatient(guarded, 'mfa-patient@test.local');
+    assert.equal((await patient.get('/api/auth/export')).status, 200);
+  } finally {
+    await guarded.stop();
+  }
+});
+
+test('production demo-account switch disables synthetic users and revokes their sessions', async () => {
+  const guarded = await H.start({ DISABLE_DEMO_ACCOUNTS: 'true' });
+  try {
+    const demoUsers = guarded.store.filter('users', u => /@demo\\.gurmad24\\.test$/i.test(String(u.email || '')));
+    assert.ok(demoUsers.length > 0);
+    assert.ok(demoUsers.every(u => u.active === false && u.passwordHash === ''));
+    assert.equal(guarded.store.filter('sessions', s => demoUsers.some(u => u.id === s.userId)).length, 0);
+  } finally {
+    await guarded.stop();
+  }
+});
