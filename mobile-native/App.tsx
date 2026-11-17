@@ -5,26 +5,7 @@ import { apiRequest } from './src/api/client';
 import { colors } from './src/theme/tokens';
 
 type Hospital = { id: string; name: string; area?: string; address?: string; phone?: string; description?: string; verificationNote?: string; source?: string; verified?: boolean; isLocalDraft?: boolean };
-const directorySource = 'Isbitaal.com — buugga isbitaallada Gaalkacyo (17-11-2026)';
-const provisionalNote = 'Liis dadweyne oo aan weli si toos ah uga xaqiijin isbitaalka. Wac oo xaqiiji ka hor intaadan ku tiirsanaan.';
-const draftHospitals: Hospital[] = [
-  { id: 'draft-daacad', name: 'Daacad Hospital', area: 'Gaalkacyo', phone: '+252 61 220 5599', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-daru-dabib', name: 'Daru-Dabib Hospital', area: 'Gaalkacyo', phone: '+252 61 404 0207', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-daryeel', name: 'Daryeel Speciality Hospital and Diagnostic Center', area: 'Gaalkacyo', phone: '+252 90 768 4039', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-digfeer', name: 'Digfeer Eye Specialist Hospital', area: 'Gaalkacyo', address: 'Hotel Classic agtiisa — goobta lama xaqiijin', description: 'Isbitaal ku takhasusay caafimaadka indhaha (sida ku qoran magaca iyo xogtii mashruuca).', phone: '+252 90 765 8641', verificationNote: 'Magaca iyo lambarku waxay waafaqsan yihiin diiwaanka dadweynaha ee Isbitaal.com. Goobta saxda ah iyo adeegyada hadda jira wali si toos ah looma xaqiijin.', source: directorySource, isLocalDraft: true },
-  { id: 'draft-galkayo-general', name: 'Galkayo General Hospital', area: 'Gaalkacyo', address: 'Hobyo Street (liis dadweyne)', phone: '+252 61 782 0040', verificationNote: 'Liis dadweyne; magaca Galkayo Hospital - Galmudug wuxuu la wadaagaa lambarkan, waxaana suuragal ah inay hal xarun yihiin. Xaqiiji.', source: directorySource, isLocalDraft: true },
-  { id: 'draft-gmc', name: 'GMC Hospital — Galkacyo Medical Center', area: 'Gaalkacyo', phone: '+252 90 470 6666', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-hayaat', name: 'Hayaat Hospital Galkacyo', area: 'Gaalkacyo', phone: '+252 90 664 6499', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-horeeye', name: 'Horeeye Multispecialty Hospital', area: 'Gaalkacyo', phone: '+252 90 775 9796', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-modern', name: 'Modern Hospital', area: 'Gaalkacyo', address: 'Hotel Classic dhinaciisa midig — goobta lama xaqiijin', phone: '+252 90 679 5131', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-mudug-regional', name: 'Mudug Regional Hospital', area: 'Gaalkacyo', phone: '+252 90 779 5891', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-ramadan', name: 'Ramadan Hospital Galkacyo', area: 'Gaalkacyo', address: 'Wadajir District, Hobyo Street — liis dadweyne', phone: '+252 90 537 3131', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-royal-family', name: 'Royal Family Hospital', area: 'Gaalkacyo', phone: '+252 90 705 6667', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-shifo', name: 'Shifo Hospital Galkacyo', area: 'Gaalkacyo', phone: '+252 90 738 6583', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-shifo-specialist', name: 'Shifo Specialist Hospital', area: 'Gaalkacyo', phone: '+252 90 686 0404', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-wadani', name: 'Wadani Specialist Hospital', area: 'Gaalkacyo', phone: '+252 90 776 6666', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-  { id: 'draft-wadatal', name: 'Wadatal General Hospital', area: 'Gaalkacyo', phone: '+252 61 976 6665', verificationNote: provisionalNote, source: directorySource, isLocalDraft: true },
-];
+const draftHospitals: Hospital[] = [];
 const tabs = [
   { key: 'home', label: 'Hoyga', icon: '⌂' }, { key: 'hospitals', label: 'Isbitaallo', icon: '✚' },
   { key: 'activity', label: 'Hawlahayga', icon: '◷' }, { key: 'account', label: 'Akoon', icon: '○' },
@@ -39,16 +20,15 @@ function useHospitals() {
   const [fromServer, setFromServer] = useState(false);
   const load = async () => {
     try {
-      const result = await apiRequest<{ hospitals?: Hospital[] }>('/api/hospitals');
+      const result = await apiRequest<{ hospitals?: Hospital[]; directory?: Hospital[] }>('/api/hospitals');
       const live = Array.isArray(result.hospitals) ? result.hospitals : [];
-      if (live.length) {
-        const merged: Hospital[] = live.map(h => ({ ...h, isLocalDraft: false }));
-        draftHospitals.forEach(d => {
-          if (!merged.some(h => h.name.toLowerCase() === d.name.toLowerCase())) merged.push(d);
-        });
-        setItems(merged);
-        setFromServer(true);
-      } else { setItems(draftHospitals); setFromServer(false); }
+      const publicListings = Array.isArray(result.directory) ? result.directory.map(h => ({ ...h, isLocalDraft: true })) : draftHospitals;
+      const merged: Hospital[] = live.map(h => ({ ...h, isLocalDraft: false }));
+      publicListings.forEach(d => {
+        if (!merged.some(h => h.name.toLowerCase() === d.name.toLowerCase())) merged.push(d);
+      });
+      setItems(merged);
+      setFromServer(true);
     } catch { setItems(draftHospitals); setFromServer(false); }
     finally { setLoading(false); setRefreshing(false); }
   };
