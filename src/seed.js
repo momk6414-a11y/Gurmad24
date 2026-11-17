@@ -82,10 +82,9 @@ function removeDemoHospitals(app) {
   const targets = store.filter('orgs', o => o.isDemoSeed === true && o.type === 'hospital' && names.has(o.name));
   if (!targets.length) return 0;
   const ids = new Set(targets.map(o => o.id));
-  const cardIds = new Set(store.filter('cards', c => ids.has(c.hospitalId) && c.isDemoSeed === true).map(c => c.id));
-  store.data.cards = store.col('cards').filter(c => !cardIds.has(c.id));
+  store.data.cards = store.col('cards').filter(c => !ids.has(c.hospitalId));
   store.data.services = store.col('services').filter(s => !ids.has(s.orgId));
-  store.data.users = store.col('users').filter(u => !(ids.has(u.orgId) && u.email === 'hospital@demo.gurmad24.test'));
+  store.data.users = store.col('users').filter(u => !(ids.has(u.orgId) && String(u.email || '').endsWith('@demo.gurmad24.test')));
   store.data.orgs = store.col('orgs').filter(o => !ids.has(o.id));
   store.save();
   return targets.length;
