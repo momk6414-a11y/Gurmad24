@@ -199,12 +199,21 @@ export async function compare() {
 // ---------- Hospitals
 export async function hospitals() {
   const out = h('div', { class: 'grid g3' }); const q = h('input', { type: 'search', placeholder: t('Search hospitals'), 'aria-label': t('Search') });
-  async function load() { const r = await GET('/hospitals?q=' + encodeURIComponent(q.value)); out.replaceChildren(...(r.hospitals.length ? r.hospitals.map(orgTile) : [emptyState('No hospitals found.')])); }
+  async function load() { const r = await GET('/hospitals?q=' + encodeURIComponent(q.value)); const all = [...r.hospitals, ...(r.directory || [])]; out.replaceChildren(...(all.length ? all.map(o => o.directoryOnly ? directoryHospitalTile(o) : orgTile(o)) : [emptyState('No hospitals found.')])); }
   let tm; q.oninput = () => { clearTimeout(tm); tm = setTimeout(load, 250); }; load();
-  return h('div', head('Hospital directory', 'Only administrator-verified hospitals are listed.'), h('div', { class: 'field' }, q), out);
+  return h('div', head('Hospital directory', 'Administrator-verified hospitals and clearly labelled public listings.'), demoNote('Public directory entries are not hospital-verified. Call the hospital to confirm details before relying on them.'), h('div', { class: 'field' }, q), out);
 }
 const orgTile = o => h('article', { class: 'hc' }, h('img', { class: 'art', src: '/img/org-' + (o.type === 'hospital' ? 'hospital' : o.type === 'lab' ? 'lab' : 'ambulance') + '.svg', alt: '', width: 320, height: 112, loading: 'lazy' }), h('h4', o.name), h('div', { class: 'hosp' }, o.area, verified(o.verified)),
   h('div', { class: 'meta' }, o.description), o.type === 'hospital' ? h('a', { class: 'btn sm', href: '#/hospitals/' + o.id }, t('View details')) : (o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : null));
+
+const directoryHospitalTile = o => h('article', { class: 'hc' },
+  h('img', { class: 'art', src: '/img/org-hospital.svg', alt: '', width: 320, height: 112, loading: 'lazy' }),
+  h('div', { class: 'hosp' }, o.area, h('span', { class: 'badge warn' }, t('Public listing - unverified'))),
+  h('h4', o.name), h('div', { class: 'meta' }, o.description),
+  o.verificationNote ? h('p', { class: 'hint' }, o.verificationNote) : null,
+  o.phone ? h('a', { class: 'btn sm', href: 'tel:' + o.phone.replace(/[^+\\d]/g, '') }, icon('phone', 16), o.phone) : null,
+  h('a', { class: 'source-link', href: o.sourceUrl || 'https://isbitaal.com/isbitaal/gaalkacyo/', target: '_blank', rel: 'noopener noreferrer' }, t('Source: Isbitaal.com ↗'))
+);
 
 export async function hospitalDetail({ id }) {
   const r = await GET('/hospitals/' + id); const o = r.hospital;
@@ -221,7 +230,7 @@ export function appointmentModal(org, services = []) {
   let m; const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
   m = modal(t('Request appointment') + ' - ' + org.name, h('div', demoNote('Do not write medical details here. Only the hospital you choose will see your name and phone.'),
     form([{ name: 'category', label: 'Reason type', type: 'select', options: APPT_CATS, required: true }, services.length ? { name: 'serviceId', label: 'Service (optional)', type: 'select', options: [['', '-'], ...services.map(s => [s.id, s.name + ' - ' + money(s.priceCents)])] } : null,
-      { name: 'preferredDate', label: 'Preferred date', type: 'date', required: true, default: tomorrow, min: tomorrow }, { name: 'contactPhone', label: 'Phone for the hospital to reach you', type: 'tel', max: 30, autocomplete: 'tel' }, { name: 'note', label: 'Short note (optional, no medical details)', max: 140 }].filter(Boolean),
+      { name: 'preferredDate', label: 'Preferred date', type: 'date', required: true, default: tomorrow, min: tomorrow }, { name: 'contactPhone', label: 'Phone for the hospital to reach you', type: 'tel', max: 30, autocomplete: 'tel' }, { name: 'note', label: 'Short note (optional, no medical details)', max: 140 }, { name: 'visitConsent', label: 'I agree that the hospital may save a short visit card in my account after my appointment (optional).', type: 'checkbox', default: false }].filter(Boolean),
     { submit: 'Send request', cancel: () => m.close(), onSubmit: async v => { if (!v.serviceId) delete v.serviceId; await POST('/appointments', { ...v, orgId: org.id }); m.close(); toast(t('Appointment request sent.')); go('/me/appointments'); } })));
 }
 
