@@ -35,14 +35,14 @@ Do not put secrets in source code, issues, pull requests, screenshots, or chat.
 
 ## Encrypted off-site backups
 
-The workflow `.github/workflows/secure-database-backup.yml` runs daily at 02:17 UTC and can also be started manually. It creates a PostgreSQL custom-format dump, encrypts it with AES-256-CBC + PBKDF2 (310,000 iterations), checks that it can be decrypted and listed, then uploads an encrypted GitHub Actions artifact for 90 days.
+The workflow `.github/workflows/secure-database-backup.yml` runs daily at 02:17 UTC and can also be started manually. It creates a PostgreSQL custom-format dump, encrypts it with GPG symmetric AES-256 and integrity protection, checks that it can be decrypted and listed, then uploads an encrypted GitHub Actions artifact for 90 days.
 
 The repository owner must add these two GitHub Actions repository secrets before the workflow can succeed:
 
 1. `SUPABASE_DB_URL`: the PostgreSQL connection URI copied from the Supabase project dashboard (use an SSL-enabled connection string; prefer the session pooler if the direct database endpoint is not reachable from GitHub-hosted runners).
 2. `BACKUP_ENCRYPTION_KEY`: a randomly generated secret with at least 32 characters. Keep a separate offline copy; it is required to decrypt backups.
 
-The encryption key is not stored in the repository or in the workflow. Never share either secret in chat. A successful workflow run and an actual restore drill are required before calling backups operational. Artifacts expire after 90 days, so copy critical backups to a separately controlled storage destination for longer retention.
+The encryption key is not stored in the repository or in the workflow. GPG's integrity-protected symmetric format is used instead of unauthenticated CBC encryption. Never share either secret in chat. A successful workflow run and an actual restore drill are required before calling backups operational. Artifacts expire after 90 days, so copy critical backups to a separately controlled storage destination for longer retention.
 
 ### Restore outline
 
