@@ -1,427 +1,122 @@
-import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  StyleProp,
-  Text,
-  TextStyle,
-  View,
-  ViewStyle,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Linking, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { colors, radius, spacing } from './src/theme/tokens';
+import { apiRequest } from './src/api/client';
+import { colors } from './src/theme/tokens';
 
-const services = [
-  { icon: '✚', title: 'Isbitaallo', detail: 'Raadi xarumaha caafimaadka', tone: 'blue' },
-  { icon: '⌖', title: 'Khariidad', detail: 'Goobaha adeegyada kuu dhow', tone: 'green' },
-  { icon: '＋', title: 'Adeeg caafimaad', detail: 'Eeg adeegyada la heli karo', tone: 'purple' },
-  { icon: '▣', title: 'Tikidyo', detail: 'Codsiyada iyo safarrada', tone: 'orange' },
-] as const;
-
-const hospitals = [
-  {
-    name: 'Digfeer Hospital',
-    services: 'Adeegyada caafimaadka indhaha',
-    location: 'Goobta: Hotel Classic, Gaalkacyo',
-    category: 'Caafimaadka indhaha',
-    phone: '0907658461',
-  },
-  {
-    name: 'Modern Hospital',
-    services: 'Adeegyo dhamaystiran oo caafimaad',
-    location: 'Goobta: Hotel Classic ku dhegan, dhinaca midig, Gaalkacyo',
-    category: 'Adeegyo caafimaad oo dhamaystiran',
-  },
-] as const;
-
+type Hospital = { id: string; name: string; area?: string; address?: string; phone?: string; description?: string; isLocalDraft?: boolean };
+const draftHospitals: Hospital[] = [
+  { id: 'draft-digfeer', name: 'Digfeer Hospital', area: 'Gaalkacyo', address: 'Hotel Classic, Gaalkacyo', description: 'Adeegyada caafimaadka indhaha', phone: '0907658461', isLocalDraft: true },
+  { id: 'draft-modern', name: 'Modern Hospital', area: 'Gaalkacyo', address: 'Hotel Classic ku dhegan, dhinaca midig', description: 'Adeegyo dhamaystiran oo caafimaad', isLocalDraft: true },
+];
 const tabs = [
-  { key: 'home', label: 'Hoyga', icon: '⌂' },
-  { key: 'services', label: 'Adeegyada', icon: '▦' },
-  { key: 'activity', label: 'Hawlahayga', icon: '◷' },
-  { key: 'profile', label: 'Akoon', icon: '○' },
-  { key: 'webapp', label: 'Web App', icon: '↗' },
+  { key: 'home', label: 'Hoyga', icon: '⌂' }, { key: 'hospitals', label: 'Isbitaallo', icon: '✚' },
+  { key: 'activity', label: 'Hawlahayga', icon: '◷' }, { key: 'account', label: 'Akoon', icon: '○' },
+  { key: 'web', label: 'Web App', icon: '↗' },
 ] as const;
+type Tab = (typeof tabs)[number]['key'];
 
-type TabKey = (typeof tabs)[number]['key'];
-type ServiceTone = (typeof services)[number]['tone'];
-
-const iconStyles: Record<ServiceTone, StyleProp<ViewStyle>> = {
-  blue: styles.icon_blue,
-  green: styles.icon_green,
-  purple: styles.icon_purple,
-  orange: styles.icon_orange,
-};
-const iconTextStyles: Record<ServiceTone, StyleProp<TextStyle>> = {
-  blue: styles.iconText_blue,
-  green: styles.iconText_green,
-  purple: styles.iconText_purple,
-  orange: styles.iconText_orange,
-};
-
-function PrototypeNotice({ feature }: { feature: string }) {
-  Alert.alert(
-    feature,
-    'Qaybtan wali waa la dhisayaa. Xog ama adeeg dhab ah laguma xaqiijin noocan tijaabada ah.',
-    [{ text: 'Hagaag' }],
-  );
+function useHospitals() {
+  const [items, setItems] = useState<Hospital[]>(draftHospitals);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [fromServer, setFromServer] = useState(false);
+  const load = async () => {
+    try {
+      const result = await apiRequest<{ hospitals?: Hospital[] }>('/api/hospitals');
+      if (result.hospitals?.length) { setItems(result.hospitals); setFromServer(true); }
+      else { setItems(draftHospitals); setFromServer(false); }
+    } catch { setItems(draftHospitals); setFromServer(false); }
+    finally { setLoading(false); setRefreshing(false); }
+  };
+  useEffect(() => { load(); }, []);
+  return { items, loading, refreshing, fromServer, reload: () => { setRefreshing(true); load(); } };
 }
 
-function PageHeading({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <View style={styles.pageHeading}>
-      <Text style={styles.pageTitle}>{title}</Text>
-      <Text style={styles.pageSubtitle}>{subtitle}</Text>
+function Mark({ small = false }: { small?: boolean }) {
+  return <View style={[styles.mark, small && styles.markSmall]}><Text style={[styles.markCross, small && styles.markCrossSmall]}>✚</Text><View style={styles.markPulse} /></View>;
+}
+function Splash() {
+  return <View style={styles.splash}><Mark /><Text style={styles.splashName}>GURMAD <Text style={styles.greenText}>24</Text></Text><Text style={styles.splashCaption}>Caafimaad iyo gargaar, hal meel.</Text><Text style={styles.splashFoot}>NOOCA TIJAABADA</Text></View>;
+}
+function Heading({ title, action, onPress }: { title: string; action?: string; onPress?: () => void }) {
+  return <View style={styles.headingRow}><Text style={styles.sectionTitle}>{title}</Text>{action && onPress ? <Pressable onPress={onPress}><Text style={styles.action}>{action} ›</Text></Pressable> : null}</View>;
+}
+function HospitalCard({ item }: { item: Hospital }) {
+  return <View style={styles.hospitalCard}>
+    <View style={styles.hospitalTop}><View style={styles.hospitalMark}><Text style={styles.hospitalMarkText}>✚</Text></View><View style={styles.hospitalTitle}><Text style={styles.hospitalName}>{item.name}</Text><Text style={styles.hospitalArea}>{item.area || 'Gaalkacyo'}</Text></View>
+      <Text style={[styles.pill, item.isLocalDraft ? styles.pillDraft : styles.pillLive]}>{item.isLocalDraft ? 'Hordhac' : 'Nidaamka'}</Text>
     </View>
-  );
+    <Text style={styles.hospitalDescription}>{item.description || 'Adeegyada caafimaadka'}</Text>
+    <Text style={styles.address}>⌖  {item.address || item.area || 'Goobta lama sheegin'}</Text>
+    {item.phone ? <Pressable style={styles.callButton} onPress={() => Linking.openURL('tel:' + item.phone).catch(() => Alert.alert('Wicitaan', 'Telefoonka lagama furi karin.'))}><Text style={styles.callText}>☎  {item.phone}  ·  Wac</Text></Pressable> : null}
+  </View>;
 }
-
-function HomeScreen({ onOpenServices }: { onOpenServices: () => void }) {
-  return (
-    <>
-      <View style={styles.topBar}>
-        <View style={styles.brandRow}>
-          <View style={styles.logoMark}><Text style={styles.logoPlus}>✚</Text></View>
-          <View>
-            <Text style={styles.brand}>GURMAD <Text style={styles.brandNumber}>24</Text></Text>
-            <Text style={styles.brandCaption}>Caafimaad iyo gargaar</Text>
-          </View>
-        </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Ogeysiisyada" style={styles.notification} onPress={() => PrototypeNotice({ feature: 'Ogeysiisyada' })}>
-          <Text style={styles.notificationIcon}>♧</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.locationRow}>
-        <Text style={styles.locationPin}>⌖</Text>
-        <Text style={styles.locationLabel}>GOOBTAADA</Text>
-        <Text style={styles.locationValue}>Gaalkacyo</Text>
-        <Text style={styles.locationChevron}>⌄</Text>
-      </View>
-
-      <View style={styles.hero}>
-        <View style={styles.heroGlow} />
-        <Text style={styles.heroEyebrow}>KU SOO DHAWOOW GURMAD 24</Text>
-        <Text style={styles.heroTitle}>Caafimaadkaaga,{'\n'}mudnaantayada.</Text>
-        <Text style={styles.heroText}>Hal meel ka hel macluumaadka adeegyada caafimaadka.</Text>
-        <Pressable accessibilityRole="button" style={({ pressed }) => [styles.heroButton, pressed && styles.pressed]} onPress={() => PrototypeNotice({ feature: 'Codso gargaar' })}>
-          <Text style={styles.heroButtonText}>Codso gargaar</Text>
-          <Text style={styles.heroButtonArrow}>→</Text>
-        </Pressable>
-        <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>G24</Text></View>
-      </View>
-
-      <View style={styles.notice}>
-        <View style={styles.noticeIconWrap}><Text style={styles.noticeIcon}>i</Text></View>
-        <View style={styles.noticeCopy}>
-          <Text style={styles.noticeTitle}>Nooca tijaabada</Text>
-          <Text style={styles.noticeText}>Adeegyada gurmadka wali waa tijaabo. Ha u adeegsan xaalad degdeg ah oo dhab ah.</Text>
-        </View>
-      </View>
-
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>Adeegyadeenna</Text>
-          <Text style={styles.sectionSubtitle}>Wax kasta oo aad u baahan tahay</Text>
-        </View>
-        <Pressable accessibilityRole="button" onPress={onOpenServices}><Text style={styles.seeAll}>Dhammaan  ›</Text></Pressable>
-      </View>
-      <View style={styles.serviceGrid}>
-        {services.map((service) => (
-          <Pressable key={service.title} accessibilityRole="button" style={({ pressed }) => [styles.serviceCard, pressed && styles.pressed]} onPress={() => PrototypeNotice({ feature: service.title })}>
-            <View style={[styles.serviceIcon, iconStyles[service.tone]]}>
-              <Text style={[styles.serviceIconText, iconTextStyles[service.tone]]}>{service.icon}</Text>
-            </View>
-            <Text style={styles.serviceTitle}>{service.title}</Text>
-            <Text style={styles.serviceDetail}>{service.detail}</Text>
-            <Text style={styles.serviceArrow}>↗</Text>
-          </Pressable>
-        ))}
-      </View>
-      <View style={styles.supportCard}>
-        <View style={styles.supportIcon}><Text style={styles.supportIconText}>♥</Text></View>
-        <View style={styles.supportCopy}>
-          <Text style={styles.supportTitle}>Ma u baahan tahay caawimaad?</Text>
-          <Text style={styles.supportText}>Wax badan ka ogow GURMAD 24.</Text>
-        </View>
-        <Text style={styles.supportArrow}>›</Text>
-      </View>
-    </>
-  );
-}
-
-function ServicesScreen() {
-  return (
-    <>
-      <PageHeading title="Isbitaallada Gaalkacyo" subtitle="Xarumaha caafimaadka iyo adeegyada ay bixiyaan." />
-      <View style={styles.notice}>
-        <View style={styles.noticeIconWrap}><Text style={styles.noticeIcon}>i</Text></View>
-        <View style={styles.noticeCopy}>
-          <Text style={styles.noticeTitle}>Xog hordhac ah</Text>
-          <Text style={styles.noticeText}>Faahfaahintan waxaa bixiyey mashruuca GURMAD 24. Fadlan xaqiiji adeegyada iyo goobaha xarumaha ka hor inta aan si rasmi ah loo daabicin.</Text>
-        </View>
-      </View>
-      {hospitals.map((hospital) => (
-        <View key={hospital.name} style={styles.hospitalCard}>
-          <View style={styles.hospitalTop}>
-            <View style={styles.hospitalIcon}><Text style={styles.hospitalIconText}>✚</Text></View>
-            <View style={styles.hospitalHeading}>
-              <Text style={styles.hospitalName}>{hospital.name}</Text>
-              <Text style={styles.hospitalCity}>Gaalkacyo</Text>
-            </View>
-            <View style={styles.hospitalTag}><Text style={styles.hospitalTagText}>Xog hordhac ah</Text></View>
-          </View>
-          <View style={styles.hospitalDivider} />
-          <Text style={styles.hospitalLabel}>ADEEGYADA</Text>
-          <Text style={styles.hospitalServices}>{hospital.services}</Text>
-          <Text style={styles.hospitalLabel}>GOOBTA</Text>
-          <Text style={styles.hospitalLocation}>⌖  {hospital.location}</Text>
-          {hospital.phone ? (
-            <>
-              <Text style={styles.hospitalLabel}>TELEFOON</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel={`Wac ${hospital.name}`} style={styles.hospitalCall} onPress={() => Linking.openURL(`tel:${hospital.phone}`).catch(() => Alert.alert('Wicitaan', 'Telefoonka lagama furi karin qalabkan.'))}>
-                <Text style={styles.hospitalCallText}>☎  {hospital.phone}  ·  Wac isbitaalka</Text>
-              </Pressable>
-            </>
-          ) : null}
-        </View>
-      ))}
-      <PageHeading title="Qaybaha kale" subtitle="Adeegyada kale ee app-ka lagu diyaarinayo." />
-      {services.filter((service) => service.title !== 'Isbitaallo').map((service) => (
-        <View key={service.title} style={styles.listCard}>
-          <View style={[styles.serviceIcon, iconStyles[service.tone]]}>
-            <Text style={[styles.serviceIconText, iconTextStyles[service.tone]]}>{service.icon}</Text>
-          </View>
-          <View style={styles.listCopy}>
-            <Text style={styles.serviceTitle}>{service.title}</Text>
-            <Text style={styles.serviceDetail}>{service.detail}</Text>
-            <Text style={styles.comingSoon}>Diyaar-garow ayaa socda</Text>
-          </View>
-        </View>
-      ))}
-    </>
-  );
-}
-
-function ActivityScreen() {
-  return (
-    <>
-      <PageHeading title="Hawlahayga" subtitle="La soco codsiyadaada iyo tikidyada." />
-      <View style={styles.emptyCard}>
-        <View style={styles.emptyIcon}><Text style={styles.emptyIconText}>◷</Text></View>
-        <Text style={styles.emptyTitle}>Weli wax codsi ah ma jiro</Text>
-        <Text style={styles.emptyText}>Marka nidaamka codsiyada la hawlgeliyo, xaaladda codsiyadaada halkan ayay ka muuqan doontaa.</Text>
-        <Text style={styles.comingSoon}>Qaybtan wali waa tijaabo</Text>
-      </View>
-    </>
-  );
-}
-
-function ProfileScreen() {
-  return (
-    <>
-      <PageHeading title="Akoonkayga" subtitle="Macluumaadka isticmaalaha." />
-      <View style={styles.profileCard}>
-        <View style={styles.profileAvatar}><Text style={styles.profileAvatarText}>G24</Text></View>
-        <Text style={styles.emptyTitle}>Marti</Text>
-        <Text style={styles.emptyText}>Ma jiro akoon lagu soo galay.</Text>
-      </View>
-      <View style={styles.listCard}>
-        <View style={styles.profileRowIcon}><Text style={styles.profileRowIconText}>⚙</Text></View>
-        <View style={styles.listCopy}>
-          <Text style={styles.serviceTitle}>Dejinta akoonka</Text>
-          <Text style={styles.serviceDetail}>Gelitaanka iyo xogta shakhsiga</Text>
-        </View>
-        <Text style={styles.comingSoon}>Dhawaan</Text>
-      </View>
-      <View style={styles.listCard}>
-        <View style={styles.profileRowIcon}><Text style={styles.profileRowIconText}>?</Text></View>
-        <View style={styles.listCopy}>
-          <Text style={styles.serviceTitle}>Ku saabsan GURMAD 24</Text>
-          <Text style={styles.serviceDetail}>Macluumaad iyo taageero</Text>
-        </View>
-        <Text style={styles.comingSoon}>Dhawaan</Text>
-      </View>
-    </>
-  );
-}
-
-function WebAppScreen() {
-  return (
-    <View style={styles.webAppScreen}>
-      <View style={styles.webAppHeading}>
-        <Text style={styles.webAppTitle}>GURMAD 24 Web App</Text>
-        <Text style={styles.webAppSubtitle}>Isla website-ka iyo isla xogta backend-ka.</Text>
-      </View>
-      <WebView
-        style={styles.webView}
-        source={{ uri: 'https://gurmad24.onrender.com' }}
-        javaScriptEnabled
-        domStorageEnabled
-        sharedCookiesEnabled
-        thirdPartyCookiesEnabled
-        setSupportMultipleWindows={false}
-        startInLoadingState
-        renderLoading={() => (
-          <View style={styles.webLoading}>
-            <ActivityIndicator size="large" color={colors.green} />
-            <Text style={styles.webLoadingText}>Web App-ka ayaa furmaya…</Text>
-          </View>
-        )}
-        renderError={() => (
-          <View style={styles.webLoading}>
-            <Text style={styles.webErrorTitle}>Web App-ka lama xiriirin karo</Text>
-            <Text style={styles.webLoadingText}>Hubi internet-ka, kadib dib u fur qaybtaan.</Text>
-          </View>
-        )}
-      />
+function Home({ data, openHospitals, openWeb }: { data: ReturnType<typeof useHospitals>; openHospitals: () => void; openWeb: () => void }) {
+  return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.top}><View style={styles.brandRow}><Mark small /><View><Text style={styles.brand}>GURMAD <Text style={styles.greenText}>24</Text></Text><Text style={styles.brandSub}>Caafimaad iyo gargaar</Text></View></View><Pressable style={styles.webChip} onPress={openWeb}><Text style={styles.webChipText}>Web App ↗</Text></Pressable></View>
+    <View style={styles.location}><Text style={styles.pin}>⌖</Text><View><Text style={styles.locationLabel}>GOOBTA MASHRUUCA</Text><Text style={styles.locationName}>Gaalkacyo, Soomaaliya</Text></View></View>
+    <View style={styles.hero}><View style={styles.orb} /><Text style={styles.eyebrow}>KU SOO DHAWOOW GURMAD 24</Text><Text style={styles.heroTitle}>Caafimaadkaaga{'\n'}waa mudnaantayada.</Text><Text style={styles.heroCopy}>Hal meel ka hel macluumaadka xarumaha caafimaadka iyo adeegyada.</Text><Pressable style={styles.heroButton} onPress={openHospitals}><Text style={styles.heroButtonText}>Raadi isbitaallo  →</Text></Pressable><View style={styles.heroBadge}><Mark small /></View></View>
+    <View style={styles.notice}><Text style={styles.noticeIcon}>!</Text><View style={{ flex: 1 }}><Text style={styles.noticeTitle}>Nooca tijaabada</Text><Text style={styles.noticeCopy}>Codsiga gurmadku wali waa SIMULATION; gargaar dhab ah lama dirayo. Ha u adeegsan xaalad degdeg ah.</Text></View></View>
+    <Heading title="Adeegyada" /><View style={styles.grid}>
+      <Pressable style={styles.quickCard} onPress={openHospitals}><Text style={styles.quickIcon}>✚</Text><Text style={styles.quickTitle}>Isbitaallo</Text><Text style={styles.quickSub}>Xarumaha caafimaadka</Text></Pressable>
+      <Pressable style={styles.quickCard} onPress={openWeb}><Text style={styles.quickIconGreen}>⌖</Text><Text style={styles.quickTitle}>Khariidad</Text><Text style={styles.quickSub}>Ka fur Web App-ka</Text></Pressable>
+      <Pressable style={styles.quickCard} onPress={openWeb}><Text style={styles.quickIconPurple}>▣</Text><Text style={styles.quickTitle}>Tikidyo</Text><Text style={styles.quickSub}>Codsiyada iyo safarrada</Text></Pressable>
+      <Pressable style={styles.quickCard} onPress={openWeb}><Text style={styles.quickIconOrange}>＋</Text><Text style={styles.quickTitle}>Adeeg caafimaad</Text><Text style={styles.quickSub}>Eeg adeegyada</Text></Pressable>
     </View>
-  );
+    <Heading title="Isbitaallada Gaalkacyo" action="Dhammaan" onPress={openHospitals} />
+    {data.loading && !data.items.length ? <ActivityIndicator color={colors.green} /> : data.items.slice(0, 2).map(h => <HospitalCard key={h.id} item={h} />)}
+    <Pressable style={styles.webBanner} onPress={openWeb}><Text style={styles.webBannerIcon}>↗</Text><View style={{ flex: 1 }}><Text style={styles.webBannerTitle}>Fur GURMAD 24 Web App</Text><Text style={styles.webBannerSub}>Isla website-ka iyo backend-ka mashruuca.</Text></View><Text style={styles.bannerArrow}>›</Text></Pressable>
+    <Text style={styles.footer}>GURMAD 24 · NOOCA TIJAABADA</Text>
+  </ScrollView>;
 }
-
+function Hospitals({ data }: { data: ReturnType<typeof useHospitals> }) {
+  return <ScrollView contentContainerStyle={styles.content} refreshing={data.refreshing} onRefresh={data.reload}>
+    <Text style={styles.pageEyebrow}>GURMAD 24 DIRECTORY</Text><Text style={styles.pageTitle}>Isbitaallada</Text><Text style={styles.pageSub}>Xarumaha caafimaadka iyo adeegyada ay bixiyaan.</Text>
+    {!data.fromServer ? <View style={styles.notice}><Text style={styles.noticeIcon}>i</Text><View style={{ flex: 1 }}><Text style={styles.noticeTitle}>Xog hordhac ah</Text><Text style={styles.noticeCopy}>Xogta mashruuca wali laguma darin diiwaanka server-ka. Jiid shaashadda si aad u cusboonaysiiso.</Text></View></View> : null}
+    {data.loading ? <ActivityIndicator color={colors.green} /> : data.items.map(h => <HospitalCard key={h.id} item={h} />)}
+  </ScrollView>;
+}
+function SimplePage({ title, subtitle, onOpenWeb }: { title: string; subtitle: string; onOpenWeb: () => void }) {
+  return <ScrollView contentContainerStyle={styles.content}><Text style={styles.pageEyebrow}>GURMAD 24</Text><Text style={styles.pageTitle}>{title}</Text><Text style={styles.pageSub}>{subtitle}</Text><View style={styles.emptyCard}><Text style={styles.emptyIcon}>◷</Text><Text style={styles.emptyTitle}>Qaybtan wali waa la dhisayaa</Text><Text style={styles.emptyCopy}>Adeegyada hadda shaqaynaya ka isticmaal Web App-ka isku xiran.</Text><Pressable style={styles.secondaryButton} onPress={onOpenWeb}><Text style={styles.secondaryText}>Fur Web App-ka ↗</Text></Pressable></View></ScrollView>;
+}
+function WebPage() {
+  const [failed, setFailed] = useState(false);
+  const [version, setVersion] = useState(0);
+  return <View style={styles.webPage}><View style={styles.webHeader}><View><Text style={styles.webTitle}>GURMAD 24 Web App</Text><Text style={styles.webSub}>Isla website-ka iyo isla backend-ka</Text></View><Pressable style={styles.refresh} onPress={() => { setFailed(false); setVersion(v => v + 1); }}><Text style={styles.refreshText}>Cusboonaysii</Text></Pressable></View>
+    {failed ? <View style={styles.webFailed}><Text style={styles.emptyTitle}>Web App-ka lama xiriirin karo</Text><Text style={styles.emptyCopy}>Hubi internet-ka, kadib mar kale isku day.</Text><Pressable style={styles.secondaryButton} onPress={() => Linking.openURL('https://gurmad24.onrender.com')}><Text style={styles.secondaryText}>Ku fur browser-ka ↗</Text></Pressable></View> :
+      <WebView key={version} style={styles.webView} source={{ uri: 'https://gurmad24.onrender.com' }} javaScriptEnabled domStorageEnabled sharedCookiesEnabled thirdPartyCookiesEnabled setSupportMultipleWindows={false} onError={() => setFailed(true)} startInLoadingState renderLoading={() => <View style={styles.webLoading}><ActivityIndicator size="large" color={colors.green} /><Text style={styles.muted}>Web App-ka ayaa furmaya…</Text></View>} />}
+  </View>;
+}
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabKey>('home');
-
-  return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-      <View style={styles.screen}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-          {activeTab === 'home' ? <HomeScreen onOpenServices={() => setActiveTab('services')} /> : null}
-          {activeTab === 'services' ? <ServicesScreen /> : null}
-          {activeTab === 'activity' ? <ActivityScreen /> : null}
-          {activeTab === 'profile' ? <ProfileScreen /> : null}
-          {activeTab === 'webapp' ? <WebAppScreen /> : null}
-          <Text style={styles.footer}>GURMAD 24  ·  Nooca tijaabada</Text>
-        </ScrollView>
-        <View style={styles.bottomBar}>
-          {tabs.map((tab) => {
-            const selected = activeTab === tab.key;
-            return (
-              <Pressable key={tab.key} accessibilityRole="button" accessibilityState={{ selected }} style={styles.tab} onPress={() => setActiveTab(tab.key)}>
-                <Text style={[styles.tabIcon, selected && styles.tabIconActive]}>{tab.icon}</Text>
-                <Text style={[styles.tabLabel, selected && styles.tabLabelActive]}>{tab.label}</Text>
-                {selected ? <View style={styles.activeIndicator} /> : null}
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-    </SafeAreaView>
-  );
+  const [tab, setTab] = useState<Tab>('home');
+  const [splash, setSplash] = useState(true);
+  const data = useHospitals();
+  useEffect(() => { const t = setTimeout(() => setSplash(false), 900); return () => clearTimeout(t); }, []);
+  if (splash) return <><StatusBar barStyle="light-content" backgroundColor={colors.navy} /><Splash /></>;
+  const openWeb = () => setTab('web');
+  return <SafeAreaView style={styles.safe}><StatusBar barStyle="dark-content" backgroundColor={colors.background} /><View style={styles.shell}>
+    {tab === 'home' ? <Home data={data} openHospitals={() => setTab('hospitals')} openWeb={openWeb} /> : null}
+    {tab === 'hospitals' ? <Hospitals data={data} /> : null}
+    {tab === 'activity' ? <SimplePage title="Hawlahayga" subtitle="La soco codsiyadaada iyo tikidyada." onOpenWeb={openWeb} /> : null}
+    {tab === 'account' ? <SimplePage title="Akoonkayga" subtitle="Gelitaanka iyo macluumaadka isticmaalaha." onOpenWeb={openWeb} /> : null}
+    {tab === 'web' ? <WebPage /> : null}
+    <View style={styles.bottom}>{tabs.map(t => <Pressable key={t.key} style={styles.tab} onPress={() => setTab(t.key)} accessibilityRole="button" accessibilityState={{ selected: tab === t.key }}><Text style={[styles.tabIcon, tab === t.key && styles.tabActive]}>{t.icon}</Text><Text style={[styles.tabLabel, tab === t.key && styles.tabActive]}>{t.label}</Text>{tab === t.key ? <View style={styles.indicator} /> : null}</Pressable>)}</View>
+  </View></SafeAreaView>;
 }
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  screen: { flex: 1 },
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  brandRow: { flexDirection: 'row', alignItems: 'center' },
-  logoMark: { width: 46, height: 46, borderRadius: 15, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center', marginRight: spacing.sm },
-  logoPlus: { color: colors.white, fontSize: 25, fontWeight: '900' },
-  brand: { color: colors.navy, fontSize: 19, fontWeight: '900', letterSpacing: 0.5 },
-  brandNumber: { color: colors.green },
-  brandCaption: { color: colors.muted, fontSize: 11, marginTop: 2 },
-  notification: { width: 42, height: 42, borderRadius: 14, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  notificationIcon: { color: colors.navy, fontSize: 23 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.lg, marginBottom: spacing.md },
-  locationPin: { color: colors.green, fontSize: 18, marginRight: 6 },
-  locationLabel: { color: colors.muted, fontSize: 10, fontWeight: '800', letterSpacing: 0.8, marginRight: 8 },
-  locationValue: { color: colors.ink, fontSize: 12, fontWeight: '800' },
-  locationChevron: { color: colors.muted, fontSize: 16, marginLeft: 5 },
-  hero: { overflow: 'hidden', position: 'relative', backgroundColor: colors.navy, borderRadius: 24, padding: spacing.lg, minHeight: 222, marginBottom: spacing.md },
-  heroGlow: { position: 'absolute', width: 190, height: 190, borderRadius: 95, backgroundColor: '#2456A0', right: -70, top: 20, opacity: 0.8 },
-  heroEyebrow: { color: '#C8D9F3', fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
-  heroTitle: { color: colors.white, fontSize: 27, lineHeight: 34, fontWeight: '900', marginTop: 10 },
-  heroText: { color: '#D7E4F7', fontSize: 12, lineHeight: 19, marginTop: 7, maxWidth: '82%' },
-  heroButton: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', backgroundColor: colors.green, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 15, marginTop: 16 },
-  heroButtonText: { color: colors.white, fontWeight: '800', fontSize: 12 },
-  heroButtonArrow: { color: colors.white, fontSize: 18, marginLeft: 12, marginTop: -2 },
-  heroBadge: { position: 'absolute', right: 18, bottom: 24, width: 55, height: 55, borderRadius: 18, borderWidth: 1, borderColor: '#7193C5', alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-10deg' }] },
-  heroBadgeText: { color: '#D7E4F7', fontWeight: '900', fontSize: 15 },
-  notice: { flexDirection: 'row', alignItems: 'flex-start', padding: spacing.md, backgroundColor: '#FFF8E8', borderColor: '#F0DDAF', borderWidth: 1, borderRadius: radius.card, marginBottom: spacing.xl },
-  noticeIconWrap: { width: 25, height: 25, borderRadius: 9, backgroundColor: '#F6E8C5', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  noticeIcon: { color: '#805B13', fontWeight: '900', fontSize: 14 },
-  noticeCopy: { flex: 1 },
-  noticeTitle: { color: '#805B13', fontWeight: '900', fontSize: 12, marginBottom: 3 },
-  noticeText: { color: '#6B571F', fontSize: 11, lineHeight: 17 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
-  sectionTitle: { color: colors.ink, fontSize: 19, fontWeight: '900' },
-  sectionSubtitle: { color: colors.muted, fontSize: 11, marginTop: 4 },
-  seeAll: { color: colors.navy, fontSize: 11, fontWeight: '800' },
-  serviceGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  serviceCard: { width: '48.2%', minHeight: 144, backgroundColor: colors.white, borderRadius: 18, borderWidth: 1, borderColor: colors.border, padding: 13, marginBottom: 11 },
-  serviceIcon: { width: 39, height: 39, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginBottom: 11 },
-  serviceIconText: { fontSize: 21, fontWeight: '800' },
-  icon_blue: { backgroundColor: '#E8F1FB' },
-  icon_green: { backgroundColor: '#E7F6EC' },
-  icon_purple: { backgroundColor: '#F0ECFC' },
-  icon_orange: { backgroundColor: '#FFF1E5' },
-  iconText_blue: { color: '#0B3D91' },
-  iconText_green: { color: '#238C48' },
-  iconText_purple: { color: '#7455B8' },
-  iconText_orange: { color: '#C46A22' },
-  serviceTitle: { color: colors.ink, fontSize: 13, fontWeight: '900' },
-  serviceDetail: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 4, paddingRight: 5 },
-  serviceArrow: { position: 'absolute', top: 13, right: 13, color: '#9AAABD', fontSize: 15 },
-  supportCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EAF2FC', borderRadius: 18, padding: spacing.md, marginTop: 3 },
-  supportIcon: { width: 38, height: 38, borderRadius: 13, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
-  supportIconText: { color: colors.green, fontSize: 19 },
-  supportCopy: { flex: 1, marginLeft: 11 },
-  supportTitle: { color: colors.navy, fontSize: 12, fontWeight: '900' },
-  supportText: { color: colors.muted, fontSize: 10, marginTop: 4 },
-  supportArrow: { color: colors.navy, fontSize: 24 },
-  footer: { color: colors.muted, textAlign: 'center', fontSize: 10, marginTop: spacing.xl },
-  bottomBar: { flexDirection: 'row', backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 9, paddingBottom: 7 },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
-  tabIcon: { color: '#9AAABD', fontSize: 21, lineHeight: 24 },
-  tabIconActive: { color: colors.navy },
-  tabLabel: { color: '#9AAABD', fontSize: 9, marginTop: 2, fontWeight: '600' },
-  tabLabelActive: { color: colors.navy, fontWeight: '900' },
-  activeIndicator: { position: 'absolute', top: -9, width: 18, height: 3, borderRadius: 2, backgroundColor: colors.green },
-  pageHeading: { marginTop: spacing.md, marginBottom: spacing.lg },
-  pageTitle: { color: colors.navy, fontSize: 25, fontWeight: '900' },
-  pageSubtitle: { color: colors.muted, fontSize: 12, marginTop: 5 },
-  hospitalCard: { backgroundColor: colors.white, borderRadius: 19, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.md },
-  hospitalTop: { flexDirection: 'row', alignItems: 'center' },
-  hospitalIcon: { width: 43, height: 43, borderRadius: 14, backgroundColor: colors.paleBlue, alignItems: 'center', justifyContent: 'center' },
-  hospitalIconText: { color: colors.navy, fontSize: 23, fontWeight: '900' },
-  hospitalHeading: { flex: 1, marginLeft: 11 },
-  hospitalName: { color: colors.navy, fontSize: 15, fontWeight: '900' },
-  hospitalCity: { color: colors.muted, fontSize: 11, marginTop: 3 },
-  hospitalTag: { backgroundColor: '#FFF5DF', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
-  hospitalTagText: { color: '#805B13', fontSize: 9, fontWeight: '800' },
-  hospitalDivider: { height: 1, backgroundColor: colors.border, marginVertical: 13 },
-  hospitalLabel: { color: colors.muted, fontSize: 9, fontWeight: '900', letterSpacing: 0.8, marginTop: 5 },
-  hospitalServices: { color: colors.ink, fontSize: 12, fontWeight: '700', lineHeight: 18, marginTop: 4, marginBottom: 8 },
-  hospitalLocation: { color: colors.ink, fontSize: 11, lineHeight: 17, marginTop: 4 },
-  hospitalCall: { alignSelf: 'flex-start', backgroundColor: '#E7F6EC', borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, marginTop: 7 },
-  hospitalCallText: { color: '#176B38', fontSize: 12, fontWeight: '800' },
-  listCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: 11 },
-  listCopy: { flex: 1, marginLeft: 12 },
-  comingSoon: { color: '#8A6A25', fontSize: 10, fontWeight: '800', marginTop: 5 },
-  emptyCard: { backgroundColor: colors.white, borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, alignItems: 'center', marginTop: spacing.md },
-  emptyIcon: { width: 58, height: 58, borderRadius: 20, backgroundColor: colors.paleBlue, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
-  emptyIconText: { color: colors.navy, fontSize: 30 },
-  emptyTitle: { color: colors.navy, fontSize: 15, fontWeight: '900', textAlign: 'center' },
-  emptyText: { color: colors.muted, fontSize: 11, lineHeight: 18, textAlign: 'center', marginTop: 7 },
-  profileCard: { backgroundColor: colors.white, borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, alignItems: 'center', marginBottom: spacing.md },
-  profileAvatar: { width: 62, height: 62, borderRadius: 22, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  profileAvatarText: { color: colors.white, fontWeight: '900', fontSize: 17 },
-  profileRowIcon: { width: 39, height: 39, borderRadius: 13, backgroundColor: colors.paleBlue, alignItems: 'center', justifyContent: 'center' },
-  profileRowIconText: { color: colors.navy, fontSize: 20, fontWeight: '900' },
-  webAppScreen: { minHeight: 580, flex: 1, backgroundColor: colors.white, borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
-  webAppHeading: { padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
-  webAppTitle: { color: colors.navy, fontSize: 15, fontWeight: '900' },
-  webAppSubtitle: { color: colors.muted, fontSize: 10, marginTop: 3 },
-  webView: { flex: 1, minHeight: 520, backgroundColor: colors.white },
-  webLoading: { minHeight: 280, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
-  webLoadingText: { color: colors.muted, fontSize: 12, marginTop: 10, textAlign: 'center' },
-  webErrorTitle: { color: colors.navy, fontWeight: '900', fontSize: 14, textAlign: 'center' },
-  pressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
+  safe:{flex:1,backgroundColor:colors.background},shell:{flex:1,backgroundColor:colors.background},content:{padding:18,paddingBottom:26},
+  splash:{flex:1,backgroundColor:colors.navy,alignItems:'center',justifyContent:'center'},mark:{width:82,height:82,borderRadius:25,backgroundColor:'#174B7A',alignItems:'center',justifyContent:'center',overflow:'hidden',borderWidth:1,borderColor:'#47749D'},markSmall:{width:45,height:45,borderRadius:14},markCross:{fontSize:49,color:'#FFFFFF',fontWeight:'900'},markCrossSmall:{fontSize:26},markPulse:{position:'absolute',width:57,height:4,borderRadius:4,backgroundColor:'#39C878',transform:[{rotate:'-12deg'}]},
+  splashName:{fontSize:29,fontWeight:'900',color:'#FFFFFF',letterSpacing:1.5,marginTop:22},greenText:{color:'#39C878'},splashCaption:{color:'#D6E5F5',fontSize:12,marginTop:8},splashFoot:{position:'absolute',bottom:38,color:'#A8BED8',fontSize:9,fontWeight:'800',letterSpacing:1.5},
+  top:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:18},brandRow:{flexDirection:'row',alignItems:'center'},brand:{fontSize:18,fontWeight:'900',color:colors.navy},brandSub:{fontSize:10,color:colors.muted,marginTop:2},webChip:{backgroundColor:'#FFFFFF',borderWidth:1,borderColor:colors.border,borderRadius:12,paddingHorizontal:12,paddingVertical:9},webChipText:{fontSize:10,fontWeight:'900',color:colors.navy},
+  location:{flexDirection:'row',alignItems:'center',marginBottom:15},pin:{fontSize:23,color:colors.green,marginRight:9},locationLabel:{fontSize:9,color:colors.muted,fontWeight:'900',letterSpacing:1},locationName:{fontSize:12,color:colors.ink,fontWeight:'800',marginTop:3},
+  hero:{backgroundColor:'#071B35',borderRadius:25,padding:20,minHeight:235,overflow:'hidden',marginBottom:15},orb:{position:'absolute',width:200,height:200,borderRadius:100,backgroundColor:'#174775',right:-75,top:-55},eyebrow:{fontSize:9,color:'#C5D9ED',fontWeight:'900',letterSpacing:1},heroTitle:{fontSize:27,lineHeight:34,color:'#FFFFFF',fontWeight:'900',marginTop:17},heroCopy:{fontSize:11,lineHeight:18,color:'#D6E4F2',marginTop:8,maxWidth:'84%'},heroButton:{alignSelf:'flex-start',backgroundColor:colors.green,borderRadius:11,paddingHorizontal:14,paddingVertical:11,marginTop:16},heroButtonText:{fontSize:11,color:'#FFFFFF',fontWeight:'900'},heroBadge:{position:'absolute',right:16,bottom:15,opacity:0.75},
+  notice:{flexDirection:'row',alignItems:'flex-start',backgroundColor:'#FFF7E5',borderWidth:1,borderColor:'#F0DDAF',borderRadius:14,padding:12,marginBottom:21},noticeIcon:{width:25,height:25,textAlign:'center',textAlignVertical:'center',overflow:'hidden',borderRadius:8,backgroundColor:'#F3E5BF',color:'#805B13',fontWeight:'900',marginRight:10},noticeTitle:{fontSize:11,fontWeight:'900',color:'#805B13',marginBottom:3},noticeCopy:{fontSize:10,lineHeight:16,color:'#6B571F'},
+  headingRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:11},sectionTitle:{fontSize:16,fontWeight:'900',color:colors.ink},action:{fontSize:10,fontWeight:'900',color:colors.navy},
+  grid:{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',marginBottom:19},quickCard:{width:'48.3%',minHeight:120,backgroundColor:'#FFFFFF',borderRadius:16,borderWidth:1,borderColor:colors.border,padding:12,marginBottom:10},quickIcon:{fontSize:25,color:colors.navy,marginBottom:8},quickIconGreen:{fontSize:25,color:'#238C48',marginBottom:8},quickIconPurple:{fontSize:23,color:'#7455B8',marginBottom:8},quickIconOrange:{fontSize:25,color:'#C46A22',marginBottom:8},quickTitle:{fontSize:12,fontWeight:'900',color:colors.ink},quickSub:{fontSize:9,lineHeight:14,color:colors.muted,marginTop:4},
+  hospitalCard:{backgroundColor:'#FFFFFF',borderWidth:1,borderColor:colors.border,borderRadius:17,padding:13,marginBottom:10},hospitalTop:{flexDirection:'row',alignItems:'center'},hospitalMark:{width:38,height:38,borderRadius:12,backgroundColor:'#E8F1FB',alignItems:'center',justifyContent:'center'},hospitalMarkText:{fontSize:21,color:colors.navy},hospitalTitle:{flex:1,marginLeft:9},hospitalName:{fontSize:12,fontWeight:'900',color:colors.ink},hospitalArea:{fontSize:9,color:colors.muted,marginTop:3},pill:{fontSize:8,fontWeight:'900',overflow:'hidden',borderRadius:20,paddingHorizontal:8,paddingVertical:5},pillDraft:{backgroundColor:'#FFF4D9',color:'#805B13'},pillLive:{backgroundColor:'#E7F6EC',color:'#176B38'},hospitalDescription:{fontSize:10,lineHeight:16,color:colors.ink,marginTop:11},address:{fontSize:9,lineHeight:15,color:colors.muted,marginTop:5},callButton:{alignSelf:'flex-start',backgroundColor:'#E7F6EC',borderRadius:9,paddingHorizontal:11,paddingVertical:8,marginTop:9},callText:{fontSize:10,fontWeight:'900',color:'#176B38'},
+  webBanner:{flexDirection:'row',alignItems:'center',backgroundColor:'#EAF2FC',borderRadius:16,padding:13,marginTop:5},webBannerIcon:{fontSize:22,color:colors.navy,marginRight:12},webBannerTitle:{fontSize:11,fontWeight:'900',color:colors.navy},webBannerSub:{fontSize:9,color:colors.muted,marginTop:4},bannerArrow:{fontSize:23,color:colors.navy,marginLeft:8},
+  pageEyebrow:{fontSize:9,color:colors.green,fontWeight:'900',letterSpacing:1.2,marginTop:12},pageTitle:{fontSize:27,fontWeight:'900',color:colors.navy,marginTop:6},pageSub:{fontSize:11,lineHeight:17,color:colors.muted,marginTop:5,marginBottom:18},emptyCard:{alignItems:'center',backgroundColor:'#FFFFFF',borderWidth:1,borderColor:colors.border,borderRadius:18,padding:24,marginTop:16},emptyIcon:{fontSize:35,color:colors.navy,marginBottom:12},emptyTitle:{fontSize:14,fontWeight:'900',color:colors.ink,textAlign:'center'},emptyCopy:{fontSize:10,lineHeight:16,color:colors.muted,textAlign:'center',marginTop:7},secondaryButton:{backgroundColor:colors.navy,borderRadius:10,paddingHorizontal:15,paddingVertical:11,marginTop:16},secondaryText:{fontSize:10,fontWeight:'900',color:'#FFFFFF'},
+  webPage:{flex:1,backgroundColor:'#FFFFFF'},webHeader:{padding:13,borderBottomWidth:1,borderBottomColor:colors.border,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},webTitle:{fontSize:12,fontWeight:'900',color:colors.navy},webSub:{fontSize:9,color:colors.muted,marginTop:3},refresh:{backgroundColor:'#E8F1FB',padding:9,borderRadius:9},refreshText:{fontSize:9,color:colors.navy,fontWeight:'900'},webView:{flex:1,backgroundColor:'#FFFFFF'},webLoading:{flex:1,alignItems:'center',justifyContent:'center'},muted:{fontSize:10,color:colors.muted,marginTop:9},webFailed:{flex:1,alignItems:'center',justifyContent:'center',padding:24},
+  bottom:{flexDirection:'row',backgroundColor:'#FFFFFF',borderTopWidth:1,borderTopColor:colors.border,paddingTop:6,paddingBottom:5},tab:{flex:1,minHeight:49,alignItems:'center',justifyContent:'center'},tabIcon:{fontSize:20,color:'#9AAABD',lineHeight:23},tabLabel:{fontSize:8,color:'#9AAABD',fontWeight:'700',marginTop:2},tabActive:{color:colors.navy,fontWeight:'900'},indicator:{position:'absolute',top:-7,width:17,height:3,borderRadius:2,backgroundColor:colors.green},footer:{fontSize:9,color:colors.muted,textAlign:'center',marginTop:16,marginBottom:5},
 });
