@@ -1,34 +1,30 @@
-# GURMAD 24 — React Native app
+# GURMAD 24 — React Native Android app
 
-This is the new native mobile client, built with React Native + Expo SDK 58.
-It is intentionally separate from the existing Node.js backend and browser app.
+The native client is built with React Native + Expo. It uses the existing GURMAD 24 backend; it does not create a second database.
 
-## Requirements
+## Shared services
 
-- Node.js 22.13 or newer (Expo SDK 58 requirement)
-- Android Studio for local Android builds
-- Expo Go or a development build for device testing
+- Public hospital directory data is requested from the existing `/api/hospitals` endpoint.
+- The **Web App** tab opens `https://gurmad24.onrender.com` inside the app, so the existing website workflows continue to use the same backend.
+- `EXPO_PUBLIC_API_URL` can override the API origin for a different environment.
+- Digfeer Hospital and Modern Hospital project-supplied details are shown as provisional fallback data until they are entered and approved in the shared backend.
 
-## Run
+## Run locally
 
 ```bash
 cd mobile-native
 npm install
+npm run typecheck
 npx expo start
 ```
 
-Set `EXPO_PUBLIC_API_URL` to the HTTPS backend URL when testing against another environment.
-The default points to the existing GURMAD 24 hosted API.
+## Android test APK
 
-## Migration approach
+GitHub Actions builds a debug APK from this folder and uploads it as the `gurmad24-android-test-apk` artifact. This is for direct testing only, not a Google Play release.
 
-1. Keep the existing Node.js backend and its tests intact.
-2. Build native screens in this directory and connect them to existing API routes.
-3. Port authentication/session handling and role-based navigation before protected workflows.
-4. Port patient, hospital/provider, operator, and admin experiences incrementally.
-5. Add push notifications, location, and maps only after permissions and backend contracts are verified.
+## Data and safety boundaries
 
-## Safety boundary
-
-Emergency dispatch remains simulation-only. Do not enable live dispatch, automatic responder assignment,
-or real emergency notifications until institutional approval, trained operators, and verified integrations exist.
+- Synthetic hospital fixtures are created only for automated tests. The old sample hospitals A/B/C are not seeded in production and are removed from existing stores at bootstrap.
+- Emergency dispatch remains simulation-only. Payments remain sandbox-only.
+- Do not enable live dispatch, automatic responder assignment, or real emergency notifications until institutional approval, trained operators, and verified integrations exist.
+- Native authentication and role-based screens are not yet implemented; use the embedded Web App for the existing sign-in and protected workflows.
