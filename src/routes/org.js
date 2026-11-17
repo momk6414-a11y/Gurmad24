@@ -158,12 +158,15 @@ module.exports = function (app) {
   });
 
   // ---------- Patient visit cards. A patient must explicitly consent on their own appointment.
-  app.get('/api/org/visits', { auth: ['hospital_admin'], summary: 'Visit cards belonging to my hospital' }, req => ({
-    visits: store.filter('visits', v => v.orgId === req.user.orgId).sort((a, b) => b.visitDate.localeCompare(a.visitDate)).map(v => {
-      const u = store.get('users', v.userId);
-      return { ...v, userId: undefined, patientName: u ? u.name : 'Patient' };
-    }),
-  }));
+  app.get('/api/org/visits', { auth: ['hospital_admin'], summary: 'Visit cards belonging to my hospital' }, req => {
+    const hosp = hospitalOnly(req);
+    return {
+      visits: store.filter('visits', v => v.orgId === hosp.id).sort((a, b) => b.visitDate.localeCompare(a.visitDate)).map(v => {
+        const u = store.get('users', v.userId);
+        return { id: v.id, appointmentId: v.appointmentId, patientName: u ? u.name : 'Patient', doctorName: v.doctorName, specialty: v.specialty, visitDate: v.visitDate, service: v.service, summary: v.summary, followUpDate: v.followUpDate, createdAt: v.createdAt };
+      }),
+    };
+  });
   app.post('/api/org/visits', { auth: ['hospital_admin'], summary: 'Create a patient visit card after the patient has consented' }, req => {
     const o = hospitalOnly(req);
     const b = validate({
