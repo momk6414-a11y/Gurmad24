@@ -198,3 +198,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--mint);outline:none;bo
 @media(max-width:560px){
   .visit-card-head{flex-direction:column;align-items:flex-start}
 }
+
+
+.appointment-card{padding:18px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.appointment-card h3{font-size:18px;margin:3px 0 0;overflow-wrap:anywhere}
+.appointment-card p{margin:0;line-height:1.5;overflow-wrap:anywhere}
+.appointment-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.appointment-card-head small{font-size:10px;letter-spacing:.08em;color:var(--brand-strong);font-weight:800}
+.appointment-card .kv{margin:0}
+@media(max-width:560px){.appointment-card-head{flex-direction:column;align-items:flex-start}}
