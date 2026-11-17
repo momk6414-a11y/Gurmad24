@@ -108,6 +108,14 @@ test('mandatory staff MFA blocks all staff data routes until authenticator enrol
   try {
     const staff = await H.admin(guarded);
     assert.equal((await staff.get('/api/auth/me')).data.securitySetupRequired, true);
+    const orgClient = guarded.client();
+    const reg = await orgClient.post('/api/auth/register-org', {
+      name: 'Secure Staff', email: 'secure-staff@test.local', password: 'SecureStaff1234',
+      lang: 'so', consent: true, orgType: 'hospital', orgName: 'Secure Test Hospital',
+      area: 'Test', phone: '', description: '',
+    });
+    assert.equal(reg.status, 201); assert.equal(reg.data.securitySetupRequired, true); assert.equal(reg.data.org, null);
+    assert.equal((await orgClient.get('/api/org/appointments')).status, 403);
     let r = await staff.get('/api/admin/security');
     assert.equal(r.status, 403); assert.equal(r.data.error, 'staff_2fa_required');
     assert.equal((await staff.get('/api/auth/sessions')).status, 200);
