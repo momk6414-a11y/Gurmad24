@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Linking,
   Pressable,
@@ -13,6 +14,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { colors, radius, spacing } from './src/theme/tokens';
 
 const services = [
@@ -43,6 +45,7 @@ const tabs = [
   { key: 'services', label: 'Adeegyada', icon: '▦' },
   { key: 'activity', label: 'Hawlahayga', icon: '◷' },
   { key: 'profile', label: 'Akoon', icon: '○' },
+  { key: 'webapp', label: 'Web App', icon: '↗' },
 ] as const;
 
 type TabKey = (typeof tabs)[number]['key'];
@@ -248,6 +251,39 @@ function ProfileScreen() {
   );
 }
 
+function WebAppScreen() {
+  return (
+    <View style={styles.webAppScreen}>
+      <View style={styles.webAppHeading}>
+        <Text style={styles.webAppTitle}>GURMAD 24 Web App</Text>
+        <Text style={styles.webAppSubtitle}>Isla website-ka iyo isla xogta backend-ka.</Text>
+      </View>
+      <WebView
+        style={styles.webView}
+        source={{ uri: 'https://gurmad24.onrender.com' }}
+        javaScriptEnabled
+        domStorageEnabled
+        sharedCookiesEnabled
+        thirdPartyCookiesEnabled
+        setSupportMultipleWindows={false}
+        startInLoadingState
+        renderLoading={() => (
+          <View style={styles.webLoading}>
+            <ActivityIndicator size="large" color={colors.green} />
+            <Text style={styles.webLoadingText}>Web App-ka ayaa furmaya…</Text>
+          </View>
+        )}
+        renderError={() => (
+          <View style={styles.webLoading}>
+            <Text style={styles.webErrorTitle}>Web App-ka lama xiriirin karo</Text>
+            <Text style={styles.webLoadingText}>Hubi internet-ka, kadib dib u fur qaybtaan.</Text>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
 
@@ -260,6 +296,7 @@ export default function App() {
           {activeTab === 'services' ? <ServicesScreen /> : null}
           {activeTab === 'activity' ? <ActivityScreen /> : null}
           {activeTab === 'profile' ? <ProfileScreen /> : null}
+          {activeTab === 'webapp' ? <WebAppScreen /> : null}
           <Text style={styles.footer}>GURMAD 24  ·  Nooca tijaabada</Text>
         </ScrollView>
         <View style={styles.bottomBar}>
@@ -378,5 +415,13 @@ const styles = StyleSheet.create({
   profileAvatarText: { color: colors.white, fontWeight: '900', fontSize: 17 },
   profileRowIcon: { width: 39, height: 39, borderRadius: 13, backgroundColor: colors.paleBlue, alignItems: 'center', justifyContent: 'center' },
   profileRowIconText: { color: colors.navy, fontSize: 20, fontWeight: '900' },
+  webAppScreen: { minHeight: 580, flex: 1, backgroundColor: colors.white, borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
+  webAppHeading: { padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
+  webAppTitle: { color: colors.navy, fontSize: 15, fontWeight: '900' },
+  webAppSubtitle: { color: colors.muted, fontSize: 10, marginTop: 3 },
+  webView: { flex: 1, minHeight: 520, backgroundColor: colors.white },
+  webLoading: { minHeight: 280, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
+  webLoadingText: { color: colors.muted, fontSize: 12, marginTop: 10, textAlign: 'center' },
+  webErrorTitle: { color: colors.navy, fontWeight: '900', fontSize: 14, textAlign: 'center' },
   pressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
 });
