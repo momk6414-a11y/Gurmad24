@@ -18,7 +18,9 @@ function wire(config, store, overrides = {}) {
     log('WARNING: storage is NOT persistent - all data are lost on restart/deploy. Supabase is not connected.');
   }
   seed.ensureAdmin(app, config, log);
-  if (config.seedDemoData) seed.seedDemoData(app);
+  if (config.seedDemoData) seed.seedDemoData(app, { testFixtures: !!overrides.testFixtures });
+  const removedDemoHospitals = seed.removeDemoHospitals(app);
+  if (removedDemoHospitals) log(`Removed ${removedDemoHospitals} synthetic demo hospitals.`);
   seed.ensureResponderDemo(app);
   catalog.applyToAll(store);
   seed.seedDemoUsers(app, config, log);

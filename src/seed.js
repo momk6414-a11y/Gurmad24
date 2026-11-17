@@ -16,23 +16,39 @@ function ensureAdmin(app, config, log) {
   } else log('First admin created.');
 }
 
-function seedDemoData(app) {
+function seedDemoData(app, options = {}) {
   const { store } = app.ctx;
   if (store.data.meta.seeded) return;
   const now = new Date().toISOString();
   const contract = () => ({ cardCommissionBps: null, labCommissionBps: null, appointmentFeeCents: null });
   const org = (type, name, area, extra = {}) => store.insert('orgs', { id: store.id('o_'), type, name, area, address: '', phone: '', publicEmail: '', description: '', hours: '', serviceAreas: [], available: false, status: 'verified', statusNote: 'Synthetic demo organisation', contract: contract(), createdAt: now, isDemoSeed: true, ...extra });
 
-  const hA = org('hospital', 'Isbitaal Tusaale A (Demo)', 'Gaalkacyo', { description: 'Synthetic demo hospital for testing. Not a real facility.', hours: '24/7 (demo)', phone: '+000 000 0001' });
-  const hB = org('hospital', 'Isbitaal Tusaale B (Demo)', 'Gaalkacyo', { description: 'Synthetic demo hospital for testing. Not a real facility.', hours: '08:00-20:00 (demo)', phone: '+000 000 0002' });
-  const hC = org('hospital', 'Isbitaal Tusaale C (Demo)', 'Gaalkacyo', { description: 'Synthetic demo hospital for testing. Not a real facility.', hours: '08:00-16:00 (demo)', phone: '+000 000 0003' });
   const a1 = org('ambulance', 'Ambalaas Tusaale 1 (Demo)', 'Gaalkacyo', { available: true, serviceAreas: ['Aagga A', 'Aagga B'], phone: '+000 000 0011', description: 'Synthetic demo provider.' });
   const a2 = org('ambulance', 'Ambalaas Tusaale 2 (Demo)', 'Gaalkacyo', { available: false, serviceAreas: ['Aagga C'], phone: '+000 000 0012', description: 'Synthetic demo provider.' });
   const lab = org('lab', 'Laboratory Tusaale (Demo)', 'Gaalkacyo', { phone: '+000 000 0021', description: 'Synthetic demo laboratory.', hours: '07:00-15:00 (demo)' });
 
+  // A single synthetic hospital is created only for isolated automated tests.
+  // Production never receives the old A/B/C sample hospitals.
+  if (options.testFixtures) {
+    const testHospital = org('hospital', 'Isbitaal Tijaabo (Test Fixture)', 'Gaalkacyo', {
+      description: 'Automated test fixture only.',
+      hours: 'Test fixture',
+      phone: '0000000000',
+    });
+    // Keep a small synthetic catalogue for marketplace integration tests only.
+    for (const [index, name] of ['Test fixture card one', 'Test fixture card two', 'Test fixture card three', 'Test fixture card four'].entries()) {
+      store.insert('cards', {
+        id: store.id('cd_'), hospitalId: testHospital.id, name, priceCents: 1000 + index * 500,
+        included: ['Automated test item'], excluded: ['Not a real service'], validityDays: 30,
+        eligibility: 'Test only', terms: 'Automated test fixture only.',
+        refundPolicy: 'Automated test fixture only.', status: 'published',
+        hospitalApprovedAt: now, approvedBy: 'test-fixture', createdAt: now, updatedAt: now,
+        isDemoSeed: true,
+      });
+    }
+  }
+
   const svc = (o, name, priceCents, note = '') => store.insert('services', { id: store.id('sv_'), orgId: o.id, name, priceCents, note, active: true, createdAt: now });
-  svc(hA, 'General consultation (demo price)', 500); svc(hA, 'Check-up package (demo price)', 1500);
-  svc(hB, 'General consultation (demo price)', 400); svc(hC, 'Follow-up visit (demo price)', 300);
   svc(a1, 'Patient transport - city (demo price)', 2000, 'Within Gaalkacyo'); svc(a2, 'Patient transport - inter-district (demo price)', 6000);
   svc(lab, 'Basic blood panel (demo price)', 800); svc(lab, 'Urine analysis (demo price)', 300);
 
@@ -42,10 +58,6 @@ function seedDemoData(app) {
   });
   const T = 'DEMO TEXT: Terms are written and approved by the hospital. This card is a hospital service product, not insurance, and does not guarantee treatment or coverage.';
   const R = 'DEMO TEXT: Refund conditions are set by the hospital; requests are reviewed by GURMAD 24 administrators.';
-  card(hA, 'Kaarka Booqashada', 300, 90, ['One general consultation (demo)'], ['Emergency treatment', 'Medication', 'Surgery'], 'Open to all adults (demo)', T, R);
-  card(hA, 'Kaarka Caafimaadka Qoyska', 1800, 180, ['Up to 4 consultations (demo)', 'One check-up (demo)'], ['Emergency treatment', 'Inpatient care'], 'Family of up to 4 (demo)', T, R);
-  card(hB, 'Kaarka Adeegga Guud', 500, 120, ['Two general consultations (demo)', 'Basic vitals check (demo)'], ['Surgery', 'Specialist referrals'], 'Open to all (demo)', T, R);
-  card(hC, 'Kaarka Xubinimada', 1000, 365, ['Priority booking (demo)', 'Four follow-up visits (demo)'], ['Emergency treatment', 'Dental'], 'Registered members (demo)', T, R);
 
   const planP = (audience, name, m, a, features) => store.insert('plans', { id: store.id('pl_'), audience, name, monthlyCents: m, annualCents: a, features, active: true, isPlaceholder: true });
   planP('hospital', 'Hospital Standard (placeholder price)', 2500, 25000, []);
@@ -58,7 +70,24 @@ function seedDemoData(app) {
   mk('general', 'Aagga A', 'received'); mk('transport', 'Aagga B', 'assigned'); mk('other', 'Aagga C', 'received');
 
   store.data.meta.seeded = true; store.flush();
-  return { hA, a1 };
+  return { a1 };
+}
+
+
+// Remove only the three explicitly synthetic hospital fixtures and their dependent demo catalogue entries.
+// Real hospitals and historical orders are intentionally left untouched.
+function removeDemoHospitals(app) {
+  const { store } = app.ctx;
+  const names = new Set(['Isbitaal Tusaale A (Demo)', 'Isbitaal Tusaale B (Demo)', 'Isbitaal Tusaale C (Demo)']);
+  const targets = store.filter('orgs', o => o.isDemoSeed === true && o.type === 'hospital' && names.has(o.name));
+  if (!targets.length) return 0;
+  const ids = new Set(targets.map(o => o.id));
+  store.data.cards = store.col('cards').filter(c => !ids.has(c.hospitalId));
+  store.data.services = store.col('services').filter(s => !ids.has(s.orgId));
+  store.data.users = store.col('users').filter(u => !(ids.has(u.orgId) && String(u.email || '').endsWith('@demo.gurmad24.test')));
+  store.data.orgs = store.col('orgs').filter(o => !ids.has(o.id));
+  store.save();
+  return targets.length;
 }
 
 // Police and fire demo stations + coordinates for all demo responders. Idempotent: also runs on data seeded earlier.
@@ -110,4 +139,4 @@ function runRetention(store, days) {
   if (n) store.save(); return n;
 }
 
-module.exports = { ensureAdmin, seedDemoData, ensureResponderDemo, seedDemoUsers, runRetention };
+module.exports = { ensureAdmin, seedDemoData, removeDemoHospitals, ensureResponderDemo, seedDemoUsers, runRetention };
