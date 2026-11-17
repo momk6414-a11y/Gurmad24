@@ -210,6 +210,8 @@ const directoryHospitalTile = o => h('article', { class: 'hc' },
   h('img', { class: 'art', src: '/img/org-hospital.svg', alt: '', width: 320, height: 112, loading: 'lazy' }),
   h('div', { class: 'hosp' }, o.area, h('span', { class: 'badge warn' }, t('Public listing - unverified'))),
   h('h4', o.name), h('div', { class: 'meta' }, o.description),
+  h('p', { class: 'meta' }, t('Opening hours: {hours}', { hours: o.hours || t('Not listed') })),
+  o.publicEmail ? h('a', { class: 'source-link', href: 'mailto:' + o.publicEmail }, o.publicEmail) : null,
   o.verificationNote ? h('p', { class: 'hint' }, o.verificationNote) : null,
   o.phone ? h('a', { class: 'btn sm', href: 'tel:' + o.phone.replace(/[^+\\d]/g, '') }, icon('phone', 16), o.phone) : null,
   h('a', { class: 'source-link', href: o.sourceUrl || 'https://isbitaal.com/isbitaal/gaalkacyo/', target: '_blank', rel: 'noopener noreferrer' }, t('Source: Isbitaal.com ↗'))
