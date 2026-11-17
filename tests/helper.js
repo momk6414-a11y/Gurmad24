@@ -7,7 +7,7 @@ const { build } = require('../src/bootstrap');
 
 async function start(extra = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'g24-test-'));
-  const { app, store, config } = build({ DATA_DIR: dir, ADMIN_EMAIL: 'admin@test.local', ADMIN_PASSWORD: 'AdminPass123', DEMO_PASSWORD: 'DemoPass12345', autoBackup: false, quiet: true, rateLimit: { authPerMin: 10000, globalPerMin: 1000000 }, ...extra });
+  const { app, store, config } = build({ DATA_DIR: dir, ADMIN_EMAIL: 'admin@test.local', ADMIN_PASSWORD: 'AdminPass123', DEMO_PASSWORD: 'DemoPass12345', autoBackup: false, quiet: true, testFixtures: true, rateLimit: { authPerMin: 10000, globalPerMin: 1000000 }, ...extra });
   const server = await app.listen(0, '127.0.0.1');
   const base = 'http://127.0.0.1:' + server.address().port;
   const stop = async () => { await app.shutdown(); fs.rmSync(dir, { recursive: true, force: true }); };
