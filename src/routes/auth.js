@@ -50,7 +50,8 @@ module.exports = function (app) {
     const u = createUser({ name: b.name, email: b.email, password: b.password, lang: b.lang, role: ORG_ROLE[b.orgType], orgId: org.id, strictEmail: true });
     app.audit({ ...req, user: u }, 'org.register', 'org', org.id, { type: org.type });
     startSession(req, res, u);
-    return created({ user: D.userView(u), org: D.orgPrivate(org), securitySetupRequired: !!(app.ctx.config.requireStaff2fa && u.role !== 'patient' && !(u.totp && u.totp.enabled)) });
+    const securitySetupRequired = !!(app.ctx.config.requireStaff2fa && u.role !== 'patient' && !(u.totp && u.totp.enabled));
+    return created({ user: D.userView(u), org: securitySetupRequired ? null : D.orgPrivate(org), securitySetupRequired });
   });
 
   app.post('/api/auth/login', { summary: 'Log in (sets httpOnly session cookie). Locks after 5 failures / 15 min' }, (req, res) => {
@@ -107,7 +108,8 @@ module.exports = function (app) {
   app.get('/api/auth/me', { summary: 'Current user (null if not logged in)' }, req => {
     const u = app.loadUser(req);
     if (!u) return { user: null };
-    return { user: D.userView(u), org: u.orgId ? D.orgPrivate(store.get('orgs', u.orgId)) : null, securitySetupRequired: !!(app.ctx.config.requireStaff2fa && u.role !== 'patient' && !(u.totp && u.totp.enabled)) };
+    const securitySetupRequired = !!(app.ctx.config.requireStaff2fa && u.role !== 'patient' && !(u.totp && u.totp.enabled));
+    return { user: D.userView(u), org: securitySetupRequired ? null : (u.orgId ? D.orgPrivate(store.get('orgs', u.orgId)) : null), securitySetupRequired };
   });
 
   app.post('/api/auth/change-password', { auth: true, summary: 'Change own password (logs out other sessions)' }, req => {
