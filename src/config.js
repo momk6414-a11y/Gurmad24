@@ -42,6 +42,8 @@ function load(overrides = {}) {
     anthropicKey: env.ANTHROPIC_API_KEY || '', anthropicModel: env.ANTHROPIC_MODEL || '',
     cookieSecure: bool(env.COOKIE_SECURE, false),
     trustProxy: bool(env.TRUST_PROXY, false),
+    requireStaff2fa: bool(env.REQUIRE_STAFF_2FA, false),
+    disableDemoAccounts: bool(env.DISABLE_DEMO_ACCOUNTS, false),
     retentionDays: Number(env.RETENTION_DAYS || 365),
     persistentStorage: bool(env.PERSISTENT_STORAGE, !env.RENDER),
     supabaseUrl: String(env.SUPABASE_URL || '').replace(/\/$/, ''),
