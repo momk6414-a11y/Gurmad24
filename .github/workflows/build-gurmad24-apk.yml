@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/react-native-expo-foundation
+      - feat/verified-hospital-directory-draft
     paths:
       - "mobile-native/**"
       - ".github/workflows/build-gurmad24-apk.yml"
