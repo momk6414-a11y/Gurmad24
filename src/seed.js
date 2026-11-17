@@ -16,7 +16,7 @@ function ensureAdmin(app, config, log) {
   } else log('First admin created.');
 }
 
-function seedDemoData(app) {
+function seedDemoData(app, options = {}) {
   const { store } = app.ctx;
   if (store.data.meta.seeded) return;
   const now = new Date().toISOString();
@@ -26,6 +26,16 @@ function seedDemoData(app) {
   const a1 = org('ambulance', 'Ambalaas Tusaale 1 (Demo)', 'Gaalkacyo', { available: true, serviceAreas: ['Aagga A', 'Aagga B'], phone: '+000 000 0011', description: 'Synthetic demo provider.' });
   const a2 = org('ambulance', 'Ambalaas Tusaale 2 (Demo)', 'Gaalkacyo', { available: false, serviceAreas: ['Aagga C'], phone: '+000 000 0012', description: 'Synthetic demo provider.' });
   const lab = org('lab', 'Laboratory Tusaale (Demo)', 'Gaalkacyo', { phone: '+000 000 0021', description: 'Synthetic demo laboratory.', hours: '07:00-15:00 (demo)' });
+
+  // A single synthetic hospital is created only for isolated automated tests.
+  // Production never receives the old A/B/C sample hospitals.
+  if (options.testFixtures) {
+    org('hospital', 'Isbitaal Tijaabo (Test Fixture)', 'Gaalkacyo', {
+      description: 'Automated test fixture only.',
+      hours: 'Test fixture',
+      phone: '0000000000',
+    });
+  }
 
   const svc = (o, name, priceCents, note = '') => store.insert('services', { id: store.id('sv_'), orgId: o.id, name, priceCents, note, active: true, createdAt: now });
   svc(a1, 'Patient transport - city (demo price)', 2000, 'Within Gaalkacyo'); svc(a2, 'Patient transport - inter-district (demo price)', 6000);
