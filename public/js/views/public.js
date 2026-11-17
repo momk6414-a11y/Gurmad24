@@ -520,7 +520,8 @@ export async function afterAuth(user) {
   window.dispatchEvent(new CustomEvent('g24-auth'));
   const after = SS.get('g24-after'); SS.del('g24-after');
   const home = { patient: '/', hospital_admin: '/org', provider_admin: '/org', operator: '/ops', admin: '/admin' }[user.role];
-  go(after && user.role === 'patient' ? after.replace(/^#/, '') : home);
+  const staff = user.role !== 'patient';
+  go(staff && !user.twoFactor ? '/account' : (after && user.role === 'patient' ? after.replace(/^#/, '') : home));
 }
 const consent = { name: 'consent', type: 'checkbox', label: 'I agree to the privacy notice: GURMAD 24 stores only what is needed, never sells personal data, and I can export or delete my data at any time.', required: true };
 export function register() {
