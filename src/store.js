@@ -7,7 +7,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const COLLECTIONS = ['users', 'sessions', 'orgs', 'cards', 'orders', 'appointments', 'cases', 'services',
-  'subscriptions', 'plans', 'transactions', 'invoices', 'complaints', 'audit', 'sponsored'];
+  'subscriptions', 'plans', 'transactions', 'invoices', 'complaints', 'audit', 'sponsored', 'visits'];
 
 class Store {
   constructor(dir) {
