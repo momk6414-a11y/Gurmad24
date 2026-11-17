@@ -21,6 +21,21 @@ const services = [
   { icon: '▣', title: 'Tikidyo', detail: 'Codsiyada iyo safarrada', tone: 'orange' },
 ] as const;
 
+const hospitals = [
+  {
+    name: 'Digfeer Hospital',
+    services: 'Adeegyada caafimaadka indhaha',
+    location: 'Goobta: Hotel Classic, Gaalkacyo',
+    category: 'Caafimaadka indhaha',
+  },
+  {
+    name: 'Modern Hospital',
+    services: 'Adeegyo dhamaystiran oo caafimaad',
+    location: 'Goobta: Hotel Classic ku dhegan, dhinaca midig, Gaalkacyo',
+    category: 'Adeegyo caafimaad oo dhamaystiran',
+  },
+] as const;
+
 const tabs = [
   { key: 'home', label: 'Hoyga', icon: '⌂' },
   { key: 'services', label: 'Adeegyada', icon: '▦' },
@@ -37,7 +52,7 @@ const iconStyles: Record<ServiceTone, StyleProp<ViewStyle>> = {
   purple: styles.icon_purple,
   orange: styles.icon_orange,
 };
-const iconTextStyles: Record<ServiceTone, object> = {
+const iconTextStyles: Record<ServiceTone, StyleProp<TextStyle>> = {
   blue: styles.iconText_blue,
   green: styles.iconText_green,
   purple: styles.iconText_purple,
@@ -138,15 +153,33 @@ function HomeScreen({ onOpenServices }: { onOpenServices: () => void }) {
 function ServicesScreen() {
   return (
     <>
-      <PageHeading title="Adeegyada" subtitle="Qaybaha laga heli doono GURMAD 24." />
+      <PageHeading title="Isbitaallada Gaalkacyo" subtitle="Xarumaha caafimaadka iyo adeegyada ay bixiyaan." />
       <View style={styles.notice}>
         <View style={styles.noticeIconWrap}><Text style={styles.noticeIcon}>i</Text></View>
         <View style={styles.noticeCopy}>
-          <Text style={styles.noticeTitle}>Adeegyada wali waa tijaabo</Text>
-          <Text style={styles.noticeText}>Xogta xarumaha, qiimaha, helitaanka iyo adeeg-bixiyeyaasha lama xaqiijin. Halkan laguma soo bandhigayo xog aan la hubin.</Text>
+          <Text style={styles.noticeTitle}>Xog hordhac ah</Text>
+          <Text style={styles.noticeText}>Faahfaahintan waxaa bixiyey mashruuca GURMAD 24. Fadlan xaqiiji adeegyada iyo goobaha xarumaha ka hor inta aan si rasmi ah loo daabicin.</Text>
         </View>
       </View>
-      {services.map((service) => (
+      {hospitals.map((hospital) => (
+        <View key={hospital.name} style={styles.hospitalCard}>
+          <View style={styles.hospitalTop}>
+            <View style={styles.hospitalIcon}><Text style={styles.hospitalIconText}>✚</Text></View>
+            <View style={styles.hospitalHeading}>
+              <Text style={styles.hospitalName}>{hospital.name}</Text>
+              <Text style={styles.hospitalCity}>Gaalkacyo</Text>
+            </View>
+            <View style={styles.hospitalTag}><Text style={styles.hospitalTagText}>Xog hordhac ah</Text></View>
+          </View>
+          <View style={styles.hospitalDivider} />
+          <Text style={styles.hospitalLabel}>ADEEGYADA</Text>
+          <Text style={styles.hospitalServices}>{hospital.services}</Text>
+          <Text style={styles.hospitalLabel}>GOOBTA</Text>
+          <Text style={styles.hospitalLocation}>⌖  {hospital.location}</Text>
+        </View>
+      ))}
+      <PageHeading title="Qaybaha kale" subtitle="Adeegyada kale ee app-ka lagu diyaarinayo." />
+      {services.filter((service) => service.title !== 'Isbitaallo').map((service) => (
         <View key={service.title} style={styles.listCard}>
           <View style={[styles.serviceIcon, iconStyles[service.tone]]}>
             <Text style={[styles.serviceIconText, iconTextStyles[service.tone]]}>{service.icon}</Text>
@@ -307,6 +340,19 @@ const styles = StyleSheet.create({
   pageHeading: { marginTop: spacing.md, marginBottom: spacing.lg },
   pageTitle: { color: colors.navy, fontSize: 25, fontWeight: '900' },
   pageSubtitle: { color: colors.muted, fontSize: 12, marginTop: 5 },
+  hospitalCard: { backgroundColor: colors.white, borderRadius: 19, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.md },
+  hospitalTop: { flexDirection: 'row', alignItems: 'center' },
+  hospitalIcon: { width: 43, height: 43, borderRadius: 14, backgroundColor: colors.paleBlue, alignItems: 'center', justifyContent: 'center' },
+  hospitalIconText: { color: colors.navy, fontSize: 23, fontWeight: '900' },
+  hospitalHeading: { flex: 1, marginLeft: 11 },
+  hospitalName: { color: colors.navy, fontSize: 15, fontWeight: '900' },
+  hospitalCity: { color: colors.muted, fontSize: 11, marginTop: 3 },
+  hospitalTag: { backgroundColor: '#FFF5DF', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  hospitalTagText: { color: '#805B13', fontSize: 9, fontWeight: '800' },
+  hospitalDivider: { height: 1, backgroundColor: colors.border, marginVertical: 13 },
+  hospitalLabel: { color: colors.muted, fontSize: 9, fontWeight: '900', letterSpacing: 0.8, marginTop: 5 },
+  hospitalServices: { color: colors.ink, fontSize: 12, fontWeight: '700', lineHeight: 18, marginTop: 4, marginBottom: 8 },
+  hospitalLocation: { color: colors.ink, fontSize: 11, lineHeight: 17, marginTop: 4 },
   listCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: 11 },
   listCopy: { flex: 1, marginLeft: 12 },
   comingSoon: { color: '#8A6A25', fontSize: 10, fontWeight: '800', marginTop: 5 },
