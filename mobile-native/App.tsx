@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Alert,
+  Linking,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -27,6 +28,7 @@ const hospitals = [
     services: 'Adeegyada caafimaadka indhaha',
     location: 'Goobta: Hotel Classic, Gaalkacyo',
     category: 'Caafimaadka indhaha',
+    phone: '0907658461',
   },
   {
     name: 'Modern Hospital',
@@ -176,6 +178,14 @@ function ServicesScreen() {
           <Text style={styles.hospitalServices}>{hospital.services}</Text>
           <Text style={styles.hospitalLabel}>GOOBTA</Text>
           <Text style={styles.hospitalLocation}>⌖  {hospital.location}</Text>
+          {hospital.phone ? (
+            <>
+              <Text style={styles.hospitalLabel}>TELEFOON</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Wac ${hospital.name}`} style={styles.hospitalCall} onPress={() => Linking.openURL(`tel:${hospital.phone}`).catch(() => Alert.alert('Wicitaan', 'Telefoonka lagama furi karin qalabkan.'))}>
+                <Text style={styles.hospitalCallText}>☎  {hospital.phone}  ·  Wac isbitaalka</Text>
+              </Pressable>
+            </>
+          ) : null}
         </View>
       ))}
       <PageHeading title="Qaybaha kale" subtitle="Adeegyada kale ee app-ka lagu diyaarinayo." />
@@ -353,6 +363,8 @@ const styles = StyleSheet.create({
   hospitalLabel: { color: colors.muted, fontSize: 9, fontWeight: '900', letterSpacing: 0.8, marginTop: 5 },
   hospitalServices: { color: colors.ink, fontSize: 12, fontWeight: '700', lineHeight: 18, marginTop: 4, marginBottom: 8 },
   hospitalLocation: { color: colors.ink, fontSize: 11, lineHeight: 17, marginTop: 4 },
+  hospitalCall: { alignSelf: 'flex-start', backgroundColor: '#E7F6EC', borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, marginTop: 7 },
+  hospitalCallText: { color: '#176B38', fontSize: 12, fontWeight: '800' },
   listCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: 11 },
   listCopy: { flex: 1, marginLeft: 12 },
   comingSoon: { color: '#8A6A25', fontSize: 10, fontWeight: '800', marginTop: 5 },
