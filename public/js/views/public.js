@@ -508,20 +508,19 @@ export function login() {
   const draw = () => box.replaceChildren(form([{ name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'username' }, { name: 'password', label: 'Password', type: 'password', required: true, autocomplete: 'current-password' },
     ...(needCode ? [{ name: 'code', label: 'Authenticator code (6 digits)', required: true, max: 12, inputmode: 'numeric', autocomplete: 'one-time-code' }] : [])],
     { submit: 'Log in', onSubmit: async v => {
-      try { const r = await POST('/auth/login', v); await afterAuth(r.user); }
+      try { const r = await POST('/auth/login', v); await afterAuth(r.user, r.securitySetupRequired); }
       catch (e) { if (e && e.code === 'two_factor_required' && !needCode) { needCode = true; draw(); toast(t('Enter the 6-digit code from your authenticator app.')); return; } throw e; }
     } }));
   draw();
   return h('div', head('Log in'), h('div', { class: 'grid g2' }, panel(null, box),
   panel('New here?', h('div', h('p', t('Create a free account to order health cards and request appointments.')), h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/register' }, t('Create patient account')), h('a', { class: 'btn ghost', href: '#/register-org' }, t('Register a hospital / provider')))))));
 }
-export async function afterAuth(user) {
+export async function afterAuth(user, securitySetupRequired = false) {
   S.user = user; S.authKnown = true; // known immediately: do not bounce back to login while the session reloads
   window.dispatchEvent(new CustomEvent('g24-auth'));
   const after = SS.get('g24-after'); SS.del('g24-after');
   const home = { patient: '/', hospital_admin: '/org', provider_admin: '/org', operator: '/ops', admin: '/admin' }[user.role];
-  const staff = user.role !== 'patient';
-  go(staff && !user.twoFactor ? '/account' : (after && user.role === 'patient' ? after.replace(/^#/, '') : home));
+  go(securitySetupRequired ? '/account' : (after && user.role === 'patient' ? after.replace(/^#/, '') : home));
 }
 const consent = { name: 'consent', type: 'checkbox', label: 'I agree to the privacy notice: GURMAD 24 stores only what is needed, never sells personal data, and I can export or delete my data at any time.', required: true };
 export function register() {
