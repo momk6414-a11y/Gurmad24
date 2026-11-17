@@ -24,8 +24,18 @@ function useHospitals() {
   const load = async () => {
     try {
       const result = await apiRequest<{ hospitals?: Hospital[] }>('/api/hospitals');
-      if (result.hospitals?.length) { setItems(result.hospitals); setFromServer(true); }
-      else { setItems(draftHospitals); setFromServer(false); }
+      const live = Array.isArray(result.hospitals) ? result.hospitals : [];
+      if (live.length) {
+        const merged = live.map(h => {
+          const draft = draftHospitals.find(d => d.name.toLowerCase() === h.name.toLowerCase());
+          return { ...draft, ...h, phone: h.phone || (draft && draft.phone), isLocalDraft: !h.phone && !!(draft && draft.phone) };
+        });
+        draftHospitals.forEach(d => {
+          if (!merged.some(h => h.name.toLowerCase() === d.name.toLowerCase())) merged.push(d);
+        });
+        setItems(merged);
+        setFromServer(true);
+      } else { setItems(draftHospitals); setFromServer(false); }
     } catch { setItems(draftHospitals); setFromServer(false); }
     finally { setLoading(false); setRefreshing(false); }
   };
@@ -73,7 +83,7 @@ function Home({ data, openHospitals, openWeb }: { data: ReturnType<typeof useHos
 function Hospitals({ data }: { data: ReturnType<typeof useHospitals> }) {
   return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={data.reload} tintColor={colors.green} />}>
     <Text style={styles.pageEyebrow}>GURMAD 24 DIRECTORY</Text><Text style={styles.pageTitle}>Isbitaallada</Text><Text style={styles.pageSub}>Xarumaha caafimaadka iyo adeegyada ay bixiyaan.</Text>
-    {!data.fromServer ? <View style={styles.notice}><Text style={styles.noticeIcon}>i</Text><View style={{ flex: 1 }}><Text style={styles.noticeTitle}>Xog hordhac ah</Text><Text style={styles.noticeCopy}>Xogta mashruuca wali laguma darin diiwaanka server-ka. Jiid shaashadda si aad u cusboonaysiiso.</Text></View></View> : null}
+    {(!data.fromServer || data.items.some(h => h.isLocalDraft)) ? <View style={styles.notice}><Text style={styles.noticeIcon}>i</Text><View style={{ flex: 1 }}><Text style={styles.noticeTitle}>Xog hordhac ah</Text><Text style={styles.noticeCopy}>Xogta mashruuca wali laguma darin diiwaanka server-ka. Jiid shaashadda si aad u cusboonaysiiso.</Text></View></View> : null}
     {data.loading ? <ActivityIndicator color={colors.green} /> : data.items.map(h => <HospitalCard key={h.id} item={h} />)}
   </ScrollView>;
 }
