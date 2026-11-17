@@ -50,6 +50,9 @@ jobs:
       - name: Generate Android project
         run: npx expo prebuild --platform android --non-interactive
 
+      - name: Type-check React Native app
+        run: npm run typecheck
+
       - name: Build debug APK
         working-directory: mobile-native/android
         run: ./gradlew assembleDebug --no-daemon
