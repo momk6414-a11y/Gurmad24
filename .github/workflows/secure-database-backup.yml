@@ -33,7 +33,8 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
           sudo apt-get install --yes postgresql-client-17
-          pg_dump --version
+          /usr/lib/postgresql/17/bin/pg_dump --version
+          /usr/lib/postgresql/17/bin/pg_restore --version
 
       - name: Validate required secrets
         shell: bash
@@ -47,6 +48,10 @@ jobs:
             echo "::error::BACKUP_ENCRYPTION_KEY must contain at least 32 characters."
             exit 1
           fi
+          if [[ "$SUPABASE_DB_URL" != postgres://* && "$SUPABASE_DB_URL" != postgresql://* ]]; then
+            echo "::error::SUPABASE_DB_URL must be a PostgreSQL connection URI."
+            exit 1
+          fi
 
       - name: Dump and encrypt database
         shell: bash
@@ -57,7 +62,7 @@ jobs:
           file="gurmad24-${stamp}.dump.gpg"
           printf '%s' "$BACKUP_ENCRYPTION_KEY" > /tmp/gurmad24-backup-passphrase
           chmod 600 /tmp/gurmad24-backup-passphrase
-          pg_dump --format=custom --no-owner --no-acl "$SUPABASE_DB_URL" \
+          /usr/lib/postgresql/17/bin/pg_dump --format=custom --no-owner --no-acl "$SUPABASE_DB_URL" \
             | gpg --batch --yes --pinentry-mode loopback \
                 --passphrase-file /tmp/gurmad24-backup-passphrase \
                 --symmetric --cipher-algo AES256 --s2k-mode 3 \
@@ -65,7 +70,7 @@ jobs:
           gpg --batch --yes --pinentry-mode loopback \
             --passphrase-file /tmp/gurmad24-backup-passphrase \
             --decrypt --output /tmp/gurmad24-verify.dump "$file"
-          pg_restore --list /tmp/gurmad24-verify.dump >/dev/null
+          /usr/lib/postgresql/17/bin/pg_restore --list /tmp/gurmad24-verify.dump >/dev/null
           rm -f /tmp/gurmad24-verify.dump /tmp/gurmad24-backup-passphrase
           echo "BACKUP_FILE=$file" >> "$GITHUB_ENV"
 
