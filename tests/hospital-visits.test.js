@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { start, demo } = require('./helper');
+const { start, demo, newPatient } = require('./helper');
 
 test('public Gaalkacyo directory exposes 17 unverified public listings with the corrected Digfeer phone', async t => {
   const app = await start(); t.after(app.stop);
@@ -37,9 +37,7 @@ test('hospital visit cards require patient consent and remain private to the pat
   assert.equal(own.data.visits.length, 1);
   assert.equal(own.data.visits[0].doctorName, 'Dr Test');
 
-  const stranger = app.client();
-  const login = await stranger.post('/api/auth/login', { email: 'patient@demo.gurmad24.test', password: 'DemoPass12345' });
-  assert.equal(login.status, 200);
-  assert.equal((await stranger.get('/api/visits')).data.visits.length, 1);
+  const stranger = await newPatient(app, 'another-patient@test.local');
+  assert.equal((await stranger.get('/api/visits')).data.visits.length, 0);
   assert.equal((await patient.post('/api/org/visits', payload)).status, 403);
 });
