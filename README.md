@@ -5,7 +5,7 @@ Emergency-coordination (simulation) and digital-healthcare marketplace platform 
 ```bash
 cp .env.example .env     # set ADMIN_EMAIL / ADMIN_PASSWORD
 npm start                # http://localhost:8080   (Node 18+, zero dependencies)
-npm test                 # 33 automated tests
+npm test                 # 91 automated tests
 npm run docs             # regenerate docs/API.md from the live routes
 npm run backup           # manual database backup
 ```

@@ -3,8 +3,7 @@ name: Build GURMAD 24 Android APK
 on:
   push:
     branches:
-      - feat/react-native-expo-foundation
-      - feat/verified-hospital-directory-draft
+      - main
     paths:
       - "mobile-native/**"
       - ".github/workflows/build-gurmad24-apk.yml"

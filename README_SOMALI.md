@@ -35,7 +35,7 @@ GURMAD 24 waa madal isku xidha **bukaannada, isbitaallada, ambalaasyada, shaybaa
 Eeg **`docs/DEPLOY_SOMALI.md`** (talaabooyin laga qaado taleefan keliya) — host HTTPS ah ka dibna Chrome → ⋮ → **Install app / Add to Home screen**. App Android oo Play Store ah (TWA) way suurtagal tahay laakiin waxay u baahan tahay akoon Google Play iyo domain HTTPS ah (qeexitaan `docs/STATUS.md`).
 
 ## Tijaabooyin
-`npm test` → 33 tijaabo oo otomaatig ah (auth, doorar, onboarding, kaararka, dalabyada, komishan, rukumo, ballamo, lacag-celin, warbixino, amniga API). Tijaabada browser-ka: `node tests/ui-smoke.js` (u baahan Playwright). Natiijooyinka dhabta ah: `docs/TEST_RESULTS.md`.
+`npm test` → 91 tijaabo oo otomaatig ah (auth, doorar, onboarding, kaararka, dalabyada, komishan, rukumo, ballamo, lacag-celin, warbixino, amniga API). Tijaabada browser-ka: `node tests/ui-smoke.js` (u baahan Playwright). Natiijooyinka dhabta ah: `docs/TEST_RESULTS.md`.
 
 ## Dukumentiyada
 `docs/STATUS.md` (waxa shaqeeya vs waxa u baahan oggolaansho) · `docs/DEPLOY_SOMALI.md` · `docs/API.md` · `docs/SECURITY.md` · `docs/ARCHITECTURE.md` · `docs/PAYMENTS.md` · `docs/BACKUP_RECOVERY.md` · `docs/TEST_PLAN_SOMALI.md` · `docs/TEST_RESULTS.md`
