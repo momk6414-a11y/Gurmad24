@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, RefreshControl, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, RefreshControl, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { apiRequest } from './src/api/client';
 import { colors } from './src/theme/tokens';
@@ -18,6 +18,7 @@ function useHospitals() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fromServer, setFromServer] = useState(false);
+  const [error, setError] = useState('');
   const load = async () => {
     try {
       const result = await apiRequest<{ hospitals?: Hospital[]; directory?: Hospital[] }>('/api/hospitals');
@@ -29,11 +30,16 @@ function useHospitals() {
       });
       setItems(merged);
       setFromServer(true);
-    } catch { setItems(draftHospitals); setFromServer(false); }
+      setError('');
+    } catch {
+      setItems(draftHospitals);
+      setFromServer(false);
+      setError('Liiska isbitaallada hadda lama soo dejin karo. Hubi internet-ka oo isku day mar kale.');
+    }
     finally { setLoading(false); setRefreshing(false); }
   };
   useEffect(() => { load(); }, []);
-  return { items, loading, refreshing, fromServer, reload: () => { setRefreshing(true); load(); } };
+  return { items, loading, refreshing, fromServer, error, reload: () => { setRefreshing(true); load(); } };
 }
 
 function Mark({ small = false }: { small?: boolean }) {
@@ -48,7 +54,7 @@ function Heading({ title, action, onPress }: { title: string; action?: string; o
 function HospitalCard({ item }: { item: Hospital }) {
   return <View style={styles.hospitalCard}>
     <View style={styles.hospitalTop}><View style={styles.hospitalMark}><Text style={styles.hospitalMarkText}>✚</Text></View><View style={styles.hospitalTitle}><Text style={styles.hospitalName}>{item.name}</Text><Text style={styles.hospitalArea}>{item.area || 'Gaalkacyo'}</Text></View>
-      <Text style={[styles.pill, item.isLocalDraft ? styles.pillDraft : styles.pillLive]}>{item.isLocalDraft ? 'Liis dadweyne' : 'La xaqiijiyey'}</Text>
+      <Text style={[styles.pill, item.isLocalDraft || !item.verified ? styles.pillDraft : styles.pillLive]}>{item.isLocalDraft ? 'Liis dadweyne' : item.verified ? 'La xaqiijiyey' : 'Xog server'}</Text>
     </View>
     <Text style={styles.hospitalDescription}>{item.description || 'Isbitaal ku jira buugga dadweynaha; takhasuska iyo adeegyada gaarka ah lama sheegin.'}</Text>
     {item.verificationNote ? <Text style={styles.verificationNote}>{item.verificationNote}</Text> : null}
@@ -67,7 +73,7 @@ function Home({ data, openHospitals, openWeb }: { data: ReturnType<typeof useHos
     <View style={styles.notice}><Text style={styles.noticeIcon}>!</Text><View style={{ flex: 1 }}><Text style={styles.noticeTitle}>Nooca tijaabada</Text><Text style={styles.noticeCopy}>Codsiga gurmadku wali waa SIMULATION; gargaar dhab ah lama dirayo. Ha u adeegsan xaalad degdeg ah.</Text></View></View>
     <View style={styles.statsRow}>
       <View style={styles.statCard}><Text style={styles.statValue}>{data.items.length}</Text><Text style={styles.statLabel}>Liiska guud</Text></View>
-      <View style={styles.statCard}><Text style={styles.statValue}>{data.items.filter(h => !h.isLocalDraft).length}</Text><Text style={styles.statLabel}>La xaqiijiyey</Text></View>
+      <View style={styles.statCard}><Text style={styles.statValue}>{data.items.filter(h => h.verified === true).length}</Text><Text style={styles.statLabel}>La xaqiijiyey</Text></View>
       <View style={styles.statCard}><Text style={styles.statValue}>{data.items.filter(h => h.isLocalDraft).length}</Text><Text style={styles.statLabel}>Xog hordhac ah</Text></View>
     </View>
     <Heading title="Adeegyada" /><View style={styles.grid}>
@@ -83,10 +89,13 @@ function Home({ data, openHospitals, openWeb }: { data: ReturnType<typeof useHos
   </ScrollView>;
 }
 function Hospitals({ data }: { data: ReturnType<typeof useHospitals> }) {
-  return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={data.reload} tintColor={colors.green} />}>
-    <Text style={styles.pageEyebrow}>GURMAD 24 DIRECTORY</Text><Text style={styles.pageTitle}>Isbitaallada</Text><Text style={styles.pageSub}>Xarumaha caafimaadka iyo adeegyada ay bixiyaan.</Text>
+  const [query, setQuery] = useState('');
+  const filtered = data.items.filter(h => `${h.name} ${h.area || ''} ${h.address || ''}`.toLowerCase().includes(query.trim().toLowerCase()));
+  return <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={data.reload} tintColor={colors.green} />}>
+    <Text style={styles.pageEyebrow}>GURMAD 24 DIRECTORY</Text><Text style={styles.pageTitle}>Isbitaallada</Text><Text style={styles.pageSub}>Ka raadi xarumaha caafimaadka ee ku jira diiwaanka.</Text>
+    <TextInput value={query} onChangeText={setQuery} placeholder="Raadi isbitaal ama xaafad…" placeholderTextColor={colors.muted} style={styles.searchInput} returnKeyType="search" accessibilityLabel="Raadi isbitaal" />
     {(!data.fromServer || data.items.some(h => h.isLocalDraft)) ? <View style={styles.notice}><Text style={styles.noticeIcon}>i</Text><View style={{ flex: 1 }}><Text style={styles.noticeTitle}>Xog hordhac ah</Text><Text style={styles.noticeCopy}>Liiskani wuxuu ka yimid buug dadweyne; xogta iyo lambarrada wali isbitaallada lagama xaqiijin. Wac oo xaqiiji ka hor isticmaalka.</Text></View></View> : null}
-    {data.loading ? <ActivityIndicator color={colors.green} /> : data.items.map(h => <HospitalCard key={h.id} item={h} />)}
+    {data.loading ? <ActivityIndicator color={colors.green} /> : data.error ? <View style={styles.emptyCard}><Text style={styles.emptyTitle}>Xogta lama helin</Text><Text style={styles.emptyCopy}>{data.error}</Text><Pressable style={styles.secondaryButton} onPress={data.reload}><Text style={styles.secondaryText}>Mar kale isku day</Text></Pressable></View> : filtered.length ? filtered.map(h => <HospitalCard key={h.id} item={h} />) : <View style={styles.emptyCard}><Text style={styles.emptyTitle}>Natiijo lama helin</Text><Text style={styles.emptyCopy}>Bedel erayga aad raadisay ama tirtir raadinta.</Text></View>}
   </ScrollView>;
 }
 function SimplePage({ title, subtitle, onOpenWeb }: { title: string; subtitle: string; onOpenWeb: () => void }) {
@@ -129,7 +138,7 @@ const styles = StyleSheet.create({
   grid:{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',marginBottom:19},quickCard:{width:'48.3%',minHeight:120,backgroundColor:'#FFFFFF',borderRadius:16,borderWidth:1,borderColor:colors.border,padding:12,marginBottom:10},quickIcon:{fontSize:25,color:colors.navy,marginBottom:8},quickIconGreen:{fontSize:25,color:'#238C48',marginBottom:8},quickIconPurple:{fontSize:23,color:'#7455B8',marginBottom:8},quickIconOrange:{fontSize:25,color:'#C46A22',marginBottom:8},quickTitle:{fontSize:12,fontWeight:'900',color:colors.ink},quickSub:{fontSize:9,lineHeight:14,color:colors.muted,marginTop:4},
   hospitalCard:{backgroundColor:'#FFFFFF',borderWidth:1,borderColor:colors.border,borderRadius:17,padding:13,marginBottom:10},hospitalTop:{flexDirection:'row',alignItems:'center'},hospitalMark:{width:38,height:38,borderRadius:12,backgroundColor:'#E8F1FB',alignItems:'center',justifyContent:'center'},hospitalMarkText:{fontSize:21,color:colors.navy},hospitalTitle:{flex:1,marginLeft:9},hospitalName:{fontSize:12,fontWeight:'900',color:colors.ink},hospitalArea:{fontSize:9,color:colors.muted,marginTop:3},pill:{fontSize:8,fontWeight:'900',overflow:'hidden',borderRadius:20,paddingHorizontal:8,paddingVertical:5},pillDraft:{backgroundColor:'#FFF4D9',color:'#805B13'},pillLive:{backgroundColor:'#E7F6EC',color:'#176B38'},hospitalDescription:{fontSize:10,lineHeight:16,color:colors.ink,marginTop:11},verificationNote:{fontSize:9,lineHeight:14,color:'#8A5B18',marginTop:6},sourceText:{fontSize:8,color:colors.muted,marginTop:4},address:{fontSize:9,lineHeight:15,color:colors.muted,marginTop:7,backgroundColor:'#F7F9FC',padding:8,borderRadius:8},callButton:{alignSelf:'stretch',backgroundColor:'#E7F6EC',borderRadius:11,paddingHorizontal:11,paddingVertical:12,marginTop:10,alignItems:'center'},callText:{fontSize:11,fontWeight:'900',color:'#176B38'},
   webBanner:{flexDirection:'row',alignItems:'center',backgroundColor:'#EAF2FC',borderRadius:16,padding:13,marginTop:5},webBannerIcon:{fontSize:22,color:colors.navy,marginRight:12},webBannerTitle:{fontSize:11,fontWeight:'900',color:colors.navy},webBannerSub:{fontSize:9,color:colors.muted,marginTop:4},bannerArrow:{fontSize:23,color:colors.navy,marginLeft:8},
-  pageEyebrow:{fontSize:9,color:colors.green,fontWeight:'900',letterSpacing:1.2,marginTop:12},pageTitle:{fontSize:27,fontWeight:'900',color:colors.navy,marginTop:6},pageSub:{fontSize:11,lineHeight:17,color:colors.muted,marginTop:5,marginBottom:18},emptyCard:{alignItems:'center',backgroundColor:'#FFFFFF',borderWidth:1,borderColor:colors.border,borderRadius:18,padding:24,marginTop:16},emptyIcon:{fontSize:35,color:colors.navy,marginBottom:12},emptyTitle:{fontSize:14,fontWeight:'900',color:colors.ink,textAlign:'center'},emptyCopy:{fontSize:10,lineHeight:16,color:colors.muted,textAlign:'center',marginTop:7},secondaryButton:{backgroundColor:colors.navy,borderRadius:10,paddingHorizontal:15,paddingVertical:11,marginTop:16},secondaryText:{fontSize:10,fontWeight:'900',color:'#FFFFFF'},
+  searchInput:{backgroundColor:'#FFFFFF',borderWidth:1,borderColor:colors.border,borderRadius:13,paddingHorizontal:14,paddingVertical:12,fontSize:12,color:colors.ink,marginBottom:14},pageEyebrow:{fontSize:9,color:colors.green,fontWeight:'900',letterSpacing:1.2,marginTop:12},pageTitle:{fontSize:27,fontWeight:'900',color:colors.navy,marginTop:6},pageSub:{fontSize:11,lineHeight:17,color:colors.muted,marginTop:5,marginBottom:18},emptyCard:{alignItems:'center',backgroundColor:'#FFFFFF',borderWidth:1,borderColor:colors.border,borderRadius:18,padding:24,marginTop:16},emptyIcon:{fontSize:35,color:colors.navy,marginBottom:12},emptyTitle:{fontSize:14,fontWeight:'900',color:colors.ink,textAlign:'center'},emptyCopy:{fontSize:10,lineHeight:16,color:colors.muted,textAlign:'center',marginTop:7},secondaryButton:{backgroundColor:colors.navy,borderRadius:10,paddingHorizontal:15,paddingVertical:11,marginTop:16},secondaryText:{fontSize:10,fontWeight:'900',color:'#FFFFFF'},
   webPage:{flex:1,backgroundColor:'#FFFFFF'},webHeader:{padding:13,borderBottomWidth:1,borderBottomColor:colors.border,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},webTitle:{fontSize:12,fontWeight:'900',color:colors.navy},webSub:{fontSize:9,color:colors.muted,marginTop:3},refresh:{backgroundColor:'#E8F1FB',padding:9,borderRadius:9},refreshText:{fontSize:9,color:colors.navy,fontWeight:'900'},webView:{flex:1,backgroundColor:'#FFFFFF'},webLoading:{flex:1,alignItems:'center',justifyContent:'center'},muted:{fontSize:10,color:colors.muted,marginTop:9},webFailed:{flex:1,alignItems:'center',justifyContent:'center',padding:24},
   bottom:{flexDirection:'row',backgroundColor:'#FFFFFF',borderTopWidth:1,borderTopColor:colors.border,paddingTop:6,paddingBottom:5},tab:{flex:1,minHeight:49,alignItems:'center',justifyContent:'center'},tabIcon:{fontSize:20,color:'#9AAABD',lineHeight:23},tabLabel:{fontSize:8,color:'#9AAABD',fontWeight:'700',marginTop:2},tabActive:{color:colors.navy,fontWeight:'900'},indicator:{position:'absolute',top:-7,width:17,height:3,borderRadius:2,backgroundColor:colors.green},footer:{fontSize:9,color:colors.muted,textAlign:'center',marginTop:16,marginBottom:5},
 });
