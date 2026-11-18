@@ -92,7 +92,7 @@ export function HospitalDashboard({ onBack, role='hospital_admin' }: Props) {
         apiRequest<{appointments:Appointment[]}>('/api/org/appointments'),
         apiRequest<{services:Service[]}>('/api/org/services'),
       ];
-      const [o,a,sv]=await Promise.all(tasks);
+      const [o,a,sv]=await Promise.all(tasks as [Promise<{org:Organisation}>,Promise<{appointments:Appointment[]}>,Promise<{services:Service[]}>]);
       setOrg(o);setAppointments(a.appointments||[]);setServices(sv.services||[]);
       if(role==='hospital_admin'){
         const report=await apiRequest<Sales>('/api/org/reports/sales');
