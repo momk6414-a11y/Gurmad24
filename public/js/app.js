@@ -8,6 +8,7 @@ import * as OPS from './views/ops.js';
 import * as A from './views/admin.js';
 import { mountAssistant } from './assistant.js';
 import { initPush, stopPush } from './native.js';
+import { maybeShowOnboarding } from './onboarding.js';
 
 const pushApi = (_method, path, body) => POST(path, body);
 
@@ -125,7 +126,7 @@ function chrome() {
 
   document.getElementById('top').replaceChildren(
     h('a', { class: 'brand', href: '#/' },
-      h('img', { class: 'logo-img', src: '/icon.svg', width: 42, height: 42, alt: '' }),
+      h('img', { class: 'logo-img', src: '/assets/gurmad-logo.svg', width: 42, height: 42, alt: '' }),
       h('div',
         h('b', 'GURMAD 24'),
         h('small', t('Emergency Coordination & Health Marketplace'))
@@ -382,6 +383,7 @@ window.addEventListener('online', () => {
     S.authKnown = true;
     // Refresh role-aware navigation after session lookup completes.
     await render(true);
+    maybeShowOnboarding();
   } catch (error) {
     console.error('GURMAD 24 startup failed:', error);
     S.authKnown = true;

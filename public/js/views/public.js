@@ -37,15 +37,19 @@ export async function home() {
     h('section', { class: 'g24-home-hero', 'aria-labelledby': 'home-title' },
       h('div', { class: 'g24-home-main' },
         h('div', { class: 'g24-home-brand' },
-          h('span', { class: 'g24-home-brand-icon' }, icon('activity', 18)),
+          h('span', { class: 'g24-home-brand-icon' }, h('img', { src: '/assets/gurmad-logo.svg', alt: '', width: 34, height: 34 })),
           h('span', { class: 'eyebrow' }, 'GURMAD 24  ·  ' + t('Fast help, one tap away'))
         ),
+        S.user ? h('p', { class: 'g24-home-greet' }, t('Welcome back, {name}', { name: String(S.user.name || '').split(' ')[0] })) : null,
         h('h1', { id: 'home-title' }, t('One network. Every emergency.')),
         h('p', t('A connected response system for people, location and essential services.')),
         h('div', { class: 'g24-home-cta' },
           h('a', { class: 'btn sos-cta', href: '#/emergency', onclick: e => { e.preventDefault(); go('/emergency'); } }, icon('alert', 19), t('Request help now')),
           h('a', { class: 'btn ghost g24-home-map', href: '#/map', onclick: e => { e.preventDefault(); go('/map'); } }, icon('pin', 19), t('Open live map'))
         ),
+        S.user ? null : h('p', { class: 'g24-home-account' }, t('Have an account?'), ' ',
+          h('a', { href: '#/login', onclick: e => { e.preventDefault(); go('/login'); } }, t('Log in')), ' · ',
+          h('a', { href: '#/register', onclick: e => { e.preventDefault(); go('/register'); } }, t('Create account'))),
         h('div', { class: 'g24-home-proof' },
           h('span', icon('shield', 15), t('People first')),
           h('span', icon('activity', 15), t('One connected system')),
@@ -53,7 +57,7 @@ export async function home() {
         )
       ),
       h('div', { class: 'g24-home-visual' },
-        h('img', { src: '/img/hero.svg', alt: t('GURMAD 24 system map: people, GPS location, ambulance, hospitals, police, fire and support connected in one response network.'), width: 900, height: 620, fetchpriority: 'low' })
+        h('img', { src: '/assets/onboarding/ob-sos.svg', alt: '', width: 360, height: 300, fetchpriority: 'low' })
       )
     ),
     hot ? h('div', { class: 'g24-home-hotlines' }, hot) : null,
@@ -503,6 +507,13 @@ export async function system() {
 }
 
 // ---------- Auth
+// Shared premium layout for log in / sign up: brand panel + form card.
+const authShell = (title, lead, ...card) => h('div', { class: 'g24-auth' },
+  h('div', { class: 'g24-auth-brand' },
+    h('img', { class: 'g24-auth-logo', src: '/assets/gurmad-logo.svg', alt: '', width: 78, height: 78 }),
+    h('h2', t(title)), h('p', t(lead)),
+    h('ul', { class: 'g24-auth-points' }, ['Order health cards', 'Book hospital appointments', 'Follow your requests'].map(x => h('li', t(x))))),
+  h('div', { class: 'g24-auth-card' }, ...card));
 export function login() {
   const box = h('div'); let needCode = false;
   const draw = () => box.replaceChildren(form([{ name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'username' }, { name: 'password', label: 'Password', type: 'password', required: true, autocomplete: 'current-password' },
@@ -512,8 +523,13 @@ export function login() {
       catch (e) { if (e && e.code === 'two_factor_required' && !needCode) { needCode = true; draw(); toast(t('Enter the 6-digit code from your authenticator app.')); return; } throw e; }
     } }));
   draw();
-  return h('div', head('Log in'), h('div', { class: 'grid g2' }, panel(null, box),
-  panel('New here?', h('div', h('p', t('Create a free account to order health cards and request appointments.')), h('div', { class: 'actions' }, h('a', { class: 'btn', href: '#/register' }, t('Create patient account')), h('a', { class: 'btn ghost', href: '#/register-org' }, t('Register a hospital / provider')))))));
+  return authShell('Welcome back', 'Log in to order health cards, book appointments and follow your requests.',
+    h('h3', t('Log in')), box,
+    h('div', { class: 'g24-auth-or' }, t('New here?')),
+    h('div', { class: 'g24-auth-links' },
+      h('a', { class: 'btn', href: '#/register' }, t('Create patient account')),
+      h('a', { class: 'btn ghost', href: '#/register-org' }, t('Register a hospital / provider')),
+      h('button', { type: 'button', class: 'g24-auth-guest', onclick: () => go('/') }, t('Continue as guest'))));
 }
 export async function afterAuth(user, securitySetupRequired = false) {
   S.user = user; S.securitySetupRequired = !!securitySetupRequired; S.authKnown = true; // known immediately: do not bounce back to login while the session reloads
@@ -524,10 +540,11 @@ export async function afterAuth(user, securitySetupRequired = false) {
 }
 const consent = { name: 'consent', type: 'checkbox', label: 'I agree to the privacy notice: GURMAD 24 stores only what is needed, never sells personal data, and I can export or delete my data at any time.', required: true };
 export function register() {
-  return h('div', head('Create patient account'), panel(null, h('div', demoNote('Demo system: do not enter real medical information.'), form([
+  return authShell('Create patient account', 'Join GURMAD 24 to order health cards, book appointments and follow your requests.', h('div', demoNote('Demo system: do not enter real medical information.'), form([
     { name: 'name', label: 'Full name', required: true, max: 80, autocomplete: 'name' }, { name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'email' },
     { name: 'password', label: 'Password', type: 'password', required: true, hint: 'At least 8 characters with letters and numbers.', autocomplete: 'new-password' }, consent],
-  { submit: 'Create account', onSubmit: async v => { const r = await POST('/auth/register', { ...v, lang: S.lang }); await afterAuth(r.user); } }))));
+  { submit: 'Create account', onSubmit: async v => { const r = await POST('/auth/register', { ...v, lang: S.lang }); await afterAuth(r.user); } })),
+    h('div', { class: 'g24-auth-links' }, h('a', { class: 'btn ghost', href: '#/login' }, t('Already have an account? Log in'))));
 }
 export function registerOrg() {
   return h('div', head('Register a hospital / provider', 'Your organisation will be reviewed by an administrator before it appears publicly.'), panel(null, form([

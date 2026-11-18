@@ -1,0 +1,110 @@
+/* GURMAD 24 - first-run onboarding + premium log in / sign up screens.
+   Uses the brand tokens (brand-tokens.css). Onboarding is always light so it looks the same on every device. */
+
+/* ---------- Onboarding overlay ---------- */
+body.g24-ob-active { overflow: hidden; }
+.g24-ob {
+  position: fixed; inset: 0; z-index: 9000; display: flex; flex-direction: column; align-items: center;
+  padding: max(14px, env(safe-area-inset-top)) 20px max(16px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(120% 60% at 90% -8%, #D8E8FF 0, transparent 60%),
+    radial-gradient(90% 55% at -8% 108%, #DDF6DD 0, transparent 55%),
+    #FFFFFF;
+  color: #0B2447; font-family: var(--g-font-family); overflow-y: auto;
+  animation: g24ob-in .4s ease both;
+}
+.g24-ob.is-leaving { opacity: 0; transform: scale(1.02); transition: opacity .3s ease, transform .3s ease; pointer-events: none; }
+.g24-ob > * { width: 100%; max-width: 440px; flex: none; }
+:where(.g24-ob) button { font: inherit; border: 0; background: none; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.g24-ob:focus { outline: none; }
+.g24-ob :where(button):focus-visible { outline: 3px solid var(--g-brand-green); outline-offset: 2px; }
+
+.g24-ob__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; }
+.g24-ob__brand { display: inline-flex; align-items: center; gap: 9px; font-size: 19px; letter-spacing: -.01em; color: var(--g-brand-blue); }
+.g24-ob__brand b { font-weight: var(--g-font-bold); }
+.g24-ob__top-actions { display: inline-flex; align-items: center; gap: 8px; }
+.g24-ob__lang { display: inline-flex; padding: 3px; border-radius: 999px; background: #EAF1FB; border: 1px solid #D3E2F6; }
+.g24-ob__lang button { padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #4A6485; }
+.g24-ob__lang button[aria-pressed="true"] { background: var(--g-brand-blue); color: #fff; }
+.g24-ob__skip { padding: 9px 14px; border-radius: 12px; font-size: 14px; font-weight: 700; color: var(--g-brand-blue); }
+.g24-ob__skip:hover { background: #E8F1FB; }
+
+.g24-ob__stage { flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 6px 4px 8px; }
+.g24-ob__art { width: min(100%, 330px); height: auto; margin-bottom: 8px; animation: g24ob-float 5.5s ease-in-out infinite, g24ob-pop .55s cubic-bezier(.2, .8, .2, 1) both; }
+.g24-ob__title { margin: 4px 0 10px; max-width: 360px; font-family: var(--g-font-family); font-size: clamp(23px, 6.4vw, 28px); line-height: 1.18; font-weight: var(--g-font-bold); letter-spacing: -.02em; color: var(--g-brand-blue); animation: g24ob-up .5s .08s ease both; }
+.g24-ob__text { margin: 0; max-width: 340px; font-size: 15.5px; line-height: 1.6; color: #46607F; animation: g24ob-up .5s .16s ease both; }
+.g24-ob__note { margin: 14px 0 0; padding: 6px 12px; border-radius: 999px; background: #EAF8EA; color: #1E7D32; font-size: 12px; font-weight: 700; animation: g24ob-up .5s .24s ease both; }
+
+.g24-ob__dots { display: flex; justify-content: center; gap: 8px; margin: 10px 0 18px; }
+.g24-ob__dot { width: 9px; height: 9px; border-radius: 999px; background: #C3D5EC; transition: width .3s ease, background .3s ease; }
+.g24-ob__dot[aria-selected="true"] { width: 28px; background: linear-gradient(90deg, #2EB82E, #52D152); }
+
+.g24-ob__actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.g24-ob__back { padding: 14px 18px; border-radius: 16px; font-size: 15px; font-weight: 700; color: #4A6485; }
+.g24-ob__back:hover { background: #EAF1FB; }
+.g24-ob__next {
+  flex: 1; min-height: 58px; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 14px 22px; border-radius: 18px; color: #fff; font-size: 16.5px; font-weight: 700; letter-spacing: .01em;
+  background: linear-gradient(135deg, #1B6BE0 0%, var(--g-brand-blue) 100%);
+  box-shadow: 0 16px 30px rgba(11, 61, 145, .3), inset 0 1px 0 rgba(255, 255, 255, .25);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.g24-ob__next:hover { transform: translateY(-1px); box-shadow: 0 20px 34px rgba(11, 61, 145, .34), inset 0 1px 0 rgba(255, 255, 255, .25); }
+.g24-ob__next:active { transform: translateY(1px); }
+.g24-ob__arrow { transition: transform .2s ease; }
+.g24-ob__next:hover .g24-ob__arrow { transform: translateX(4px); }
+.g24-ob__guest { margin-top: 10px; padding: 12px; border-radius: 14px; font-size: 14.5px; font-weight: 700; color: var(--g-brand-blue); text-decoration: underline; text-underline-offset: 4px; }
+.g24-ob__sos { margin-top: 12px; padding: 11px 16px; border-radius: 999px; background: #FDECEC; border: 1px solid #F4C4C0; color: #B3261E; font-size: 13.5px; font-weight: 700; }
+.g24-ob__sos:hover { background: #FBDCDA; }
+
+@keyframes g24ob-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes g24ob-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes g24ob-pop { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes g24ob-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+@media (prefers-reduced-motion: reduce) {
+  .g24-ob, .g24-ob * { animation: none !important; transition: none !important; }
+}
+@media (max-height: 640px) {
+  .g24-ob__art { width: min(100%, 230px); }
+  .g24-ob__dots { margin-bottom: 10px; }
+}
+
+/* ---------- Premium log in / sign up ---------- */
+.g24-auth {
+  display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); max-width: 980px; margin: 18px auto 28px;
+  border-radius: 30px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--g-shadow-soft); background: var(--panel);
+}
+.g24-auth-brand {
+  position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: clamp(24px, 4vw, 44px);
+  color: #fff; background: linear-gradient(155deg, #1B6BE0 0%, var(--g-brand-blue) 52%, #072B67 100%);
+}
+.g24-auth-brand::before { content: ""; position: absolute; right: -70px; top: -70px; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle, rgba(82, 209, 82, .55), transparent 68%); }
+.g24-auth-brand::after { content: ""; position: absolute; left: -90px; bottom: -110px; width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .16), transparent 70%); }
+.g24-auth-brand > * { position: relative; z-index: 1; }
+.g24-auth-logo { width: 78px; height: 78px; padding: 10px; border-radius: 24px; background: #fff; box-shadow: 0 14px 30px rgba(0, 0, 0, .25); }
+.g24-auth-brand h2 { margin: 6px 0 0; font-family: var(--g-font-family); font-size: clamp(25px, 3.4vw, 33px); line-height: 1.12; font-weight: var(--g-font-bold); letter-spacing: -.02em; color: #fff; }
+.g24-auth-brand p { margin: 0; max-width: 360px; font-size: 14.5px; line-height: 1.6; color: #D6E5FB; }
+.g24-auth-points { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 9px; }
+.g24-auth-points li { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: #fff; }
+.g24-auth-points li::before { content: "✓"; flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #2EB82E; color: #fff; font-size: 12px; font-weight: 800; }
+.g24-auth-card { padding: clamp(22px, 4vw, 40px); display: flex; flex-direction: column; gap: 14px; justify-content: center; }
+.g24-auth-card h3 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+.g24-auth-card .panel, .g24-auth-card form { margin: 0; }
+.g24-auth-or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.g24-auth-or::before, .g24-auth-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.g24-auth-links { display: grid; gap: 9px; }
+.g24-auth-links .btn { justify-content: center; width: 100%; min-height: 48px; border-radius: 14px; }
+.g24-auth-guest { background: none; border: 0; padding: 8px; font: inherit; font-size: 13.5px; font-weight: 700; color: var(--mint); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+@media (max-width: 780px) {
+  .g24-auth { grid-template-columns: 1fr; margin: 8px 0 22px; border-radius: 24px; }
+  .g24-auth-brand { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px 14px; padding: 20px; }
+  .g24-auth-logo { width: 56px; height: 56px; padding: 8px; border-radius: 18px; }
+  .g24-auth-brand h2 { flex: 1 1 60%; margin: 0; font-size: 22px; }
+  .g24-auth-brand p { flex: 1 1 100%; font-size: 13.5px; }
+  .g24-auth-points { display: none; }
+}
+
+.g24-auth-card form button[type="submit"], .g24-auth-card form .btn:not(.ghost) {
+  width: 100%; min-height: 54px; justify-content: center; border: 0; border-radius: 16px; font-size: 16px; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, #1B6BE0 0%, var(--g-brand-blue) 100%); box-shadow: 0 14px 26px rgba(11, 61, 145, .28);
+}
