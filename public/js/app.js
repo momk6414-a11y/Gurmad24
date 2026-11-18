@@ -6,6 +6,7 @@ import * as PT from './views/patient.js';
 import * as O from './views/org.js';
 import * as OPS from './views/ops.js';
 import * as A from './views/admin.js';
+import { travel as travelView } from './views/travel.js';
 import { mountAssistant } from './assistant.js';
 import { initPush, stopPush } from './native.js';
 import { maybeShowOnboarding } from './onboarding.js';
@@ -19,12 +20,12 @@ const ORG = ['hospital_admin', 'provider_admin'];
 const ROUTES = [
   ['/', null, P.home], ['/cards', null, P.cards], ['/cards/:id', null, P.cardDetail], ['/compare', null, P.compare], ['/hospitals', null, P.hospitals], ['/hospitals/:id', null, P.hospitalDetail],
   ['/services', null, P.services], ['/map', null, P.puntlandMap], ['/system', null, P.system], ['/verify/:code', null, P.verifyCard], ['/emergency', null, P.emergency], ['/login', null, P.login], ['/register', null, P.register], ['/register-org', null, P.registerOrg], ['/privacy', null, P.privacy],
-  ['/me/orders', ['patient'], PT.orders], ['/me/orders/:id', ['patient'], PT.orderDetail], ['/me/appointments', ['patient'], PT.appointments], ['/me/visits', ['patient'], PT.visits], ['/me/support', ['patient'], PT.support], ['/me/account', ['patient'], PT.account], ['/account', ['hospital_admin', 'provider_admin', 'operator', 'admin'], PT.account],
+  ['/travel', null, travelView], ['/me/orders', ['patient'], PT.orders], ['/me/orders/:id', ['patient'], PT.orderDetail], ['/me/appointments', ['patient'], PT.appointments], ['/me/visits', ['patient'], PT.visits], ['/me/support', ['patient'], PT.support], ['/me/account', ['patient'], PT.account], ['/account', ['hospital_admin', 'provider_admin', 'operator', 'admin'], PT.account],
   ['/org', ORG, O.dashboard], ['/org/cards', ['hospital_admin'], O.cards], ['/org/verify', ['hospital_admin'], O.cardDesk], ['/org/services', ORG, O.servicesPage], ['/org/appointments', ORG, O.appointments], ['/org/visits', ['hospital_admin'], O.visits], ['/org/sales', ORG, O.sales], ['/org/subscription', ORG, O.subscription],
   ['/org/complaints', ORG, O.complaints], ['/org/profile', ORG, O.profile], ['/org/requests', ['provider_admin'], O.requests],
   ['/ops', ['operator', 'admin'], OPS.dashboard], ['/ops/case/:id', ['operator', 'admin'], OPS.caseDetail], ['/ops/directory', ['operator', 'admin'], OPS.directory],
   ['/admin', ['admin'], A.overview], ['/admin/orgs', ['admin'], A.orgs], ['/admin/users', ['admin'], A.users], ['/admin/cards', ['admin'], A.cards], ['/admin/finance', ['admin'], A.finance],
-  ['/admin/revenue', ['admin'], A.revenue], ['/admin/settings', ['admin'], A.settings], ['/admin/complaints', ['admin'], A.complaints], ['/admin/audit', ['admin'], A.audit], ['/admin/security', ['admin'], A.security],
+  ['/admin/revenue', ['admin'], A.revenue], ['/admin/settings', ['admin'], A.settings], ['/admin/complaints', ['admin'], A.complaints], ['/admin/travel', ['admin'], A.travel], ['/admin/audit', ['admin'], A.audit], ['/admin/security', ['admin'], A.security],
 ].map(([p, roles, fn]) => {
   const keys = [];
   const re = new RegExp('^' + p.replace(/:(\w+)/g, (_, k) => {
@@ -43,6 +44,7 @@ function navItems() {
     ['/cards', 'card', 'Cards'],
     ['/hospitals', 'hospital', 'Hospitals'],
     ['/services', 'ambulance', 'Services'],
+    ['/travel', 'globe', 'Travel'],
     ['/me/support', 'chat', 'Support'],
     ['/map', 'pin', 'Map'],
     ['/emergency', 'alert', 'Emergency'],
@@ -60,6 +62,7 @@ function navItems() {
         ['/me/appointments', 'calendar', 'Appointments'],
         ['/me/visits', 'card', 'My visit cards'],
         ['/services', 'ambulance', 'Services'],
+        ['/travel', 'globe', 'Travel'],
         ['/map', 'pin', 'Map'],
     ['/emergency', 'alert', 'Emergency'],
         ['/me/account', 'user', 'Account']
@@ -110,6 +113,7 @@ function navItems() {
         ['/admin/finance', 'receipt', 'Finance'],
         ['/admin/revenue', 'chart', 'Revenue'],
         ['/admin/settings', 'settings', 'Settings'],
+        ['/admin/travel', 'globe', 'Travel'],
         ['/admin/complaints', 'chat', 'Support'],
         ['/admin/security', 'shield', 'Security'],
         ['/admin/audit', 'audit', 'Audit'],

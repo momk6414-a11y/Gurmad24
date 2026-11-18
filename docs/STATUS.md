@@ -12,6 +12,7 @@
 - Database joogto ah (JSON atomic + **migrations** + kayd maalinle + soo celin), PWA oo la rakibi karo, Soomaali/Ingiriis.
 
 ## 🔶 Waa tijaabo / waxaa la dayacay si ammaan ah
+- **Safar (Tikit/Visa):** waa codsi KALIYA. Bukaanku wuu dirayaa codsi, maamuluhu wuu eegayaa oo jawaab buu qorayaa. Tikidh lama dhigto, visa lama bixiyo, lacag lama qaado, lambarka baasaboorka lama ururiyo. Tikidh dhab ah waxay u baahan tahay wakiil safar oo shati leh ama API duulimaad; visa-na waxaa go'aamisa dowladda.
 - **Lacag-bixin:** kaliya `sandbox`. Mobile-money/kaar **MA XIRNA** (ma jiro API credentials). Eeg `docs/PAYMENTS.md`.
 - **Gurmadka:** jilitaan keliya (ambalaas, booliis, dab-damis). Ma jiro dirid dhab ah, wicitaan, SMS, isbitaal-xiriir. Goobta waa ikhtiyaari (ogolaansho + ama aag la doorto), waxaa loo isticmaalaa khariidadda tijaabada kaliya. Cutubyada waxay u dhaqaaqaan si toos ah (autopilot tijaabo ah); hawl-wade qaata kiiska wuu joojiyaa autopilot-ka.
 - **Qiimayaasha/komishanka caadiga ah** waa tusaale — maamuluhu ha dejiyo kuwa dhabta ah.

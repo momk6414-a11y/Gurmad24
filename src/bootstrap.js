@@ -11,7 +11,7 @@ function wire(config, store, overrides = {}) {
   store.migrate(migrations);
   const app = new App({ store, config, push: require('./push').createSender(process.env) });
   const log = overrides.quiet ? () => {} : console.log;
-  for (const r of ['auth', 'public', 'patient', 'org', 'ops', 'admin']) require('./routes/' + r)(app);
+  for (const r of ['auth', 'public', 'patient', 'org', 'ops', 'admin', 'travel']) require('./routes/' + r)(app);
   if (store.backend === 'supabase-postgres') {
     log('GURMAD 24 storage: Supabase PostgreSQL (server-side key; private schema).');
   } else if (!config.persistentStorage) {
