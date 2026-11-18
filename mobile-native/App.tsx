@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Linking, Pressable, RefreshControl, SafeAreaV
 import { WebView } from 'react-native-webview';
 import { apiRequest } from './src/api/client';
 import { colors } from './src/theme/tokens';
+import { InfoMenu } from './src/components/InfoMenu';
 
 type Hospital = { id: string; name: string; area?: string; address?: string; phone?: string; description?: string; verificationNote?: string; source?: string; verified?: boolean; hours?: string; publicEmail?: string; isLocalDraft?: boolean };
 const draftHospitals: Hospital[] = [];
@@ -43,12 +44,13 @@ function Splash() {
   return <View style={styles.splash}><Mark /><Text style={styles.splashName}>GURMAD <Text style={styles.greenText}>24</Text></Text><Text style={styles.splashCaption}>Caafimaad iyo gargaar, hal meel.</Text><Text style={styles.splashFoot}>NOOCA TIJAABADA</Text></View>;
 }
 function Heading({ title, action, onPress }: { title: string; action?: string; onPress?: () => void }) {
-  return <View style={styles.headingRow}><Text style={styles.sectionTitle}>{title}</Text>{action && onPress ? <Pressable onPress={onPress}><Text style={styles.action}>{action} ›</Text></Pressable> : null}</View>;
+  return <View style={styles.headingRow}><Text style={styles.sectionTitle}>{title}</Text><View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>{action && onPress ? <Pressable onPress={onPress}><Text style={styles.action}>{action} ›</Text></Pressable> : null}<InfoMenu title={title} description={`Qaybta ${title} waxay kuu soo bandhigaysaa adeegyada iyo macluumaadka la xiriira. Faahfaahinta iyo ficillada la heli karo waxay ku xirnaanayaan nooca akoonkaaga iyo rukhsadahaaga.`} steps={['Taabo qaybta si aad u furto.', 'Akhri xogta iyo tilmaamaha ka muuqda.', 'Isticmaal ficillada kuu bannaan; xogta aan la xaqiijin ha u qaadan mid rasmi ah.']} actions={['Eeg macluumaadka qaybta.', 'Raac tilmaamaha isticmaalka.', 'La xiriir taageerada haddii xog khaldan jirto.']} /></View></View>;
 }
 function HospitalCard({ item }: { item: Hospital }) {
   return <View style={styles.hospitalCard}>
     <View style={styles.hospitalTop}><View style={styles.hospitalMark}><Text style={styles.hospitalMarkText}>✚</Text></View><View style={styles.hospitalTitle}><Text style={styles.hospitalName}>{item.name}</Text><Text style={styles.hospitalArea}>{item.area || 'Gaalkacyo'}</Text></View>
       <Text style={[styles.pill, item.isLocalDraft ? styles.pillDraft : styles.pillLive]}>{item.isLocalDraft ? 'Liis dadweyne' : 'La xaqiijiyey'}</Text>
+      <View style={{ marginLeft: 7 }}><InfoMenu title={item.name} description={item.description || 'Faahfaahinta adeegyada gaarka ah weli lagama helin isbitaalkan.'} steps={['Hubi magaca iyo goobta isbitaalka.', 'Akhri xaaladda xaqiijinta iyo xogta xiriirka.', 'Wac isbitaalka si aad u xaqiijiso adeegga iyo saacadaha ka hor booqashada.']} actions={['Eeg goobta iyo xogta xiriirka.', 'Wac haddii lambar la heli karo.', 'Ka warbixi xog khaldan adigoo adeegsanaya taageerada.']} /></View>
     </View>
     <Text style={styles.hospitalDescription}>{item.description || 'Isbitaal ku jira buugga dadweynaha; takhasuska iyo adeegyada gaarka ah lama sheegin.'}</Text>
     {item.verificationNote ? <Text style={styles.verificationNote}>{item.verificationNote}</Text> : null}
@@ -90,7 +92,7 @@ function Hospitals({ data }: { data: ReturnType<typeof useHospitals> }) {
   </ScrollView>;
 }
 function SimplePage({ title, subtitle, onOpenWeb }: { title: string; subtitle: string; onOpenWeb: () => void }) {
-  return <ScrollView contentContainerStyle={styles.content}><Text style={styles.pageEyebrow}>GURMAD 24</Text><Text style={styles.pageTitle}>{title}</Text><Text style={styles.pageSub}>{subtitle}</Text><View style={styles.emptyCard}><Text style={styles.emptyIcon}>◷</Text><Text style={styles.emptyTitle}>Qaybtan wali waa la dhisayaa</Text><Text style={styles.emptyCopy}>Adeegyada hadda shaqaynaya ka isticmaal Web App-ka isku xiran.</Text><Pressable style={styles.secondaryButton} onPress={onOpenWeb}><Text style={styles.secondaryText}>Fur Web App-ka ↗</Text></Pressable></View></ScrollView>;
+  return <ScrollView contentContainerStyle={styles.content}><View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><View style={{ flex: 1 }}><Text style={styles.pageEyebrow}>GURMAD 24</Text><Text style={styles.pageTitle}>{title}</Text></View><InfoMenu title={title} description={subtitle} steps={['Akhri sharaxaadda qaybta.', 'Raac tilmaamaha shaashadda.', 'Haddii aad u baahato hawl aan halkan ka muuqan, ka fur Web App-ka isku xiran.']} actions={['Faham ujeeddada qaybta.', 'Ogow halka laga helo adeegyada.', 'Hel caawimaad marka loo baahdo.']} /></View><Text style={styles.pageSub}>{subtitle}</Text><View style={styles.emptyCard}><Text style={styles.emptyIcon}>◷</Text><Text style={styles.emptyTitle}>Qaybtan wali waa la dhisayaa</Text><Text style={styles.emptyCopy}>Adeegyada hadda shaqaynaya ka isticmaal Web App-ka isku xiran.</Text><Pressable style={styles.secondaryButton} onPress={onOpenWeb}><Text style={styles.secondaryText}>Fur Web App-ka ↗</Text></Pressable></View></ScrollView>;
 }
 function WebPage() {
   const [failed, setFailed] = useState(false);
