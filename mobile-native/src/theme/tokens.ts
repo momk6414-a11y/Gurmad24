@@ -1,12 +1,12 @@
 export const colors = {
-  navy: '#0B3D91',
-  green: '#2EB82E',
+  navy: '#071B35',
+  green: '#20B879',
   white: '#FFFFFF',
-  paleBlue: '#E8F1FB',
-  ink: '#17324D',
+  paleBlue: '#EAF2FC',
+  ink: '#14283F',
   muted: '#64748B',
-  border: '#D9E5F2',
-  background: '#F5F8FC',
+  border: '#E2EAF2',
+  background: '#F6F8FB',
 } as const;
 
 export const spacing = {
