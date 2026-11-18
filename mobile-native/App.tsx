@@ -4,6 +4,7 @@ import { WebView } from 'react-native-webview';
 import { apiRequest } from './src/api/client';
 import { colors } from './src/theme/tokens';
 import { InfoMenu } from './src/components/InfoMenu';
+import { AdminDashboardPreview, HospitalDashboardPreview } from './src/components/NativeDashboards';
 
 type Hospital = { id: string; name: string; area?: string; address?: string; phone?: string; description?: string; verificationNote?: string; source?: string; verified?: boolean; hours?: string; publicEmail?: string; isLocalDraft?: boolean };
 const draftHospitals: Hospital[] = [];
@@ -12,7 +13,7 @@ const tabs = [
   { key: 'activity', label: 'Hawlahayga', icon: '◷' }, { key: 'account', label: 'Akoon', icon: '○' },
   { key: 'web', label: 'Web App', icon: '↗' },
 ] as const;
-type Tab = (typeof tabs)[number]['key'];
+type Tab = (typeof tabs)[number]['key'] | 'adminPreview' | 'hospitalPreview';
 
 function useHospitals() {
   const [items, setItems] = useState<Hospital[]>(draftHospitals);
@@ -91,8 +92,8 @@ function Hospitals({ data }: { data: ReturnType<typeof useHospitals> }) {
     {data.loading ? <ActivityIndicator color={colors.green} /> : data.items.map(h => <HospitalCard key={h.id} item={h} />)}
   </ScrollView>;
 }
-function SimplePage({ title, subtitle, onOpenWeb }: { title: string; subtitle: string; onOpenWeb: () => void }) {
-  return <ScrollView contentContainerStyle={styles.content}><View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><View style={{ flex: 1 }}><Text style={styles.pageEyebrow}>GURMAD 24</Text><Text style={styles.pageTitle}>{title}</Text></View><InfoMenu title={title} description={subtitle} steps={['Akhri sharaxaadda qaybta.', 'Raac tilmaamaha shaashadda.', 'Haddii aad u baahato hawl aan halkan ka muuqan, ka fur Web App-ka isku xiran.']} actions={['Faham ujeeddada qaybta.', 'Ogow halka laga helo adeegyada.', 'Hel caawimaad marka loo baahdo.']} /></View><Text style={styles.pageSub}>{subtitle}</Text><View style={styles.emptyCard}><Text style={styles.emptyIcon}>◷</Text><Text style={styles.emptyTitle}>Qaybtan wali waa la dhisayaa</Text><Text style={styles.emptyCopy}>Adeegyada hadda shaqaynaya ka isticmaal Web App-ka isku xiran.</Text><Pressable style={styles.secondaryButton} onPress={onOpenWeb}><Text style={styles.secondaryText}>Fur Web App-ka ↗</Text></Pressable></View></ScrollView>;
+function SimplePage({ title, subtitle, onOpenWeb, onOpenAdmin, onOpenHospital }: { title: string; subtitle: string; onOpenWeb: () => void; onOpenAdmin?: () => void; onOpenHospital?: () => void }) {
+  return <ScrollView contentContainerStyle={styles.content}><View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><View style={{ flex: 1 }}><Text style={styles.pageEyebrow}>GURMAD 24</Text><Text style={styles.pageTitle}>{title}</Text></View><InfoMenu title={title} description={subtitle} steps={['Akhri sharaxaadda qaybta.', 'Raac tilmaamaha shaashadda.', 'Haddii aad u baahato hawl aan halkan ka muuqan, ka fur Web App-ka isku xiran.']} actions={['Faham ujeeddada qaybta.', 'Ogow halka laga helo adeegyada.', 'Hel caawimaad marka loo baahdo.']} /></View><Text style={styles.pageSub}>{subtitle}</Text><View style={styles.emptyCard}><Text style={styles.emptyIcon}>◷</Text><Text style={styles.emptyTitle}>Qaybtan wali waa la dhisayaa</Text><Text style={styles.emptyCopy}>Adeegyada hadda shaqaynaya ka isticmaal Web App-ka isku xiran.</Text><Pressable style={styles.secondaryButton} onPress={onOpenWeb}><Text style={styles.secondaryText}>Fur Web App-ka ↗</Text></Pressable>{title === 'Akoonkayga' ? <><Pressable style={[styles.secondaryButton,{backgroundColor:'#176B62'}]} onPress={onOpenAdmin}><Text style={styles.secondaryText}>Eeg naqshadda Maamulka</Text></Pressable><Pressable style={[styles.secondaryButton,{backgroundColor:'#176B62'}]} onPress={onOpenHospital}><Text style={styles.secondaryText}>Eeg naqshadda Isbitaalka</Text></Pressable><Text style={styles.muted}>Kuwani waa muuqaal hordhac ah; ma aha gelitaan maamul oo dhab ah.</Text></> : null}</View></ScrollView>;
 }
 function WebPage() {
   const [failed, setFailed] = useState(false);
@@ -113,8 +114,10 @@ export default function App() {
     {tab === 'home' ? <Home data={data} openHospitals={() => setTab('hospitals')} openWeb={openWeb} /> : null}
     {tab === 'hospitals' ? <Hospitals data={data} /> : null}
     {tab === 'activity' ? <SimplePage title="Hawlahayga" subtitle="La soco codsiyadaada iyo tikidyada." onOpenWeb={openWeb} /> : null}
-    {tab === 'account' ? <SimplePage title="Akoonkayga" subtitle="Gelitaanka iyo macluumaadka isticmaalaha." onOpenWeb={openWeb} /> : null}
+    {tab === 'account' ? <SimplePage title="Akoonkayga" subtitle="Gelitaanka iyo macluumaadka isticmaalaha." onOpenWeb={openWeb} onOpenAdmin={() => setTab('adminPreview')} onOpenHospital={() => setTab('hospitalPreview')} /> : null}
     {tab === 'web' ? <WebPage /> : null}
+    {tab === 'adminPreview' ? <AdminDashboardPreview onBack={() => setTab('account')} /> : null}
+    {tab === 'hospitalPreview' ? <HospitalDashboardPreview onBack={() => setTab('account')} /> : null}
     <View style={styles.bottom}>{tabs.map(t => <Pressable key={t.key} style={styles.tab} onPress={() => setTab(t.key)} accessibilityRole="button" accessibilityState={{ selected: tab === t.key }}><Text style={[styles.tabIcon, tab === t.key && styles.tabActive]}>{t.icon}</Text><Text style={[styles.tabLabel, tab === t.key && styles.tabActive]}>{t.label}</Text>{tab === t.key ? <View style={styles.indicator} /> : null}</Pressable>)}</View>
   </View></SafeAreaView>;
 }
