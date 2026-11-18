@@ -20,6 +20,13 @@ jobs:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        shell: bash
+        run: bash scripts/validate-backup-env.sh
+
       - name: Install PostgreSQL 17 client and GPG
         run: |
           set -euo pipefail
@@ -36,22 +43,20 @@ jobs:
           /usr/lib/postgresql/17/bin/pg_dump --version
           /usr/lib/postgresql/17/bin/pg_restore --version
 
-      - name: Validate required secrets
+      - name: Test database connection
         shell: bash
+        env:
+          PGCONNECT_TIMEOUT: '30'
+          PGSSLMODE: require
         run: |
           set -euo pipefail
-          if [[ -z "$SUPABASE_DB_URL" ]]; then
-            echo "::error::Add the SUPABASE_DB_URL repository secret."
+          if ! /usr/lib/postgresql/17/bin/psql "$SUPABASE_DB_URL" --no-psqlrc --tuples-only --no-align \
+              --command "select count(*) from gurmad24.records" >/tmp/records-count 2>/tmp/psql-error; then
+            echo "::error::Could not read gurmad24.records. Check the database password, that the Session pooler string is used (port 5432), and that the project is not paused."
+            sed -E 's#(postgres(ql)?://)[^@ ]*@#\1***@#g' /tmp/psql-error | head -5
             exit 1
           fi
-          if [[ ${#BACKUP_ENCRYPTION_KEY} -lt 32 ]]; then
-            echo "::error::BACKUP_ENCRYPTION_KEY must contain at least 32 characters."
-            exit 1
-          fi
-          if [[ "$SUPABASE_DB_URL" != postgres://* && "$SUPABASE_DB_URL" != postgresql://* ]]; then
-            echo "::error::SUPABASE_DB_URL must be a PostgreSQL connection URI."
-            exit 1
-          fi
+          echo "Connected. gurmad24.records rows: $(tr -d '[:space:]' </tmp/records-count)"
 
       - name: Dump and encrypt database
         shell: bash
@@ -62,7 +67,9 @@ jobs:
           file="gurmad24-${stamp}.dump.gpg"
           printf '%s' "$BACKUP_ENCRYPTION_KEY" > /tmp/gurmad24-backup-passphrase
           chmod 600 /tmp/gurmad24-backup-passphrase
-          /usr/lib/postgresql/17/bin/pg_dump --format=custom --no-owner --no-acl "$SUPABASE_DB_URL" \
+          export PGCONNECT_TIMEOUT=30 PGSSLMODE=require
+          # Only the application schema: that is where all GURMAD 24 data lives (Supabase internal schemas are managed by Supabase).
+          /usr/lib/postgresql/17/bin/pg_dump --format=custom --no-owner --no-acl --schema=gurmad24 "$SUPABASE_DB_URL" \
             | gpg --batch --yes --pinentry-mode loopback \
                 --passphrase-file /tmp/gurmad24-backup-passphrase \
                 --symmetric --cipher-algo AES256 --s2k-mode 3 \
@@ -70,7 +77,11 @@ jobs:
           gpg --batch --yes --pinentry-mode loopback \
             --passphrase-file /tmp/gurmad24-backup-passphrase \
             --decrypt --output /tmp/gurmad24-verify.dump "$file"
-          /usr/lib/postgresql/17/bin/pg_restore --list /tmp/gurmad24-verify.dump >/dev/null
+          /usr/lib/postgresql/17/bin/pg_restore --list /tmp/gurmad24-verify.dump >/tmp/gurmad24-toc
+          grep -q "TABLE DATA gurmad24 records" /tmp/gurmad24-toc || { echo "::error::The backup does not contain the gurmad24.records table data."; exit 1; }
+          size="$(stat -c %s "$file")"
+          echo "Encrypted backup created: $file (${size} bytes), restore test list OK."
+          rm -f /tmp/gurmad24-toc
           rm -f /tmp/gurmad24-verify.dump /tmp/gurmad24-backup-passphrase
           echo "BACKUP_FILE=$file" >> "$GITHUB_ENV"
 
