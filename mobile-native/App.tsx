@@ -56,7 +56,7 @@ function Splash() {
       <View style={styles.splashRule}><View style={styles.splashRuleFill} /></View>
       <Text style={styles.splashPromise}>XARUMAHA CAAFIMAADKA · ADEEGYO · ISKU XIR</Text>
     </View>
-    <View style={styles.splashBottom}><Text style={styles.splashFoot}>NOOCA TIJAABADA</Text><Text style={styles.splashVersion}>MOBILE EXPERIENCE</Text></View>
+    <View style={styles.splashBottom}><Text style={styles.splashFoot}>GURMAD 24 · PILOT</Text><Text style={styles.splashVersion}>MOBILE APP</Text></View>
   </View>;
 }
 function Heading({ title, action, onPress }: { title: string; action?: string; onPress?: () => void }) {
@@ -81,7 +81,7 @@ function Home({ data, openHospitals, openWeb }: { data: ReturnType<typeof useHos
     <View style={styles.top}><View style={styles.brandRow}><Mark small /><View><Text style={styles.brand}>GURMAD <Text style={styles.greenText}>24</Text></Text><Text style={styles.brandSub}>Caafimaad iyo gargaar</Text></View></View><Pressable style={styles.webChip} onPress={openWeb}><Text style={styles.webChipText}>Web App ↗</Text></Pressable></View>
     <View style={styles.location}><Text style={styles.pin}>⌖</Text><View><Text style={styles.locationLabel}>GOOBTA MASHRUUCA</Text><Text style={styles.locationName}>Gaalkacyo, Soomaaliya</Text></View></View>
     <View style={styles.hero}><View style={styles.orb} /><Text style={styles.eyebrow}>KU SOO DHAWOOW GURMAD 24</Text><Text style={styles.heroTitle}>Caafimaadkaaga{'\n'}waa mudnaantayada.</Text><Text style={styles.heroCopy}>Hal meel ka hel macluumaadka xarumaha caafimaadka iyo adeegyada.</Text><Pressable style={styles.heroButton} onPress={openHospitals}><Text style={styles.heroButtonText}>Raadi isbitaallo  →</Text></Pressable><View style={styles.heroBadge}><Mark small /></View></View>
-    <View style={styles.notice}><Text style={styles.noticeIcon}>!</Text><View style={{ flex: 1 }}><Text style={styles.noticeTitle}>Nooca tijaabada</Text><Text style={styles.noticeCopy}>Codsiga gurmadku wali waa SIMULATION; gargaar dhab ah lama dirayo. Ha u adeegsan xaalad degdeg ah.</Text></View></View>
+    <View style={styles.notice}><Text style={styles.noticeIcon}>!</Text><View style={{ flex: 1 }}><Text style={styles.noticeTitle}>Xaaladda adeegga gurmadka</Text><Text style={styles.noticeCopy}>Codsiga gurmadku wali waa SIMULATION; gargaar dhab ah lama dirayo. Ha u adeegsan xaalad degdeg ah.</Text></View></View>
     <View style={styles.statsRow}>
       <View style={styles.statCard}><Text style={styles.statValue}>{data.items.length}</Text><Text style={styles.statLabel}>Liiska guud</Text></View>
       <View style={styles.statCard}><Text style={styles.statValue}>{data.items.filter(h => h.verified === true).length}</Text><Text style={styles.statLabel}>La xaqiijiyey</Text></View>
@@ -96,7 +96,7 @@ function Home({ data, openHospitals, openWeb }: { data: ReturnType<typeof useHos
     <Heading title="Isbitaallada Gaalkacyo" action="Dhammaan" onPress={openHospitals} />
     {data.loading && !data.items.length ? <ActivityIndicator color={colors.green} /> : data.items.slice(0, 2).map(h => <HospitalCard key={h.id} item={h} />)}
     <Pressable style={styles.webBanner} onPress={openWeb}><Text style={styles.webBannerIcon}>↗</Text><View style={{ flex: 1 }}><Text style={styles.webBannerTitle}>Fur GURMAD 24 Web App</Text><Text style={styles.webBannerSub}>Isla website-ka iyo backend-ka mashruuca.</Text></View><Text style={styles.bannerArrow}>›</Text></Pressable>
-    <Text style={styles.footer}>GURMAD 24 · NOOCA TIJAABADA</Text>
+    <Text style={styles.footer}>GURMAD 24 · GAALKACYO PILOT</Text>
   </ScrollView>;
 }
 function Hospitals({ data }: { data: ReturnType<typeof useHospitals> }) {
