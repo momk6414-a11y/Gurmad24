@@ -65,12 +65,18 @@ jobs:
         working-directory: mobile-native/android
         run: ./gradlew assembleRelease --no-daemon
 
-      - name: Verify embedded JavaScript bundle
+      - name: Verify standalone APK package, signature and bundle
         working-directory: mobile-native/android
+        shell: bash
         run: |
+          set -euo pipefail
           APK="app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
-          unzip -l "$APK" | grep -E 'assets/index.android.bundle|assets/index.android.bundle.hbc'
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
+          APP_ID="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")"
+          test "$APP_ID" = "so.gurmad24.test"
+          unzip -l "$APK" | grep -Eq 'assets/index\\.android\\.bundle(\\.hbc)?$'
+          echo "Verified Android package ID: $APP_ID"
 
       - name: Upload standalone test APK
         uses: actions/upload-artifact@v4
