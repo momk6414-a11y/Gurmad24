@@ -5,6 +5,7 @@
 // government, so both stay outside this system. Passport numbers are deliberately NOT collected.
 const { v, validate, HttpError } = require('../validate');
 const { created } = require('../app');
+const directory = require('../travel-directory');
 
 const KINDS = ['ticket', 'visa'];
 const CABINS = ['economy', 'premium', 'business'];
@@ -20,6 +21,10 @@ module.exports = function (app) {
 
   app.get('/api/travel/config', { summary: 'Travel pilot options (public). Requests only; nothing is issued or charged.' }, () => ({
     kinds: KINDS, cabins: CABINS, visaTypes: VISA_TYPES, pilot: true, message: 'DEMO_TRAVEL_REQUEST_ONLY',
+  }));
+
+  app.get('/api/travel/agencies', { summary: 'Public listings of travel agencies serving Galkacyo (not verified by GURMAD 24; call to confirm)' }, () => ({
+    agencies: directory.list(), retrievedAt: directory.RETRIEVED, notice: 'PUBLIC_LISTINGS_NOT_VERIFIED',
   }));
 
   app.post('/api/travel', { auth: ['patient'], summary: 'Submit a flight-ticket or visa request (pilot: request only, no booking, no payment)' }, req => {
