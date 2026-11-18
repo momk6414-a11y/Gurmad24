@@ -21,61 +21,91 @@ async function hotlines() {
   return h('section', { class: 'panel hotlines' }, h('h3', t('Emergency numbers')), h('div', { class: 'calls' }, items), h('small', { class: 'hint' }, t('Demo numbers. One tap to call from your phone.')));
 }
 
-export async function home() {
-  const hot = await hotlines();
-  const quickLink = (path, symbol, title, detail) => h('a', {
-    class: 'g24-home-link',
-    href: '#' + path,
-    'aria-label': t(title) + ' — ' + t(detail),
-    onclick: e => { e.preventDefault(); go(path); }
-  },
-    h('span', { class: 'g24-home-link-icon' }, icon(symbol, 22)),
-    h('span', { class: 'g24-home-link-copy' }, h('b', t(title)), h('small', t(detail)))
-  );
+// Emergency call chips for the SOS card (demo numbers; also work from the cached directory).
+async function hotlineItems() {
+  let ps = []; try { ps = (await GET('/providers')).providers; } catch (_) { /* offline: no list */ }
+  const pick = type => { const l = ps.filter(p => p.type === type && p.phone); return l.find(p => p.available) || l[0]; };
+  return [['ambulance', 'Ambulance'], ['police', 'Police'], ['fire', 'Fire brigade']]
+    .map(([type, label]) => { const p = pick(type); return p ? { type, label, phone: p.phone } : null; }).filter(Boolean);
+}
 
-  return h('div', { class: 'g24-home' },
-    h('section', { class: 'g24-home-hero', 'aria-labelledby': 'home-title' },
-      h('div', { class: 'g24-home-main' },
-        h('div', { class: 'g24-home-brand' },
-          h('span', { class: 'g24-home-brand-icon' }, h('img', { src: '/assets/gurmad-logo.svg', alt: '', width: 34, height: 34 })),
-          h('span', { class: 'eyebrow' }, 'GURMAD 24  ·  ' + t('Fast help, one tap away'))
-        ),
-        S.user ? h('p', { class: 'g24-home-greet' }, t('Welcome back, {name}', { name: String(S.user.name || '').split(' ')[0] })) : null,
-        h('h1', { id: 'home-title' }, t('One network. Every emergency.')),
-        h('p', t('A connected response system for people, location and essential services.')),
-        h('div', { class: 'g24-home-cta' },
-          h('a', { class: 'btn sos-cta', href: '#/emergency', onclick: e => { e.preventDefault(); go('/emergency'); } }, icon('alert', 19), t('Request help now')),
-          h('a', { class: 'btn ghost g24-home-map', href: '#/map', onclick: e => { e.preventDefault(); go('/map'); } }, icon('pin', 19), t('Open live map'))
-        ),
-        S.user ? null : h('p', { class: 'g24-home-account' }, t('Have an account?'), ' ',
-          h('a', { href: '#/login', onclick: e => { e.preventDefault(); go('/login'); } }, t('Log in')), ' · ',
-          h('a', { href: '#/register', onclick: e => { e.preventDefault(); go('/register'); } }, t('Create account'))),
-        h('div', { class: 'g24-home-proof' },
-          h('span', icon('shield', 15), t('People first')),
-          h('span', icon('activity', 15), t('One connected system')),
-          h('span', icon('globe', 15), t('Somali + English'))
-        )
-      ),
-      h('div', { class: 'g24-home-visual' },
-        h('img', { src: '/assets/onboarding/ob-sos.svg', alt: '', width: 360, height: 300, fetchpriority: 'low' })
+async function homeHospitals() {
+  try {
+    const r = await GET('/hospitals');
+    return [...(r.hospitals || []), ...(r.directory || [])].slice(0, 8);
+  } catch (_) { return []; }
+}
+
+const greeting = () => { const hr = new Date().getHours(); return hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'; };
+const initials = name => String(name || '?').trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+
+export async function home() {
+  const [calls, hospitalList] = await Promise.all([hotlineItems(), homeHospitals()]);
+  const nav = path => e => { e.preventDefault(); go(path); };
+  const action = (path, symbol, label, tone) => h('a', { class: 'g24h-act g24h-tone-' + tone, href: '#' + path, onclick: nav(path) },
+    h('span', { class: 'g24h-act__icon' }, icon(symbol, 24)), h('span', { class: 'g24h-act__label' }, t(label)));
+  const soon = (symbol, label) => h('div', { class: 'g24h-soon', 'aria-disabled': 'true' },
+    h('span', { class: 'g24h-soon__icon' }, icon(symbol, 22)), h('b', t(label)), h('em', t('Soon')));
+
+  const search = h('form', { class: 'g24h-search', role: 'search', onsubmit: e => { e.preventDefault(); S.prefillQ = e.currentTarget.q.value.trim(); go('/hospitals'); } },
+    icon('search', 20),
+    h('input', { name: 'q', type: 'search', placeholder: t('Search hospitals or cards'), 'aria-label': t('Search'), autocomplete: 'off', enterkeyhint: 'search' }),
+    h('button', { type: 'submit', class: 'g24h-search__go', 'aria-label': t('Search') }, '→'));
+
+  const hospitalCard = o => h('a', { class: 'g24h-hosp', href: '#/hospitals', onclick: nav('/hospitals') },
+    h('span', { class: 'g24h-hosp__avatar' }, initials(o.name)),
+    h('b', o.name),
+    h('small', [o.area || o.city || '', o.facilityType ? ' · ' + o.facilityType : ''].join('')),
+    o.verified ? h('span', { class: 'g24h-pill ok' }, icon('check', 12), t('Verified')) : h('span', { class: 'g24h-pill' }, t('Public listing')),
+    o.phone ? h('span', { class: 'g24h-hosp__call', onclick: e => { e.preventDefault(); e.stopPropagation(); location.href = 'tel:' + String(o.phone).replace(/[^+\d]/g, ''); } }, icon('phone', 14), t('Call')) : null);
+
+  return h('div', { class: 'g24h' },
+    h('header', { class: 'g24h-top' },
+      h('div', { class: 'g24h-hello' },
+        h('small', t(greeting())),
+        h('h1', S.user ? String(S.user.name || '').split(' ')[0] : t('Welcome to GURMAD 24'))),
+      S.user
+        ? h('a', { class: 'g24h-avatar', href: '#/me/orders', onclick: nav('/me/orders'), 'aria-label': t('My account') }, initials(S.user.name))
+        : h('a', { class: 'g24h-login', href: '#/login', onclick: nav('/login') }, icon('user', 16), t('Log in'))
+    ),
+    search,
+    h('section', { class: 'g24h-sos', 'aria-label': t('Emergency') },
+      h('div', { class: 'g24h-sos__copy' },
+        h('span', { class: 'g24h-sos__tag' }, h('i'), t('24/7 emergency help')),
+        h('h2', t('Need urgent help?')),
+        h('p', t('Send your request in one tap. Pilot: dispatch is simulated.'))),
+      h('a', { class: 'g24h-sos__btn', href: '#/emergency', onclick: nav('/emergency'), 'aria-label': t('Request help now') },
+        h('span', 'SOS'), h('small', t('Request help now'))),
+      calls.length ? h('div', { class: 'g24h-sos__calls' }, calls.map(c => h('a', { class: 'g24h-call', href: 'tel:' + c.phone.replace(/[^+\d]/g, '') }, icon(c.type, 18), h('span', t(c.label)), h('small', c.phone)))) : null
+    ),
+    h('section', { class: 'g24h-sec' },
+      h('div', { class: 'g24h-sec__head' }, h('h2', t('Services')), h('a', { href: '#/services', onclick: nav('/services') }, t('See all'))),
+      h('div', { class: 'g24h-acts' },
+        action('/hospitals', 'hospital', 'Hospitals', 'blue'),
+        action('/cards', 'card', 'Health cards', 'green'),
+        action('/map', 'pin', 'Live map', 'blue'),
+        action('/services', 'ambulance', 'Ambulance', 'red'),
+        action('/me/appointments', 'calendar', 'Appointments', 'green'),
+        action('/me/orders', 'bag', 'My cards', 'blue'),
+        action('/me/support', 'chat', 'Support', 'green'),
+        action('/emergency', 'alert', 'Emergency', 'red')
       )
     ),
-    hot ? h('div', { class: 'g24-home-hotlines' }, hot) : null,
-    h('section', { class: 'g24-home-quick', 'aria-label': t('Emergency services') },
-      h('div', { class: 'g24-home-section-head' },
-        h('h2', t('Emergency services')),
-        h('span', t('One connected system'))
-      ),
-      h('div', { class: 'g24-home-grid' },
-        quickLink('/hospitals', 'hospital', 'Hospitals', 'Find care'),
-        quickLink('/services', 'ambulance', 'Emergency services', 'Ambulance and providers'),
-        quickLink('/map', 'pin', 'Live map', 'GPS and locations'),
-        quickLink('/cards', 'card', 'Health cards', 'Explore healthcare')
-      )
-    ),
-    h('div', { class: 'g24-home-safety' },
-      icon('alert', 18),
-      h('span', t('Pilot demo only — emergency dispatch is simulated. For a real emergency, contact local emergency services directly.'))
+    hospitalList.length ? h('section', { class: 'g24h-sec' },
+      h('div', { class: 'g24h-sec__head' }, h('h2', t('Hospitals near you')), h('a', { href: '#/hospitals', onclick: nav('/hospitals') }, t('See all'))),
+      h('div', { class: 'g24h-rail', role: 'list' }, hospitalList.map(o => h('div', { role: 'listitem' }, hospitalCard(o)))),
+      h('small', { class: 'g24h-note' }, t('Public listings are not hospital-verified. Call to confirm.'))
+    ) : null,
+    h('a', { class: 'g24h-promo', href: '#/cards', onclick: nav('/cards') },
+      h('div', h('b', t('Health cards for your family')), h('p', t('Compare hospital service cards and order in minutes. Not insurance.'))),
+      h('span', { class: 'g24h-promo__go', 'aria-hidden': 'true' }, '→')),
+    h('section', { class: 'g24h-sec' },
+      h('div', { class: 'g24h-sec__head' }, h('h2', t('Coming next'))),
+      h('div', { class: 'g24h-soons' }, soon('globe', 'Care abroad'), soon('mic', 'Video consult'), soon('location', 'Travel & visa'))),
+    h('div', { class: 'g24h-trust' },
+      h('span', icon('lock', 15), t('Your data is stored securely')),
+      h('span', icon('globe', 15), t('Somali + English')),
+      h('span', icon('shield', 15), t('Pilot: not for real emergencies'))
     )
   );
 }
@@ -203,6 +233,7 @@ export async function compare() {
 // ---------- Hospitals
 export async function hospitals() {
   const out = h('div', { class: 'grid g3' }); const q = h('input', { type: 'search', placeholder: t('Search hospitals'), 'aria-label': t('Search') });
+  if (S.prefillQ) { q.value = S.prefillQ; S.prefillQ = ''; }
   async function load() { const r = await GET('/hospitals?q=' + encodeURIComponent(q.value)); const all = [...r.hospitals, ...(r.directory || [])]; out.replaceChildren(...(all.length ? all.map(o => o.directoryOnly ? directoryHospitalTile(o) : orgTile(o)) : [emptyState('No hospitals found.')])); }
   let tm; q.oninput = () => { clearTimeout(tm); tm = setTimeout(load, 250); }; load();
   return h('div', head('Hospital directory', 'Administrator-verified hospitals and clearly labelled public listings.'), demoNote('Public directory entries are not hospital-verified. Call the hospital to confirm details before relying on them.'), h('div', { class: 'field' }, q), out);
