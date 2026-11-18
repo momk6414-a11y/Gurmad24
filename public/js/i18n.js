@@ -482,5 +482,20 @@ export const so = {
 "New status":"Xaalad cusub",
 "Note to the patient":"Fariin loo diro bukaanka",
 "Review":"Eeg",
-"Saved":"Waa la kaydiyay"
+"Saved":"Waa la kaydiyay",
+"PUBLIC LISTING":"LIIS DADWEYNE",
+"Source: ":"Isha: ",
+"Travel agencies serving Galkacyo":"Wakaaladaha safarka ee u adeega Gaalkacyo",
+"Call or WhatsApp an agency to book a real ticket now. These are public listings from each agency website (checked {d}); GURMAD 24 has not verified them yet. Never pay before you get a written quote.":"Wac ama WhatsApp-ku dir wakaalad si aad hadda tikidh dhab ah u dhigato. Kuwani waa liisaska dadweynaha ee websaydhka wakaalad kasta (la hubiyay {d}); GURMAD 24 weli ma xaqiijin. Ha bixin lacag ka hor intaadan helin qiimo qoran.",
+"Local office, but its website shows no licence number or company details. Ask for the licence and a written quote before paying.":"Xafiis maxalli ah, laakiin websaydhkiisa ma muujiyo lambarka shatiga ama faahfaahinta shirkadda. Weydii shatiga iyo qiimo qoran ka hor intaadan bixin lacag.",
+"Head office is in Mogadishu; its site has a Galkacyo flights page but lists no Galkacyo office. Confirm how they serve Galkacyo.":"Xafiiska weyn waa Muqdisho; websaydhkiisu wuxuu leeyahay bog duulimaadka Gaalkacyo laakiin xafiis Gaalkacyo ma muujiyo. Hubi sida ay Gaalkacyo ugu adeegaan.",
+"Head office is in Mogadishu; no Galkacyo office listed. Confirm before booking.":"Xafiiska weyn waa Muqdisho; xafiis Gaalkacyo lama sheegin. Hubi ka hor inta aadan dhigan.",
+"Flight tickets":"Tikidhka duulimaadka",
+"Visa processing":"Habaynta visa",
+"Hotel booking":"Dhigashada hudheel",
+"Document help":"Caawinta dukumeentiyada",
+"Domestic and international flight tickets":"Tikidhka duulimaadka gudaha iyo dibadda",
+"Hajj and Umrah":"Xajka iyo Cumro",
+"Hotel and bus booking":"Dhigashada hudheel iyo baska",
+"Domestic flights Mogadishu - Galkacyo":"Duulimaadyada gudaha Muqdisho - Gaalkacyo"
 };

@@ -63,3 +63,15 @@ test('travel data is in the privacy export and contact details are wiped on acco
   const rec = app.store.col('travel')[0];
   assert.equal(rec.contactPhone, ''); assert.equal(rec.note, '');
 });
+
+test('travel agency directory is public, sourced, and never marked verified', async t => {
+  const app = await start(); t.after(app.stop);
+  const r = await app.client().get('/api/travel/agencies');
+  assert.equal(r.status, 200);
+  assert.ok(r.data.agencies.length >= 3);
+  for (const a of r.data.agencies) {
+    assert.equal(a.verified, false);
+    assert.match(a.sourceUrl, /^https:\/\//);
+    assert.ok(a.phones.every(p => /^\+\d{9,15}$/.test(p)), a.id + ' phones');
+  }
+});
