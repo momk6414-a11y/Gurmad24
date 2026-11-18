@@ -46,7 +46,18 @@ function Mark({ small = false }: { small?: boolean }) {
   return <View style={[styles.mark, small && styles.markSmall]}><Text style={[styles.markCross, small && styles.markCrossSmall]}>✚</Text><View style={styles.markPulse} /></View>;
 }
 function Splash() {
-  return <View style={styles.splash}><Mark /><Text style={styles.splashName}>GURMAD <Text style={styles.greenText}>24</Text></Text><Text style={styles.splashCaption}>Caafimaad iyo gargaar, hal meel.</Text><Text style={styles.splashFoot}>NOOCA TIJAABADA</Text></View>;
+  return <View style={styles.splash}>
+    <View style={styles.splashGlow} />
+    <View style={styles.splashTop}><Text style={styles.splashTopText}>GAALKACYO · SOMALIA</Text><View style={styles.splashLive}><View style={styles.splashDot} /><Text style={styles.splashLiveText}>HEALTH PLATFORM</Text></View></View>
+    <View style={styles.splashCenter}>
+      <View style={styles.splashMarkFrame}><Mark /></View>
+      <Text style={styles.splashName}>GURMAD <Text style={styles.greenText}>24</Text></Text>
+      <Text style={styles.splashCaption}>Caafimaad iyo gargaar, hal meel.</Text>
+      <View style={styles.splashRule}><View style={styles.splashRuleFill} /></View>
+      <Text style={styles.splashPromise}>XARUMAHA CAAFIMAADKA · ADEEGYO · ISKU XIR</Text>
+    </View>
+    <View style={styles.splashBottom}><Text style={styles.splashFoot}>NOOCA TIJAABADA</Text><Text style={styles.splashVersion}>MOBILE EXPERIENCE</Text></View>
+  </View>;
 }
 function Heading({ title, action, onPress }: { title: string; action?: string; onPress?: () => void }) {
   return <View style={styles.headingRow}><Text style={styles.sectionTitle}>{title}</Text>{action && onPress ? <Pressable onPress={onPress}><Text style={styles.action}>{action} ›</Text></Pressable> : null}</View>;
@@ -127,8 +138,8 @@ export default function App() {
 }
 const styles = StyleSheet.create({
   safe:{flex:1,backgroundColor:colors.background},shell:{flex:1,backgroundColor:colors.background},content:{padding:18,paddingBottom:26},
-  splash:{flex:1,backgroundColor:colors.navy,alignItems:'center',justifyContent:'center'},mark:{width:82,height:82,borderRadius:25,backgroundColor:'#174B7A',alignItems:'center',justifyContent:'center',overflow:'hidden',borderWidth:1,borderColor:'#47749D'},markSmall:{width:45,height:45,borderRadius:14},markCross:{fontSize:49,color:'#FFFFFF',fontWeight:'900'},markCrossSmall:{fontSize:26},markPulse:{position:'absolute',width:57,height:4,borderRadius:4,backgroundColor:'#39C878',transform:[{rotate:'-12deg'}]},
-  splashName:{fontSize:29,fontWeight:'900',color:'#FFFFFF',letterSpacing:1.5,marginTop:22},greenText:{color:'#39C878'},splashCaption:{color:'#D6E5F5',fontSize:12,marginTop:8},splashFoot:{position:'absolute',bottom:38,color:'#A8BED8',fontSize:9,fontWeight:'800',letterSpacing:1.5},
+  splash:{flex:1,backgroundColor:'#06172D',alignItems:'center',justifyContent:'space-between',paddingHorizontal:25,paddingTop:62,paddingBottom:35,overflow:'hidden'},splashGlow:{position:'absolute',width:310,height:310,borderRadius:155,backgroundColor:'#103B5A',opacity:0.65,top:'28%',right:-145,borderWidth:1,borderColor:'#1B5A69'},splashTop:{width:'100%',flexDirection:'row',alignItems:'center',justifyContent:'space-between'},splashTopText:{fontSize:9,color:'#91AFC8',fontWeight:'900',letterSpacing:1.2},splashLive:{flexDirection:'row',alignItems:'center',borderWidth:1,borderColor:'#28566B',borderRadius:20,paddingHorizontal:9,paddingVertical:6},splashDot:{width:6,height:6,borderRadius:3,backgroundColor:'#39C878',marginRight:6},splashLiveText:{fontSize:8,color:'#C4D8E6',fontWeight:'900',letterSpacing:0.7},splashCenter:{alignItems:'center',justifyContent:'center',width:'100%'},splashMarkFrame:{padding:10,borderRadius:32,backgroundColor:'#0C2947',borderWidth:1,borderColor:'#28536D'},mark:{width:82,height:82,borderRadius:25,backgroundColor:'#174B7A',alignItems:'center',justifyContent:'center',overflow:'hidden',borderWidth:1,borderColor:'#47749D'},markSmall:{width:45,height:45,borderRadius:14},markCross:{fontSize:49,color:'#FFFFFF',fontWeight:'900'},markCrossSmall:{fontSize:26},markPulse:{position:'absolute',width:57,height:4,borderRadius:4,backgroundColor:'#39C878',transform:[{rotate:'-12deg'}]},
+  splashName:{fontSize:31,fontWeight:'900',color:'#FFFFFF',letterSpacing:2,marginTop:25},greenText:{color:'#39C878'},splashCaption:{color:'#D6E5F5',fontSize:12,marginTop:9,letterSpacing:0.2},splashRule:{width:82,height:3,backgroundColor:'#1B4961',borderRadius:3,marginTop:27,overflow:'hidden'},splashRuleFill:{width:48,height:3,backgroundColor:'#39C878',borderRadius:3},splashPromise:{color:'#8EAFC6',fontSize:8,fontWeight:'800',letterSpacing:1.2,marginTop:14,textAlign:'center'},splashBottom:{width:'100%',alignItems:'center',gap:7},splashFoot:{color:'#A8BED8',fontSize:9,fontWeight:'900',letterSpacing:1.5},splashVersion:{color:'#57748C',fontSize:8,fontWeight:'700',letterSpacing:1.4},
   top:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:18},brandRow:{flexDirection:'row',alignItems:'center'},brand:{fontSize:18,fontWeight:'900',color:colors.navy},brandSub:{fontSize:10,color:colors.muted,marginTop:2},webChip:{backgroundColor:'#FFFFFF',borderWidth:1,borderColor:colors.border,borderRadius:12,paddingHorizontal:12,paddingVertical:9},webChipText:{fontSize:10,fontWeight:'900',color:colors.navy},
   location:{flexDirection:'row',alignItems:'center',marginBottom:15},
   statsRow:{flexDirection:'row',gap:8,marginBottom:15},statCard:{flex:1,backgroundColor:'#FFFFFF',borderRadius:13,borderWidth:1,borderColor:'#E7EDF2',paddingVertical:12,paddingHorizontal:9},statValue:{fontSize:20,fontWeight:'900',color:colors.navy},statLabel:{fontSize:8,fontWeight:'700',color:colors.muted,marginTop:3},pin:{fontSize:23,color:colors.green,marginRight:9},locationLabel:{fontSize:9,color:colors.muted,fontWeight:'900',letterSpacing:1},locationName:{fontSize:12,color:colors.ink,fontWeight:'800',marginTop:3},
