@@ -73,9 +73,9 @@ jobs:
           APK="app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
-          APP_ID="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | awk -F"'" '/^package: name=/ { print $2; exit }')"
+          APP_ID="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | awk -F"'" '/^package: name=/ && !printed { print $2; printed=1 }')"
           test "$APP_ID" = "so.gurmad24.test"
-          unzip -l "$APK" | grep -Fq 'assets/index.android.bundle'
+          unzip -l "$APK" | grep -F 'assets/index.android.bundle' >/dev/null
           echo "Verified Android package ID: $APP_ID"
 
       - name: Upload standalone test APK
