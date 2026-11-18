@@ -3,6 +3,8 @@ import { ActivityIndicator, Alert, Linking, Pressable, RefreshControl, SafeAreaV
 import { WebView } from 'react-native-webview';
 import { apiRequest } from './src/api/client';
 import { colors } from './src/theme/tokens';
+import { InfoMenu } from './src/components/InfoMenu';
+import { AdminDashboardPreview, HospitalDashboardPreview } from './src/components/NativeDashboards';
 
 type Hospital = { id: string; name: string; area?: string; address?: string; phone?: string; description?: string; verificationNote?: string; source?: string; verified?: boolean; hours?: string; publicEmail?: string; isLocalDraft?: boolean };
 const draftHospitals: Hospital[] = [];
@@ -11,7 +13,7 @@ const tabs = [
   { key: 'activity', label: 'Hawlahayga', icon: '◷' }, { key: 'account', label: 'Akoon', icon: '○' },
   { key: 'web', label: 'Web App', icon: '↗' },
 ] as const;
-type Tab = (typeof tabs)[number]['key'];
+type Tab = (typeof tabs)[number]['key'] | 'adminPreview' | 'hospitalPreview';
 
 function useHospitals() {
   const [items, setItems] = useState<Hospital[]>(draftHospitals);
@@ -60,12 +62,13 @@ function Splash() {
   </View>;
 }
 function Heading({ title, action, onPress }: { title: string; action?: string; onPress?: () => void }) {
-  return <View style={styles.headingRow}><Text style={styles.sectionTitle}>{title}</Text>{action && onPress ? <Pressable onPress={onPress}><Text style={styles.action}>{action} ›</Text></Pressable> : null}</View>;
+  return <View style={styles.headingRow}><Text style={styles.sectionTitle}>{title}</Text><View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>{action && onPress ? <Pressable onPress={onPress}><Text style={styles.action}>{action} ›</Text></Pressable> : null}<InfoMenu title={title} description={`Qaybta ${title} waxay kuu soo bandhigaysaa adeegyada iyo macluumaadka la xiriira. Faahfaahinta iyo ficillada la heli karo waxay ku xirnaanayaan nooca akoonkaaga iyo rukhsadahaaga.`} steps={['Taabo qaybta si aad u furto.', 'Akhri xogta iyo tilmaamaha ka muuqda.', 'Isticmaal ficillada kuu bannaan; xogta aan la xaqiijin ha u qaadan mid rasmi ah.']} actions={['Eeg macluumaadka qaybta.', 'Raac tilmaamaha isticmaalka.', 'La xiriir taageerada haddii xog khaldan jirto.']} /></View></View>;
 }
 function HospitalCard({ item }: { item: Hospital }) {
   return <View style={styles.hospitalCard}>
     <View style={styles.hospitalTop}><View style={styles.hospitalMark}><Text style={styles.hospitalMarkText}>✚</Text></View><View style={styles.hospitalTitle}><Text style={styles.hospitalName}>{item.name}</Text><Text style={styles.hospitalArea}>{item.area || 'Gaalkacyo'}</Text></View>
       <Text style={[styles.pill, item.isLocalDraft || !item.verified ? styles.pillDraft : styles.pillLive]}>{item.isLocalDraft ? 'Liis dadweyne' : item.verified ? 'La xaqiijiyey' : 'Xog server'}</Text>
+      <View style={{ marginLeft: 7 }}><InfoMenu title={item.name} description={item.description || 'Faahfaahinta adeegyada gaarka ah weli lagama helin isbitaalkan.'} steps={['Hubi magaca iyo goobta isbitaalka.', 'Akhri xaaladda xaqiijinta iyo xogta xiriirka.', 'Wac isbitaalka si aad u xaqiijiso adeegga iyo saacadaha ka hor booqashada.']} actions={['Eeg goobta iyo xogta xiriirka.', 'Wac haddii lambar la heli karo.', 'Ka warbixi xog khaldan adigoo adeegsanaya taageerada.']} /></View>
     </View>
     <Text style={styles.hospitalDescription}>{item.description || 'Isbitaal ku jira buugga dadweynaha; takhasuska iyo adeegyada gaarka ah lama sheegin.'}</Text>
     {item.verificationNote ? <Text style={styles.verificationNote}>{item.verificationNote}</Text> : null}
@@ -121,7 +124,7 @@ function useAuth() {
   return { user, loading, login, register, logout, refresh };
 }
 
-function AccountPage({ auth, openWeb }: { auth: ReturnType<typeof useAuth>; openWeb: () => void }) {
+function AccountPage({ auth, openWeb, onOpenAdmin, onOpenHospital }: { auth: ReturnType<typeof useAuth>; openWeb: () => void; onOpenAdmin: () => void; onOpenHospital: () => void }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState(''); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false); const [message, setMessage] = useState(''); const [consent, setConsent] = useState(false);
@@ -136,7 +139,7 @@ function AccountPage({ auth, openWeb }: { auth: ReturnType<typeof useAuth>; open
   };
   const signOut = async () => { setBusy(true); try { await auth.logout(); } catch { setMessage('Ka bixitaanka lama dhammaystirin. Isku day mar kale.'); } finally { setBusy(false); } };
   if (auth.loading) return <View style={styles.loadingPage}><ActivityIndicator color={colors.green} /><Text style={styles.muted}>Akoonka ayaa la hubinayaa…</Text></View>;
-  if (auth.user) return <ScrollView contentContainerStyle={styles.content}><Text style={styles.pageEyebrow}>GURMAD 24 · AKOON</Text><Text style={styles.pageTitle}>Akoonkayga</Text><View style={styles.profileCard}><View style={styles.profileMark}><Text style={styles.profileMarkText}>{auth.user.name.slice(0,1).toUpperCase()}</Text></View><Text style={styles.profileName}>{auth.user.name}</Text><Text style={styles.profileEmail}>{auth.user.email}</Text><Text style={styles.rolePill}>{auth.user.role === 'patient' ? 'BUKAAN' : auth.user.role.toUpperCase()}</Text></View><Pressable style={styles.primaryButton} onPress={openWeb}><Text style={styles.primaryButtonText}>Maamul xogtaada Web App-ka ↗</Text></Pressable><Pressable style={styles.secondaryButton} onPress={signOut} disabled={busy}><Text style={styles.secondaryText}>{busy ? 'Sug…' : 'Ka bax'}</Text></Pressable></ScrollView>;
+  if (auth.user) return <ScrollView contentContainerStyle={styles.content}><Text style={styles.pageEyebrow}>GURMAD 24 · AKOON</Text><Text style={styles.pageTitle}>Akoonkayga</Text><View style={styles.profileCard}><View style={styles.profileMark}><Text style={styles.profileMarkText}>{auth.user.name.slice(0,1).toUpperCase()}</Text></View><Text style={styles.profileName}>{auth.user.name}</Text><Text style={styles.profileEmail}>{auth.user.email}</Text><Text style={styles.rolePill}>{auth.user.role === 'patient' ? 'BUKAAN' : auth.user.role.toUpperCase()}</Text></View><Pressable style={styles.primaryButton} onPress={openWeb}><Text style={styles.primaryButtonText}>Maamul xogtaada Web App-ka ↗</Text></Pressable>{auth.user.role === 'admin' ? <Pressable style={[styles.secondaryButton,{backgroundColor:'#176B62'}]} onPress={onOpenAdmin}><Text style={styles.secondaryText}>Eeg dashboard-ka maamulka (hordhac)</Text></Pressable> : null}{['hospital_admin','provider_admin'].includes(auth.user.role) ? <Pressable style={[styles.secondaryButton,{backgroundColor:'#176B62'}]} onPress={onOpenHospital}><Text style={styles.secondaryText}>Eeg dashboard-ka isbitaalka (hordhac)</Text></Pressable> : null}<Pressable style={styles.secondaryButton} onPress={signOut} disabled={busy}><Text style={styles.secondaryText}>{busy ? 'Sug…' : 'Ka bax'}</Text></Pressable></ScrollView>;
   return <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled'><Text style={styles.pageEyebrow}>GURMAD 24 · AKOON</Text><Text style={styles.pageTitle}>{mode === 'login' ? 'Soo gal' : 'Akoon sameyso'}</Text><Text style={styles.pageSub}>Isticmaal akoonkaaga si aad u aragto codsiyada iyo kaararkaaga.</Text><View style={styles.authCard}>
     {mode === 'register' ? <TextInput value={name} onChangeText={setName} placeholder='Magaca oo buuxa' placeholderTextColor={colors.muted} style={styles.authInput} /> : null}
     <TextInput value={email} onChangeText={setEmail} placeholder='Email' placeholderTextColor={colors.muted} style={styles.authInput} keyboardType='email-address' autoCapitalize='none' autoComplete='email' />
@@ -194,7 +197,9 @@ export default function App() {
     {tab === 'home' ? <Home data={data} openHospitals={() => setTab('hospitals')} openWeb={openWeb} /> : null}
     {tab === 'hospitals' ? <Hospitals data={data} /> : null}
     {tab === 'activity' ? <ActivityPage auth={auth} onLogin={() => setTab('account')} onRefreshAuth={() => auth.refresh()} /> : null}
-    {tab === 'account' ? <AccountPage auth={auth} openWeb={openWeb} /> : null}
+    {tab === 'account' ? <AccountPage auth={auth} openWeb={openWeb} onOpenAdmin={() => setTab('adminPreview')} onOpenHospital={() => setTab('hospitalPreview')} /> : null}
+    {tab === 'adminPreview' ? <AdminDashboardPreview onBack={() => setTab('account')} /> : null}
+    {tab === 'hospitalPreview' ? <HospitalDashboardPreview onBack={() => setTab('account')} /> : null}
     {tab === 'web' ? <WebPage /> : null}
     <View style={styles.bottom}>{tabs.map(t => <Pressable key={t.key} style={styles.tab} onPress={() => setTab(t.key)} accessibilityRole="button" accessibilityState={{ selected: tab === t.key }}><Text style={[styles.tabIcon, tab === t.key && styles.tabActive]}>{t.icon}</Text><Text style={[styles.tabLabel, tab === t.key && styles.tabActive]}>{t.label}</Text>{tab === t.key ? <View style={styles.indicator} /> : null}</Pressable>)}</View>
   </View></SafeAreaView>;
