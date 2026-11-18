@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/native-premium-home-and-splash
+      - release/official-gurmad24-android
     paths:
       - "mobile-native/**"
       - ".github/workflows/build-gurmad24-apk.yml"
@@ -21,7 +22,7 @@ permissions:
 
 jobs:
   build-android-apk:
-    name: Build standalone test APK
+    name: Build official GURMAD 24 pilot APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -72,10 +73,10 @@ jobs:
           test -s "$APK"
           unzip -l "$APK" | grep -E 'assets/index.android.bundle|assets/index.android.bundle.hbc'
 
-      - name: Upload standalone test APK
+      - name: Upload official GURMAD 24 pilot APK
         uses: actions/upload-artifact@v4
         with:
-          name: gurmad24-android-standalone-test-apk
+          name: gurmad24-android-official-pilot-apk
           path: mobile-native/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
