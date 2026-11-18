@@ -170,7 +170,7 @@ module.exports = function (app) {
     const id = req.user.id;
     return {
       exportedAt: new Date().toISOString(), user: D.userView(req.user), consentAt: req.user.consentAt,
-      orders: store.filter('orders', o => o.userId === id), appointments: store.filter('appointments', a => a.userId === id), complaints: store.filter('complaints', c => c.userId === id),
+      orders: store.filter('orders', o => o.userId === id), appointments: store.filter('appointments', a => a.userId === id), complaints: store.filter('complaints', c => c.userId === id), travel: store.filter('travel', r => r.userId === id),
     };
   });
   app.post('/api/auth/delete-account', { auth: true, summary: 'Delete my account (anonymises personal data)' }, (req, res) => {
@@ -181,6 +181,7 @@ module.exports = function (app) {
     app.audit(req, 'user.deleted', 'user', u.id);
     u.name = 'Deleted user'; u.email = `deleted-${u.id}@invalid.local`; u.active = false; u.deletedAt = new Date().toISOString(); u.passwordHash = ''; u.deviceTokens = [];
     for (const a of store.filter('appointments', x => x.userId === u.id)) { a.contactPhone = ''; a.note = ''; }
+    for (const r of store.filter('travel', x => x.userId === u.id)) { r.contactPhone = ''; r.note = ''; }
     for (const s of store.filter('sessions', x => x.userId === u.id)) store.remove('sessions', s.id);
     store.save(); app.setSessionCookie(res, '', true);
     return { ok: true };

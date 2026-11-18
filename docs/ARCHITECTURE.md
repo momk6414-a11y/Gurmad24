@@ -12,7 +12,7 @@ src/supabase-store.js  production store (Supabase / Postgres; see docs/SUPABASE_
 src/migrations/        versioned data migrations (never edit old ones)
 src/domain.js          rates, views (what each audience may see), ledger, documents
 src/payments.js        payment abstraction (sandbox only; real providers = not connected)
-src/routes/*.js        auth · public · patient · org (hospital+provider) · ops · admin
+src/routes/*.js        auth · public · patient · org (hospital+provider) · ops · admin · travel (ticket/visa requests, pilot)
 public/                PWA: index.html, css, js (core, i18n, onboarding, splash, views/*), sw.js, manifest, icons
 mobile-native/         Expo React Native Android app (uses the same backend)
 supabase/migrations/   SQL migrations for the production database

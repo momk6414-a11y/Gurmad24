@@ -86,7 +86,7 @@ export async function home() {
         action('/map', 'pin', 'Live map', 'blue'),
         action('/services', 'ambulance', 'Ambulance', 'red'),
         action('/me/appointments', 'calendar', 'Appointments', 'green'),
-        action('/me/orders', 'bag', 'My cards', 'blue'),
+        action('/travel', 'globe', 'Travel & visa', 'blue'),
         action('/me/support', 'chat', 'Support', 'green'),
         action('/emergency', 'alert', 'Emergency', 'red')
       )
@@ -101,7 +101,7 @@ export async function home() {
       h('span', { class: 'g24h-promo__go', 'aria-hidden': 'true' }, '→')),
     h('section', { class: 'g24h-sec' },
       h('div', { class: 'g24h-sec__head' }, h('h2', t('Coming next'))),
-      h('div', { class: 'g24h-soons' }, soon('globe', 'Care abroad'), soon('mic', 'Video consult'), soon('location', 'Travel & visa'))),
+      h('div', { class: 'g24h-soons' }, soon('globe', 'Care abroad'), soon('mic', 'Video consult'))),
     h('div', { class: 'g24h-trust' },
       h('span', icon('lock', 15), t('Your data is stored securely')),
       h('span', icon('globe', 15), t('Somali + English')),

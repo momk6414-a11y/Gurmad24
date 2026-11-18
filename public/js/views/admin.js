@@ -2,6 +2,7 @@
 import { S, t, h, icon, GET, POST, PATCH, PUT, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, fdate, fdt, confirmBox, downloadApi, link, pct } from '../core.js';
 import { receiptNode } from './shared.js';
 import { liveBoard } from './ops.js';
+import { travelTitle, travelDetails } from './travel.js';
 
 const head = (title, sub, right) => h('div', { class: 'page-head' }, h('div', h('h2', t(title)), sub ? h('p', t(sub)) : null), right || null);
 const refresh = () => window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -145,6 +146,24 @@ export async function complaints() {
   const act = c => { let m; m = modal(c.code, form([{ name: 'status', label: 'Status', type: 'select', options: [['open', 'Open'], ['in_review', 'In review'], ['resolved', 'Resolved'], ['rejected', 'Rejected']], default: c.status }, { name: 'text', label: 'Response to the patient (optional)', type: 'textarea', max: 1000 }], { submit: 'Save', cancel: () => m.close(), onSubmit: async v => { await PATCH('/admin/complaints/' + c.id, v); m.close(); refresh(); } })); };
   return h('div', head('Complaints and disputes'), panel(null, table([{ label: 'Ticket', key: 'code' }, { label: 'Subject', key: 'subject' }, { label: 'Patient', key: 'patientName' }, { label: 'About', render: c => c.orgName || t('General') }, { label: 'Status', render: c => badge(c.status) }, { label: 'Updated', render: c => fdate(c.updatedAt) },
     { label: '', render: c => h('button', { class: 'btn sm', onclick: () => modal(c.code + ' - ' + c.subject, h('div', c.responses.map(r => h('p', h('small', { style: 'color:var(--muted)' }, fdt(r.ts) + ' - ' + r.by + ': '), r.text)), h('div', { class: 'actions' }, h('button', { class: 'btn', onclick: () => act(c) }, t('Respond / change status'))))) }, t('Open')) }], cs, { empty: 'No complaints.' })));
+}
+
+const TRAVEL_NEXT = { requested: [['reviewing', 'Under review'], ['declined', 'Declined']], reviewing: [['quoted', 'Quote sent'], ['declined', 'Declined']], quoted: [['completed', 'Completed'], ['declined', 'Declined']] };
+export async function travel({ query }) {
+  const status = query.status || '';
+  const { requests } = await GET('/admin/travel' + (status ? '?status=' + encodeURIComponent(status) : ''));
+  const review = r => {
+    let m; m = modal(r.code + ' - ' + travelTitle(r), h('div',
+      h('dl', { class: 'kv' }, [[t('Patient'), r.patientName], [t('Phone'), r.contactPhone || '-'], ...travelDetails(r), [t('Note'), r.note || '-']].flatMap(([k, v]) => [h('dt', k), h('dd', v)])),
+      form([{ name: 'status', label: 'New status', type: 'select', options: TRAVEL_NEXT[r.status] }, { name: 'adminNote', label: 'Note to the patient', type: 'textarea', max: 300, rows: 3, default: r.adminNote }],
+        { submit: 'Save', cancel: () => m.close(), onSubmit: async v => { await PATCH('/admin/travel/' + r.id, v); m.close(); toast(t('Saved')); refresh(); } })));
+  };
+  const filter = h('div', { class: 'chips' }, [['', 'All'], ['requested', 'Requested'], ['reviewing', 'Under review'], ['quoted', 'Quote sent'], ['completed', 'Completed'], ['declined', 'Declined'], ['cancelled', 'Cancelled']].map(([k, l]) =>
+    h('button', { class: 'chip', 'aria-pressed': status === k, onclick: () => go('/admin/travel' + (k ? '?status=' + k : '')) }, t(l))));
+  return h('div', head('Travel requests', 'Flight-ticket and visa requests. Pilot: review and reply only; nothing is booked or charged.'), filter,
+    panel(null, requests.length ? table([{ label: 'Code', key: 'code' }, { label: 'Patient', key: 'patientName' }, { label: 'Request', render: travelTitle },
+      { label: 'Date', render: r => fdate(r.departDate || r.travelDate) }, { label: 'Status', render: r => badge(r.status) },
+      { label: '', render: r => TRAVEL_NEXT[r.status] ? h('button', { class: 'btn sm', onclick: () => review(r) }, t('Review')) : null }], requests) : emptyState('No travel requests yet.')));
 }
 
 export async function audit({ query }) {
