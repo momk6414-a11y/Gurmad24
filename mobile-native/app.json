@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "GURMAD 24 Pilot",
+    "name": "GURMAD 24",
     "slug": "gurmad24",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "scheme": "gurmad24pilot",
+    "scheme": "gurmad24",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "so.gurmad24.pilot"
+      "bundleIdentifier": "so.gurmad24.app"
     },
     "android": {
-      "package": "so.gurmad24.pilot",
+      "package": "so.gurmad24.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon-foreground.png",
         "backgroundColor": "#FFFFFF"
