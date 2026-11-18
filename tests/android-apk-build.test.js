@@ -18,6 +18,6 @@ test('Android side-by-side test APK keeps a separate package identity', () => {
 test('Android APK workflow verifies package identity, signature and embedded bundle', () => {
   assert.match(workflow, /apksigner.*verify/);
   assert.match(workflow, /aapt.*dump badging/);
-  assert.match(workflow, /so\\.gurmad24\\.test/);
-  assert.match(workflow, /assets\\/index\\.android\\.bundle/);
+  assert.match(workflow, /so\.gurmad24\.test/);
+  assert.match(workflow, /assets\/index\.android\.bundle/);
 });
