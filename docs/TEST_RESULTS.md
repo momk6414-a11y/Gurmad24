@@ -1,5 +1,7 @@
 # Natiijooyinka tijaabada (la socodsiiyey 2026-11-04)
 
+> Fiiro: tirada hadda jirta waa **91 tijaabo (91 gudbay)** — natiijadan hoose waa sawirka 2026-11-04.
+
 ## Tijaabooyin otomaatig ah — `npm test` (Node v22.23.4)
 ```
 # tests 33
