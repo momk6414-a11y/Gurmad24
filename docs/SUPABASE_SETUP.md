@@ -23,6 +23,8 @@ Render Free's filesystem is ephemeral. Any records created only in the old local
 
 ## Backups and production readiness
 
+Encrypted off-site backups: follow `docs/BACKUP_SETUP_SOMALI.md` (GitHub Actions secrets `SUPABASE_DB_URL` and `BACKUP_ENCRYPTION_KEY`).
+
 Supabase Free database storage is durable while the project remains active, but it does not provide independent point-in-time backups. This adapter disables misleading local JSON backups when Supabase is active. Before real patient information is stored, configure encrypted off-site backups and test a restore. Keep GURMAD 24 in PILOT mode: live dispatch remains OFF and payments remain sandbox-only.
 
 ## Verification
