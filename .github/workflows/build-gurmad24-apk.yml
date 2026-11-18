@@ -60,7 +60,7 @@ jobs:
 
       # React Native's legacy variant API is not yet compatible with AGP 9's default DSL.
       - name: Keep Android legacy DSL enabled for React Native
-        run: printf '\\nandroid.newDsl=false\\n' >> android/gradle.properties
+        run: printf '\nandroid.newDsl=false\n' >> android/gradle.properties
 
       - name: Type-check React Native app
         run: npm run typecheck
