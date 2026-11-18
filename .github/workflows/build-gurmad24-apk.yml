@@ -7,6 +7,12 @@ on:
     paths:
       - "mobile-native/**"
       - ".github/workflows/build-gurmad24-apk.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "mobile-native/**"
+      - ".github/workflows/build-gurmad24-apk.yml"
   workflow_dispatch:
 
 permissions:
