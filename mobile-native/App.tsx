@@ -4,7 +4,7 @@ import { WebView } from 'react-native-webview';
 import { apiRequest } from './src/api/client';
 import { colors } from './src/theme/tokens';
 import { InfoMenu } from './src/components/InfoMenu';
-import { AdminDashboardPreview, HospitalDashboardPreview } from './src/components/NativeDashboards';
+import { AdminDashboard, HospitalDashboard } from './src/components/NativeDashboards';
 
 type Hospital = { id: string; name: string; area?: string; address?: string; phone?: string; description?: string; verificationNote?: string; source?: string; verified?: boolean; hours?: string; publicEmail?: string; isLocalDraft?: boolean };
 const draftHospitals: Hospital[] = [];
@@ -198,8 +198,8 @@ export default function App() {
     {tab === 'hospitals' ? <Hospitals data={data} /> : null}
     {tab === 'activity' ? <ActivityPage auth={auth} onLogin={() => setTab('account')} onRefreshAuth={() => auth.refresh()} /> : null}
     {tab === 'account' ? <AccountPage auth={auth} openWeb={openWeb} onOpenAdmin={() => setTab('adminPreview')} onOpenHospital={() => setTab('hospitalPreview')} /> : null}
-    {tab === 'adminPreview' ? <AdminDashboardPreview onBack={() => setTab('account')} /> : null}
-    {tab === 'hospitalPreview' ? <HospitalDashboardPreview onBack={() => setTab('account')} /> : null}
+    {tab === 'adminPreview' && auth.user?.role === 'admin' ? <AdminDashboard onBack={() => setTab('account')} /> : null}
+    {tab === 'hospitalPreview' && auth.user && ['hospital_admin','provider_admin'].includes(auth.user.role) ? <HospitalDashboard onBack={() => setTab('account')} role={auth.user.role} /> : null}
     {tab === 'web' ? <WebPage /> : null}
     <View style={styles.bottom}>{tabs.map(t => <Pressable key={t.key} style={styles.tab} onPress={() => setTab(t.key)} accessibilityRole="button" accessibilityState={{ selected: tab === t.key }}><Text style={[styles.tabIcon, tab === t.key && styles.tabActive]}>{t.icon}</Text><Text style={[styles.tabLabel, tab === t.key && styles.tabActive]}>{t.label}</Text>{tab === t.key ? <View style={styles.indicator} /> : null}</Pressable>)}</View>
   </View></SafeAreaView>;
