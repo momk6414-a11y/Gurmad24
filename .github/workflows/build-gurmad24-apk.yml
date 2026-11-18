@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - main
+      - feature/native-premium-home-and-splash
+    paths:
+      - "mobile-native/**"
+      - ".github/workflows/build-gurmad24-apk.yml"
+  pull_request:
+    branches:
+      - main
     paths:
       - "mobile-native/**"
       - ".github/workflows/build-gurmad24-apk.yml"
@@ -14,7 +21,7 @@ permissions:
 
 jobs:
   build-android-apk:
-    name: Build installable test APK
+    name: Build standalone test APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -53,14 +60,28 @@ jobs:
       - name: Type-check React Native app
         run: npm run typecheck
 
-      - name: Build debug APK
+      # A debug APK expects Metro. A release APK embeds index.android.bundle.
+      - name: Build standalone release APK
         working-directory: mobile-native/android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
 
-      - name: Upload test APK
+      - name: Verify standalone APK package, signature and bundle
+        working-directory: mobile-native/android
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
+          APP_ID="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | awk -F"'" '/^package: name=/ && !printed { print $2; printed=1 }')"
+          test "$APP_ID" = "so.gurmad24.test"
+          unzip -l "$APK" | grep -F 'assets/index.android.bundle' >/dev/null
+          echo "Verified Android package ID: $APP_ID"
+
+      - name: Upload standalone test APK
         uses: actions/upload-artifact@v4
         with:
-          name: gurmad24-android-test-apk
-          path: mobile-native/android/app/build/outputs/apk/debug/app-debug.apk
+          name: gurmad24-android-standalone-test-apk
+          path: mobile-native/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
