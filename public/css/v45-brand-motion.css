@@ -102,3 +102,76 @@ td,th{border-color:rgba(11,61,145,.1);color:#315477}
   .gurmad-splash__ambient::before,.gurmad-splash__ambient::after,.gurmad-splash__logo,.gurmad-splash__name,.gurmad-splash__tagline,.gurmad-splash__waves path{animation:none!important}
   .gurmad-splash__logo,.gurmad-splash__name,.gurmad-splash__tagline{opacity:1;transform:none}
 }
+
+
+/* GURMAD 24 V47 — premium black theme with accessible high-contrast text. */
+:root{
+  color-scheme:dark;
+  --v44-bg:#05070B;--v44-bg2:#0B111B;--v44-surface:#101722;--v44-surface2:#151F2D;
+  --v44-line:rgba(174,198,226,.16);--v44-ink:#F3F7FC;--v44-muted:#B5C2D2;
+  --v44-shadow:0 18px 48px rgba(0,0,0,.38);
+}
+html,body{
+  color:#F3F7FC!important;
+  background:#05070B!important;
+  color-scheme:dark;
+}
+body::before{opacity:0!important}
+.top,.tabs{
+  background:rgba(8,12,19,.97)!important;
+  border-color:rgba(174,198,226,.16)!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.35)!important;
+}
+.brand b,.page-head h2,.sec-title,.panel h3,.tile h3,
+.hospital-card h3,.service-card h3,.g24h-hello h1,
+.g24h-sec__head h2,.hc h4,.g24-module h3{color:#F3F7FC!important}
+.brand small,.page-head p,.footer,.g24h-trust,
+.g24-module p,.setup-list small{color:#B5C2D2!important}
+.tabs a,.tabs .nav-more,.g24h-act,.g24h-act__label,
+.setup-list a,.label{color:#E5EDF7!important}
+.tabs a[aria-current=page],.tabs .nav-more[aria-current=page]{
+  color:#FFFFFF!important;background:rgba(46,184,46,.16)!important;
+  border-color:rgba(46,184,46,.4)!important
+}
+.panel,.tile,.modal,.wallet-item,.pm-card,.pm-list,.cardpass,
+.org-card,.hospital-card,.service-card,.visit-card,.appointment-card,
+.g24h-sec,.hc,.g24-module,.hd-hero,.setup,.g24h-search,.g24h-soon{
+  color:#F3F7FC!important;
+  background:linear-gradient(145deg,#141D29,#0B111B)!important;
+  border-color:rgba(174,198,226,.16)!important;
+  box-shadow:0 16px 38px rgba(0,0,0,.3)!important;
+}
+.panel p,.tile p,.modal p,.hospital-card p,.service-card p,
+.visit-card p,.appointment-card p,.g24h-sec p,.g24h-hosp,
+.g24h-act__label{color:#D4DEEA!important}
+input,select,textarea{
+  color:#F3F7FC!important;background:#0B111B!important;
+  border-color:rgba(174,198,226,.25)!important
+}
+input::placeholder,textarea::placeholder{color:#A7B5C7!important;opacity:1}
+label{color:#D4DEEA!important}
+table{background:#0B111B!important;color:#EAF1F8!important}
+th{background:#182536!important;color:#FFFFFF!important}
+td,th{border-color:rgba(174,198,226,.16)!important;color:#E1EAF4!important}
+.btn.ghost{background:#151F2D!important;color:#F3F7FC!important;border-color:rgba(174,198,226,.25)!important}
+.toast{background:#151F2D!important;color:#FFFFFF!important;border-color:rgba(174,198,226,.22)!important}
+.demo-banner{background:#302514!important;color:#FFE5B0!important}
+.g24h-hosp{background:linear-gradient(145deg,#151F2D,#0B111B)!important;color:#F3F7FC!important}
+.g24h-hosp b,.g24h-hosp span{color:#EAF1F8!important}
+.gurmad-splash{
+  background:radial-gradient(ellipse at 50% 35%,#151F2D 0%,#080C13 55%,#030508 100%)!important
+}
+.gurmad-splash__name,.gurmad-splash__tagline{color:#FFFFFF!important}
+.gurmad-splash__ambient::before,.gurmad-splash__ambient::after{
+  background:radial-gradient(circle,rgba(46,184,46,.09),rgba(11,61,145,.08) 42%,transparent 70%)!important
+}
+.gurmad-splash__waves path:nth-child(1){fill:#111D2B!important}
+.gurmad-splash__waves path:nth-child(2){fill:#0B1725!important}
+.gurmad-splash__waves path:nth-child(3){fill:#091321!important}
+.gurmad-splash__waves path:nth-child(4){fill:#05070B!important}
+.g24h-sos{color:#FFFFFF!important}
+.g24h-sos p,.g24h-sos__tag{color:#F0F7FF!important}
+/* Preserve emergency red and primary action green for clear recognition. */
+.btn:not(.ghost):not(.danger),button.primary{
+  color:#FFFFFF!important
+}
