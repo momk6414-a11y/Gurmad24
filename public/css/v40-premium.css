@@ -130,3 +130,17 @@ tr:hover td { background:rgba(82,223,208,.035); }
 @media(prefers-reduced-motion:reduce) {
   *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; }
 }
+
+/* V40 dispatch motion tokens: visible, distinct, and clearly a demo animation */
+.tm-dispatch-motion { pointer-events:none; }
+.tm-dispatch-halo { fill:#06233a; stroke:#fff; stroke-width:2.5; filter:drop-shadow(0 0 5px rgba(255,255,255,.8)); }
+.tm-dispatch-letter { fill:#fff; font:900 10px/1 system-ui,sans-serif; }
+.tm-dispatch-motion.u-ambulance .tm-dispatch-halo { fill:#087caa; stroke:#8cf1ff; }
+.tm-dispatch-motion.u-police .tm-dispatch-halo { fill:#174bba; stroke:#a9c7ff; }
+.tm-dispatch-motion.u-fire .tm-dispatch-halo { fill:#d83d22; stroke:#ffd0b8; }
+.tm-route { stroke-linecap:round; }
+.tm-trail { stroke-linecap:round; }
+.tmap .tm-loc-status { border:1px solid var(--v40-line); border-radius:12px; background:rgba(5,24,43,.94); color:#eaffff; box-shadow:var(--v40-shadow); padding:9px 12px; }
+.g24h-hosp,.hospital-card,.org-card,.service-card,.visit-card,.appointment-card { transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease; }
+.g24h-hosp:hover,.hospital-card:hover,.org-card:hover,.service-card:hover,.visit-card:hover,.appointment-card:hover { transform:translateY(-4px); border-color:rgba(82,223,208,.55); box-shadow:0 22px 44px rgba(0,8,22,.34); }
+@media(prefers-reduced-motion:reduce) { .tm-dispatch-motion { display:none; } }
