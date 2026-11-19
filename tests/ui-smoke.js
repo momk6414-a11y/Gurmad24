@@ -57,6 +57,19 @@ const { chromium } = require('playwright');
     await op.waitForSelector('.tm-veh', { timeout: 6000 }).catch(() => errors.push('map: simulated vehicle sprite was not rendered'));
     if (!(await op.locator('.tm-sim:not([hidden])').count())) errors.push('map: SIMULATION label is not visible next to vehicles');
   }
+  // Hospital UX: a brand-new hospital with no details must not show "-"/null placeholders and must guide the admin.
+  {
+    t.app.limiter.reset(); const rc = t.client();
+    const rg = await rc.post('/api/auth/register-org', { name: 'Blank Admin', email: 'blank@example.com', password: 'Sahal2026x1', lang: 'en', consent: true, orgType: 'hospital', orgName: 'Blank Hospital' });
+    const ad = await require('./helper').admin(t); await ad.patch('/api/admin/orgs/' + rg.data.org.id, { status: 'verified' });
+    const g = await session('guest-blank', null, null, ['/hospitals/' + rg.data.org.id]);
+    const gt = await g.locator('#view').innerText();
+    if (/\bnull\b|undefined/.test(gt) || gt.split('\n').some(l => l.trim() === '-')) errors.push('hospital: blank hospital page shows placeholder values');
+    if (!(await g.locator('.hd-hero .btn').count())) errors.push('hospital: profile hero actions missing');
+    const ho = await session('hospital-blank', 'blank@example.com', 'Sahal2026x1', ['/org']);
+    await ho.waitForSelector('.setup .setup-list li', { timeout: 6000 }).catch(() => {});
+    if (!(await ho.locator('.setup .setup-list li').count())) errors.push('hospital: setup checklist missing for an incomplete profile');
+  }
   await browser.close(); await t.stop();
   console.log(`routes checked: ${checked}`); console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'No browser errors.'); process.exit(errors.length ? 1 : 0);
 })();

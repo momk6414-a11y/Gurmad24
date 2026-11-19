@@ -63,7 +63,7 @@ export async function dashboard({ query }) {
       panel('Cases', h('div', h('div', { class: 'chips' }, [['', 'All'], ...RESP.map(r => [r, SERVICE_NAME[r]])].map(([v, l]) => h('button', { class: 'chip', 'aria-pressed': responder === v, onclick: () => go('/ops' + (v ? '?responder=' + v : '') + (status ? (v ? '&' : '?') + 'status=' + status : '')) }, t(l)))),
         h('div', { class: 'chips' }, [['', 'All'], ...STATUSES.map(s => [s, s])].map(([v, l]) => h('button', { class: 'chip', 'aria-pressed': status === v, onclick: () => go('/ops' + (v ? '?status=' + v : '') + (responder ? (v ? '&' : '?') + 'responder=' + responder : '')) }, v ? badgeText(v) : t(l)))),
         table([{ label: 'Code', render: c => link('/ops/case/' + c.id, c.code) }, { label: 'Service', render: c => respTag(c.responder) }, { label: 'Type', render: c => catName(c.category) }, { label: 'Area', render: c => c.area || '-' }, { label: 'Status', render: c => badge(c.status) },
-          { label: 'Provider', render: c => c.assignedOrgName || '-' }, { label: 'Created', render: c => fdt(c.createdAt) }], visibleCases, { empty: view === 'today' ? 'No requests recorded today.' : view === 'active' ? 'No active cases right now.' : 'No cases.' }))));
+          { label: 'Provider', render: c => c.assignedOrgName || t('Not assigned yet') }, { label: 'Created', render: c => fdt(c.createdAt) }], visibleCases, { empty: view === 'today' ? 'No requests recorded today.' : view === 'active' ? 'No active cases right now.' : 'No cases.' }))));
   };
   await load();
   S.poll = setInterval(() => load().catch(() => stopPoll()), 3000);
@@ -92,7 +92,7 @@ export async function caseDetail({ id }) {
     h('div', { class: 'grid g2' },
       panel('Case', h('div', h('dl', { class: 'kv' }, h('dt', t('Mode')), h('dd', t('SIMULATION')), h('dt', t('Service')), h('dd', respTag(c.responder)), h('dt', t('Source')), h('dd', c.source), h('dt', t('Created')), h('dd', fdt(c.createdAt)), h('dt', t('Note')), h('dd', c.note || '-'),
         h('dt', t('Location')), h('dd', loc ? h('a', { href: osmLink(loc), target: '_blank', rel: 'noopener noreferrer' }, icon('pin', 16), loc.lat + ', ' + loc.lng + (loc.source === 'gps' ? ' (GPS)' : '')) : '-'),
-        h('dt', t('Provider')), h('dd', c.assignedOrgName || '-'), tr && tr.etaMinutes ? h('dt', t('ETA')) : null, tr && tr.etaMinutes ? h('dd', t('{m} min (simulated)', { m: tr.etaMinutes })) : null))),
+        h('dt', t('Provider')), h('dd', c.assignedOrgName || t('Not assigned yet')), tr && tr.etaMinutes ? h('dt', t('ETA')) : null, tr && tr.etaMinutes ? h('dd', t('{m} min (simulated)', { m: tr.etaMinutes })) : null))),
       panel('Actions', h('div', c.autopilot ? h('p', { class: 'hint' }, t('Demo autopilot is moving this case. Any action you take stops it.')) : null,
         ['received', 'assigned'].includes(c.status) ? h('div', h('div', { class: 'field' }, h('label', t('Assign responder')), sel), h('button', { class: 'btn sm', onclick: () => sel.value ? change({ assignedOrgId: sel.value }) : toast(t('Choose a provider first.'), 'err') }, t('Assign'))) : null,
         h('div', { class: 'actions' }, c.next.filter(n => n !== 'assigned').map(n => h('button', { class: 'btn sm' + (['cancelled', 'received'].includes(n) ? ' ghost' : ''), onclick: () => change({ status: n }) }, t(L[n])))), c.next.length ? null : h('p', { style: 'color:var(--muted)' }, t('This case is finished.'))))),

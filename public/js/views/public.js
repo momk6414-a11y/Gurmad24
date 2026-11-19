@@ -1,5 +1,5 @@
 // Public + authentication screens: home, health card marketplace, hospitals, services, emergency info, login/register.
-import { SS, S, t, h, icon, GET, POST, api, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, link, fdate, setLang } from '../core.js';
+import { SS, S, t, h, icon, GET, POST, api, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, link, fdate, setLang, kv, hasVal } from '../core.js';
 import { receiptNode, cardPass } from './shared.js';
 import { liveMap, osmLink, PLACES } from '../map.js';
 
@@ -196,8 +196,7 @@ export async function cardDetail({ id }) {
       panel(null, h('div',
         h('div', { class: 'hosp', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, h('b', hsp.name), verified(hsp.verified), h('span', { class: 'badge demo' }, t('DEMO'))),
         h('div', { class: 'price', style: 'font-size:34px;font-weight:850;color:var(--mint);margin:8px 0' }, money(c.priceCents)),
-        h('dl', { class: 'kv' }, h('dt', t('Validity')), h('dd', t('{n} days from purchase', { n: c.validityDays })), h('dt', t('Eligibility')), h('dd', c.eligibility || '-'),
-          h('dt', t('Hospital contact')), h('dd', hsp.phone ? h('a', { class: 'tel', href: 'tel:' + hsp.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), hsp.phone) : '-')),
+        kv([[t('Validity'), t('{n} days from purchase', { n: c.validityDays })], [t('Eligibility'), c.eligibility], [t('Hospital contact'), hsp.phone ? h('a', { class: 'tel', href: 'tel:' + hsp.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), hsp.phone) : null]]),
         h('div', { class: 'actions' }, h('button', { class: 'btn', onclick: () => orderFlow(c) }, icon('bag'), t('Order this card (demo)')), h('button', { class: 'btn ghost', onclick: () => { if (!S.cmp.includes(c.id) && S.cmp.length < 3) S.cmp.push(c.id); renderCompareBar(); toast(t('Added to compare')); } }, t('Compare'))))),
       panel('Included services', c.included.length ? list(c.included) : h('p', '-'))),
     h('div', { class: 'grid g2' }, panel('Not included', c.excluded.length ? list(c.excluded) : h('p', '-')), panel('Refund and cancellation policy', h('p', c.refundPolicy))),
@@ -269,8 +268,8 @@ export async function hospitals() {
   let tm; q.oninput = () => { clearTimeout(tm); tm = setTimeout(load, 250); }; load();
   return h('div', head('Hospital directory', 'Administrator-verified hospitals and clearly labelled public listings.'), demoNote('Public directory entries are not hospital-verified. Call the hospital to confirm details before relying on them.'), h('div', { class: 'field' }, q), out);
 }
-const orgTile = o => h('article', { class: 'hc' }, h('img', { class: 'art', src: '/img/org-' + (o.type === 'hospital' ? 'hospital' : o.type === 'lab' ? 'lab' : 'ambulance') + '.svg', alt: '', width: 320, height: 112, loading: 'lazy' }), h('h4', o.name), h('div', { class: 'hosp' }, o.area, verified(o.verified)),
-  h('div', { class: 'meta' }, o.description), o.type === 'hospital' ? h('a', { class: 'btn sm', href: '#/hospitals/' + o.id }, t('View details')) : (o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : null));
+const orgTile = o => h('article', { class: 'hc' }, h('img', { class: 'art', src: '/img/org-' + (o.type === 'hospital' ? 'hospital' : o.type === 'lab' ? 'lab' : 'ambulance') + '.svg', alt: '', width: 320, height: 112, loading: 'lazy' }), h('h4', o.name), h('div', { class: 'hosp' }, hasVal(o.area) ? o.area : null, verified(o.verified)),
+  hasVal(o.description) ? h('div', { class: 'meta' }, o.description) : null, o.type === 'hospital' ? h('a', { class: 'btn sm', href: '#/hospitals/' + o.id }, t('View details')) : (o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : null));
 
 const directoryHospitalTile = o => h('article', { class: 'hc' },
   h('img', { class: 'art', src: '/img/org-hospital.svg', alt: '', width: 320, height: 112, loading: 'lazy' }),
@@ -285,11 +284,28 @@ const directoryHospitalTile = o => h('article', { class: 'hc' },
 
 export async function hospitalDetail({ id }) {
   const r = await GET('/hospitals/' + id); const o = r.hospital;
-  return h('div', head(o.name, o.area, h('button', { class: 'btn', onclick: () => appointmentModal(o, r.services) }, icon('calendar'), t('Request appointment'))),
-    h('div', { class: 'grid g2' },
-      panel('About', h('div', h('p', o.description || '-'), h('dl', { class: 'kv' }, h('dt', t('Address')), h('dd', o.address || '-'), h('dt', t('Hours')), h('dd', o.hours || '-'), h('dt', t('Phone')), h('dd', o.phone ? h('a', { class: 'tel', href: 'tel:' + o.phone.replace(/[^+\d]/g, '') }, icon('phone', 16), o.phone) : '-')))),
-      panel('Services and prices', r.services.length ? table([{ label: 'Service', key: 'name' }, { label: 'Price', render: s => money(s.priceCents) }], r.services) : emptyState('No services listed.'))),
-    panel('Health cards', r.cards.length ? h('div', { class: 'grid g3' }, r.cards.map(c => cardTile(c))) : emptyState('No cards published yet.')));
+  const tel = o.phone ? 'tel:' + String(o.phone).replace(/[^+\d]/g, '') : null;
+  const hasPos = typeof o.lat === 'number' && typeof o.lng === 'number';
+  const initials = String(o.name || '?').trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+  const hero = h('section', { class: 'hd-hero' },
+    h('div', { class: 'hd-id' },
+      h('span', { class: 'hd-logo', 'aria-hidden': 'true' }, initials),
+      h('div', { class: 'hd-title' }, h('h2', o.name),
+        h('div', { class: 'hd-tags' }, hasVal(o.area) ? h('span', { class: 'badge' }, icon('pin', 14), o.area) : null, verified(o.verified),
+          r.services.length ? h('span', { class: 'badge' }, t('{n} services', { n: r.services.length })) : null,
+          r.cards.length ? h('span', { class: 'badge' }, t('{n} health cards', { n: r.cards.length })) : null))),
+    h('div', { class: 'hd-actions' },
+      h('button', { class: 'btn', onclick: () => appointmentModal(o, r.services) }, icon('calendar'), t('Request appointment')),
+      tel ? h('a', { class: 'btn ghost', href: tel }, icon('phone', 16), t('Call')) : null,
+      hasPos ? h('a', { class: 'btn ghost', href: osmLink(o), target: '_blank', rel: 'noopener noreferrer' }, icon('pin', 16), t('Directions')) : null));
+  const contact = kv([[t('Address'), o.address], [t('Hours'), o.hours], [t('Phone'), o.phone ? h('a', { class: 'tel', href: tel }, icon('phone', 16), o.phone) : null], [t('Email'), o.email ? h('a', { href: 'mailto:' + o.email }, o.email) : null]]);
+  const about = hasVal(o.description) || contact
+    ? panel('About', h('div', hasVal(o.description) ? h('p', o.description) : null, contact))
+    : panel('About', h('p', { class: 'hint' }, t('This hospital has not added its details yet. Use Request appointment to contact it.')));
+  return h('div', { class: 'hd' }, hero,
+    h('div', { class: 'grid g2' }, about,
+      r.services.length ? panel('Services and prices', table([{ label: 'Service', key: 'name' }, { label: 'Price', render: s => money(s.priceCents) }], r.services)) : null),
+    r.cards.length ? panel('Health cards', h('div', { class: 'grid g3' }, r.cards.map(c => cardTile(c)))) : null);
 }
 
 export function appointmentModal(org, services = []) {

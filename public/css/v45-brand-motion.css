@@ -1,0 +1,106 @@
+/* GURMAD 24 V45 — brand motion identity and premium light environment. */
+:root{
+  color-scheme:light;
+  --v44-bg:#f4f8ff;--v44-bg2:#edf4ff;--v44-surface:#ffffff;--v44-surface2:#f5f9ff;
+  --v44-line:rgba(11,61,145,.12);--v44-mint:#2EB82E;--v44-cyan:#0B75bd;
+  --v44-ink:#12345e;--v44-muted:#58708f;--v44-shadow:0 18px 48px rgba(11,61,145,.09);
+}
+html{background:#f4f8ff;color-scheme:light}
+body{
+  color:#12345e;
+  background:
+    radial-gradient(ellipse at 8% 8%,rgba(46,184,46,.075),transparent 28%),
+    radial-gradient(ellipse at 92% 18%,rgba(11,61,145,.09),transparent 30%),
+    linear-gradient(180deg,#f8fbff 0%,#f1f6ff 52%,#f8fbff 100%);
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.38;
+  background-image:radial-gradient(rgba(11,61,145,.13) .7px,transparent .7px);
+  background-size:24px 24px;mask-image:linear-gradient(180deg,#000,transparent 72%);
+}
+.top{background:rgba(255,255,255,.88);border-bottom:1px solid rgba(11,61,145,.1);box-shadow:0 10px 32px rgba(11,61,145,.06)}
+.brand b{color:#0B3D91}.brand small{color:#58708f}
+.tabs{background:rgba(255,255,255,.92);border-color:rgba(11,61,145,.12);box-shadow:0 10px 28px rgba(11,61,145,.07)}
+.tabs a,.tabs .nav-more{color:#315477}
+.tabs a[aria-current=page],.tabs .nav-more[aria-current=page]{background:linear-gradient(135deg,rgba(46,184,46,.13),rgba(11,61,145,.07));border-color:rgba(46,184,46,.24);color:#0B3D91}
+.demo-banner{background:#fff8e8;color:#795313;border-color:rgba(183,126,20,.22)}
+.page-head h2,.sec-title{color:#0B3D91}
+.page-head p{color:#58708f}
+.panel,.tile,.modal,.cardpass,.wallet-item,.pm-card,.pm-list,.org-card,.hospital-card,.service-card,.visit-card,.appointment-card{
+  color:#12345e;border-color:rgba(11,61,145,.12);box-shadow:0 14px 36px rgba(11,61,145,.07)
+}
+.panel,.tile,.modal,.wallet-item,.pm-card,.pm-list{background:rgba(255,255,255,.96)}
+.panel h3,.tile h3,.hospital-card h3,.service-card h3{color:#0B3D91}
+.tile:hover,.hospital-card:hover,.service-card:hover,.visit-card:hover,.appointment-card:hover{border-color:rgba(46,184,46,.42);box-shadow:0 20px 44px rgba(11,61,145,.12)}
+.btn:not(.ghost):not(.danger),button.primary{background:linear-gradient(120deg,#35c84b,#229b39);color:#fff;border:1px solid rgba(34,155,57,.18);box-shadow:0 9px 22px rgba(46,184,46,.2)}
+.btn.ghost{background:#fff;border:1px solid rgba(11,61,145,.16);color:#0B3D91}
+input,select,textarea{background:#fff;border:1px solid rgba(11,61,145,.18);color:#12345e}
+input::placeholder,textarea::placeholder{color:#8296af}
+input:focus,select:focus,textarea:focus{border-color:#2EB82E;box-shadow:0 0 0 4px rgba(46,184,46,.1)}
+label{color:#315477}
+table{border-color:rgba(11,61,145,.13);background:#fff}
+th{background:#eaf2ff;color:#0B3D91}
+td,th{border-color:rgba(11,61,145,.1);color:#315477}
+.toast{background:rgba(255,255,255,.96);color:#12345e;border-color:rgba(11,61,145,.14)}
+.footer{border-top:1px solid rgba(11,61,145,.12);color:#58708f}
+.g24h-top{border-color:rgba(11,61,145,.12)}
+.g24h-hello h1{color:#0B3D91}
+.g24h-hello small{color:#229b39}
+.g24h-top:after{color:#6883a2}
+.g24h-search{background:#fff;border-color:rgba(11,61,145,.13);box-shadow:0 12px 32px rgba(11,61,145,.07)}
+.g24h-search input{background:transparent}
+.g24h-sec{background:rgba(255,255,255,.83);border-color:rgba(11,61,145,.1);box-shadow:0 12px 32px rgba(11,61,145,.055)}
+.g24h-sec__head h2{color:#0B3D91}
+.g24h-sec__head a{color:#229b39}
+.g24h-act{color:#12345e}
+.g24h-act__label{color:#24476d}
+.g24h-hosp{background:linear-gradient(145deg,#fff,#f0f6ff);border-color:rgba(11,61,145,.12)}
+.g24h-promo{box-shadow:0 18px 42px rgba(11,61,145,.13)}
+.g24h-soon{background:#f8fbff;border-color:rgba(11,61,145,.12)}
+.g24h-trust{color:#58708f;border-color:rgba(11,61,145,.12)}
+.hc,.g24-module{background:linear-gradient(150deg,#fff,#f2f7ff);border-color:rgba(11,61,145,.12);color:#12345e;box-shadow:0 14px 34px rgba(11,61,145,.07)}
+.hc h4,.g24-module h3{color:#0B3D91}
+.g24-module p{color:#58708f}
+.g24-module:hover,.hc:hover{border-color:rgba(46,184,46,.42);box-shadow:0 20px 42px rgba(11,61,145,.11)}
+/* Keep the emergency action unmistakable and high contrast. */
+.g24h-sos{border-color:rgba(11,61,145,.12);box-shadow:0 24px 56px rgba(11,61,145,.2)}
+.g24h-sos p{color:#e4f4ff}
+.g24h-sos__tag{color:#e8fff7}
+.g24h-sos__btn{background:linear-gradient(145deg,#ff7777,#d72e50)}
+/* Cinematic splash: a short animated brand film made from lightweight vector motion. */
+.gurmad-splash{
+  background:
+    radial-gradient(ellipse at 50% 38%,rgba(232,241,251,.98) 0%,rgba(255,255,255,.98) 48%,#f5f9ff 100%);
+  isolation:isolate;
+}
+.gurmad-splash__ambient{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:-1}
+.gurmad-splash__ambient::before,.gurmad-splash__ambient::after{
+  content:"";position:absolute;width:min(82vw,560px);aspect-ratio:1;border-radius:50%;filter:blur(3px);
+  background:radial-gradient(circle,rgba(46,184,46,.12),rgba(11,61,145,.055) 42%,transparent 70%);
+  animation:gurmad-aurora 7s ease-in-out infinite alternate;
+}
+.gurmad-splash__ambient::before{top:2%;left:-24%}
+.gurmad-splash__ambient::after{right:-24%;bottom:5%;animation-delay:-3.5s}
+.gurmad-splash__logo{width:clamp(150px,39vw,206px);filter:drop-shadow(0 18px 26px rgba(11,61,145,.16));animation:gurmad-logo-cinema 2s cubic-bezier(.18,.78,.2,1) .15s both,gurmad-logo-breathe 3.2s ease-in-out 2.2s infinite}
+.gurmad-splash__name{color:#0B3D91;font-size:clamp(44px,11vw,60px);letter-spacing:-.06em;animation:gurmad-text-cinema .72s cubic-bezier(.2,.8,.2,1) .65s both}
+.gurmad-splash__name::first-letter{color:#2EB82E}
+.gurmad-splash__tagline{color:#35577f;font-size:clamp(14px,3.8vw,18px);animation:gurmad-text-cinema .72s cubic-bezier(.2,.8,.2,1) .9s both}
+.gurmad-splash__waves{height:clamp(125px,25vh,220px);filter:drop-shadow(0 -8px 24px rgba(11,61,145,.06))}
+.gurmad-splash__waves path{transform-box:fill-box;transform-origin:center;animation:gurmad-wave-float 5.5s ease-in-out infinite alternate}
+.gurmad-splash__waves path:nth-child(2){animation-delay:-1.4s}
+.gurmad-splash__waves path:nth-child(3){animation-delay:-2.8s}
+.gurmad-splash__waves path:nth-child(4){animation-delay:-4s}
+.gurmad-splash.is-leaving{transition:opacity .65s ease,visibility .65s ease}
+@keyframes gurmad-logo-cinema{0%{opacity:0;transform:translateY(26px) scale(.68) rotate(-5deg)}65%{opacity:1;transform:translateY(-5px) scale(1.045) rotate(1deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
+@keyframes gurmad-logo-breathe{0%,100%{filter:drop-shadow(0 18px 26px rgba(11,61,145,.16))}50%{filter:drop-shadow(0 22px 34px rgba(46,184,46,.22))}}
+@keyframes gurmad-text-cinema{from{opacity:0;transform:translateY(16px);letter-spacing:.02em}to{opacity:1;transform:translateY(0)}}
+@keyframes gurmad-aurora{from{transform:translate3d(-4%,0,0) scale(.88);opacity:.62}to{transform:translate3d(7%,8%,0) scale(1.12);opacity:1}}
+@keyframes gurmad-wave-float{from{transform:translate3d(-1.2%,0,0) scaleY(.98)}to{transform:translate3d(1.2%,-9px,0) scaleY(1.025)}}
+@media(max-width:600px){
+  .gurmad-splash__logo{width:clamp(148px,43vw,190px)}
+  .gurmad-splash__waves{height:clamp(118px,21vh,170px)}
+}
+@media(prefers-reduced-motion:reduce){
+  .gurmad-splash__ambient::before,.gurmad-splash__ambient::after,.gurmad-splash__logo,.gurmad-splash__name,.gurmad-splash__tagline,.gurmad-splash__waves path{animation:none!important}
+  .gurmad-splash__logo,.gurmad-splash__name,.gurmad-splash__tagline{opacity:1;transform:none}
+}
