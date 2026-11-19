@@ -7,13 +7,13 @@ const TILE = 256;
 const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services';
 const LAYERS = {
   hybrid: {
-    label: 'Hybrid', max: 16,
+    label: 'Hybrid', max: 18,
     url: (z, x, y) => `${ESRI}/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
     overlay: (z, x, y) => `${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/${z}/${y}/${x}`,
     attr: 'Imagery © Esri, Maxar, Earthstar Geographics, and the GIS User Community', href: 'https://www.esri.com/',
   },
   satellite: {
-    label: 'Satellite', max: 16,
+    label: 'Satellite', max: 18,
     url: (z, x, y) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
     attr: 'Imagery © Esri, Maxar, Earthstar Geographics, and the GIS User Community', href: 'https://www.esri.com/',
   },
@@ -269,8 +269,6 @@ export function liveMap(entries, opts = {}) {
         motion.points = result.points;
         path.classList.toggle('tm-route-fallback', !result.road);
         glow.classList.toggle('tm-route-fallback', !result.road);
-        const failed = routeMotion.filter(item => item.path.classList.contains('tm-route-fallback')).length;
-        const pending = routeMotion.length - routeMotion.filter(item => item.path.dataset.routeReady === '1').length;
         path.dataset.routeReady = '1';
         const fallbacks = routeMotion.filter(item => item.path.classList.contains('tm-route-fallback')).length;
         roadBadge.hidden = false;
