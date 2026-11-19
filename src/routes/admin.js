@@ -154,14 +154,21 @@ module.exports = function (app) {
   });
 
   // ---------- Settings (commissions, fees) - everything configurable, nothing hard-wired
-  app.get('/api/admin/settings', { auth: A, summary: 'Platform settings (commission rates in basis points)' }, () => ({ settings: D.settings(store), paymentProviders: listProviders() }));
-  // ---- Real mode: while OFF every emergency request is a simulation. Only an admin can turn it on.
-  app.put('/api/admin/real-mode', { auth: A, summary: 'Turn real (non-simulated) emergency requests on or off. Audited.' }, req => {
-    const b = validate({ enabled: v.bool({ required: true }), confirm: v.str({ max: 20, default: '' }) }, req.body);
-    if (b.enabled && b.confirm !== 'SHIDO') throw new HttpError(400, 'validation_failed', { confirm: 'type_SHIDO' });
-    D.settings(store).realMode = !!b.enabled; D.settings(store).realModeAt = new Date().toISOString(); store.save();
-    app.audit(req, b.enabled ? 'realmode.on' : 'realmode.off', 'settings', null); app.secEvent(req, b.enabled ? 'real_mode_on' : 'real_mode_off', {});
-    return { realMode: !!D.settings(store).realMode };
+  app.get('/api/admin/settings', { auth: A, summary: 'Platform settings (commission rates in basis points)' }, () => ({ settings: { ...D.settings(store), realMode: false }, paymentProviders: listProviders() }));
+  // Live dispatch is disabled for this institutional pilot and cannot be enabled in-app.
+  app.put('/api/admin/real-mode', { auth: A, summary: 'Keep live dispatch OFF during institutional pilot. Enabling is blocked.' }, req => {
+    const b = validate({ enabled: v.bool({ required: true }) }, req.body);
+    if (b.enabled) {
+      app.audit(req, 'realmode.enable_blocked', 'settings', null);
+      app.secEvent(req, 'real_mode_enable_blocked', { reason: 'institutional_confirmation_required' });
+      throw new HttpError(403, 'forbidden');
+    }
+    D.settings(store).realMode = false;
+    D.settings(store).realModeAt = new Date().toISOString();
+    store.save();
+    app.audit(req, 'realmode.off', 'settings', null);
+    app.secEvent(req, 'real_mode_off', {});
+    return { realMode: false };
   });
 
   app.get('/api/admin/security', { auth: A, summary: 'Security overview: checks, recent security events, 2FA coverage' }, req => {
@@ -184,7 +191,7 @@ module.exports = function (app) {
       { id: 'backup', ok: !!cfg.autoBackup, text: 'Automatic data backups' },
       { id: 'retention', ok: cfg.retentionDays <= 365, text: `Personal data retention: ${cfg.retentionDays} days` },
     ];
-    return { checks, score: Math.round(checks.filter(c => c.ok).length / checks.length * 100), realMode: !!D.settings(store).realMode,
+    return { checks, score: Math.round(checks.filter(c => c.ok).length / checks.length * 100), realMode: false, liveDispatch: false,
       last24h: { loginFailed: count('login_failed'), locked: count('account_locked'), ipBlocked: count('ip_blocked'), rateLimited: count('rate_limited'), badOrigin: count('bad_origin'), forbidden: count('forbidden'), bad2fa: count('bad_2fa_code') },
       activeSessions: store.col('sessions').length,
       events: ev.slice(-40).reverse().map(a => ({ ts: a.ts, type: a.action.replace('security.', ''), ip: a.ip ? a.ip.replace(/(\d+)\.(\d+)\.\d+\.\d+/, '$1.$2.x.x') : '', meta: a.meta })) };
