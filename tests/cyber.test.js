@@ -4,6 +4,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const H = require('./helper');
 const S = require('../src/security');
+const R = require('../src/responders');
 
 let t, adm;
 before(async () => { t = await H.start(); adm = await H.admin(t); });
@@ -73,6 +74,38 @@ test('forbidden and cross-origin attempts are logged; hardened headers present',
   assert.equal(h.get('cross-origin-opener-policy'), 'same-origin'); assert.equal(h.get('cross-origin-resource-policy'), 'same-origin');
   assert.equal(h.get('x-frame-options'), 'DENY');
   assert.match((await t.client().get('/.well-known/security.txt')).data, /Contact:/);
+});
+
+
+test('legacy REAL case records are shown as simulation without rewriting stored history', async () => {
+  const legacy = {
+    id: 'legacy-real-case-fixture',
+    code: 'SIM-900098',
+    mode: 'REAL',
+    category: 'general',
+    responder: 'ambulance',
+    status: 'received',
+    source: 'test',
+    createdBy: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    autopilot: false,
+    trackToken: 'legacy-track-token-123',
+    sim: null,
+    history: [],
+  };
+  const forced = R.createCase(t.store, { category: 'general', source: 'test', mode: 'REAL', autopilot: false });
+  assert.equal(forced.mode, 'SIMULATION');
+  assert.equal(forced.trackToken, null);
+  t.store.insert('cases', legacy);
+  const op = await H.demo(t, 'operator');
+  const detail = (await op.get('/api/ops/cases/' + legacy.id)).data.case;
+  assert.equal(detail.mode, 'SIMULATION');
+  assert.equal(detail.legacyMode, 'REAL');
+  assert.equal(detail.track.mode, 'SIMULATION');
+  const track = (await t.client().get('/api/emergency/track/' + legacy.code + '?token=' + encodeURIComponent(legacy.trackToken))).data.track;
+  assert.equal(track.mode, 'SIMULATION');
+  assert.equal(t.store.get('cases', legacy.id).mode, 'REAL');
 });
 
 test('institutional pilot lock: live dispatch stays OFF even if a legacy setting is true', async () => {
