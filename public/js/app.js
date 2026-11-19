@@ -184,10 +184,8 @@ function chrome() {
   if (banner) {
     const demoMessage = t('INSTITUTIONAL PILOT: digital service testing; emergency requests are simulated, payments are sandbox-only, and no live dispatch is available. Not for real emergencies.');
     const offlineMessage = 'OFFLINE: Internet connection is unavailable. Changes have not been sent.';
-    const real = !!(S.config && S.config.realMode);
-    banner.classList.toggle('real', real);
-    const realMessage = t('REAL MODE: requests go to operators. In a life-threatening emergency also call the emergency number.');
-    const main = real ? realMessage : demoMessage;
+    banner.classList.remove('real');
+    const main = demoMessage;
     banner.textContent = navigator.onLine ? main : offlineMessage + ' ' + main;
     banner.setAttribute('role', 'status');
     banner.setAttribute('aria-live', 'polite');
