@@ -48,7 +48,7 @@ export function liveMap(entries, opts = {}) {
   let layer = LAYERS[opts.layer] ? opts.layer : 'hybrid';
   const view = { lat: opts.center?.lat ?? 8.4, lng: opts.center?.lng ?? 49.3, z: opts.center?.z ?? 6 };
   const mode = opts.view === 'puntland' ? 'puntland' : 'points';
-  let items = []; let current = entries || []; let userMoved = false; let raf = 0; let loaded = 0; let userLocation = null; let locStatusTimer = 0;
+  let items = []; let current = entries || []; let userMoved = false; let raf = 0; let loaded = 0; let userLocation = null; let locStatusTimer = 0; let routeMotion = [];
   const tiles = new Map();
 
   const tilePane = h('div', { class: 'tm-tiles' });
@@ -124,9 +124,14 @@ export function liveMap(entries, opts = {}) {
     const steps = [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000];
     const dist = [...steps].reverse().find(d => d / mpp <= 110) || steps[0];
     scale.firstChild.style.width = Math.max(18, dist / mpp) + 'px'; scale.lastChild.textContent = dist >= 1000 ? (dist / 1000) + ' km' : dist + ' m';
-    for (const ln of lines.childNodes) {
+    for (const ln of lines.querySelectorAll('line')) {
       const d = ln.__d; const [x1, y1] = px(d.a), [x2, y2] = px(d.b);
       ln.setAttribute('x1', x1); ln.setAttribute('y1', y1); ln.setAttribute('x2', x2); ln.setAttribute('y2', y2);
+    }
+    // Animated dispatch tokens travel along the existing route as an explicitly visual demo.
+    for (const motion of routeMotion) {
+      const [x1, y1] = px(motion.from), [x2, y2] = px(motion.to);
+      motion.anim.setAttribute('path', `M ${x1} ${y1} L ${x2} ${y2}`);
     }
   }
   const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
@@ -187,7 +192,7 @@ export function liveMap(entries, opts = {}) {
 
   const mk = (cls, ...kids) => h('div', { class: 'mk ' + cls }, ...kids);
   function build(list) {
-    markPane.replaceChildren(); lines.replaceChildren(); items = [];
+    markPane.replaceChildren(); lines.replaceChildren(); items = []; routeMotion = [];
     const add = (o, el) => { markPane.append(el); items.push({ lat: o.lat, lng: o.lng, el }); };
     const line = (a, b, cls) => { const l = document.createElementNS(NS, 'line'); l.setAttribute('class', cls); l.__d = { a, b }; lines.append(l); };
     if (opts.places) PLACES.forEach(p => add(p, mk('mk-city', h('span', { class: 'cdot' }), h('span', { class: 'clbl' }, p.name))));
@@ -199,7 +204,17 @@ export function liveMap(entries, opts = {}) {
       el.__m = m; add(m, el); items[items.length - 1].fac = true; items[items.length - 1].m = m;
     });
     if (userLocation) add(userLocation, h('div', { class: 'mk mk-user-location', role: 'img', 'aria-label': t('Your location') }));
-    for (const e of list) if (e.station) { line(e.station, e.incident, 'tm-route u-' + e.type); if (e.unit) line(e.station, e.unit, 'tm-trail u-' + e.type); }
+    for (const e of list) if (e.station) {
+      line(e.station, e.incident, 'tm-route u-' + e.type);
+      if (e.unit) line(e.station, e.unit, 'tm-trail u-' + e.type);
+      // This token is a visual simulation only; it is not a GPS position or dispatch confirmation.
+      const token = document.createElementNS(NS, 'g'); token.setAttribute('class', 'tm-dispatch-motion u-' + e.type);
+      const circle = document.createElementNS(NS, 'circle'); circle.setAttribute('r', '11'); circle.setAttribute('class', 'tm-dispatch-halo');
+      const letter = document.createElementNS(NS, 'text'); letter.setAttribute('text-anchor', 'middle'); letter.setAttribute('dominant-baseline', 'central'); letter.setAttribute('class', 'tm-dispatch-letter');
+      letter.textContent = e.type === 'ambulance' ? 'A' : e.type === 'police' ? 'P' : 'F';
+      const anim = document.createElementNS(NS, 'animateMotion'); anim.setAttribute('path', 'M 0 0 L 1 1'); anim.setAttribute('dur', e.type === 'police' ? '8s' : e.type === 'fire' ? '10s' : '9s'); anim.setAttribute('begin', '0s'); anim.setAttribute('repeatCount', 'indefinite'); anim.setAttribute('rotate', 'auto');
+      token.append(circle, letter, anim); lines.append(token); routeMotion.push({ from: e.station, to: e.incident, anim });
+    }
     for (const e of list) if (e.station) add(e.station, mk('mk-station u-' + e.type, icon(e.type, 13)));
     for (const e of list) add(e.incident, mk('mk-incident' + (e.done ? ' done' : ''), h('span', { class: 'pulse' }), h('span', { class: 'dot' })));
     for (const e of list) if (e.unit) add(e.unit, mk('mk-unit u-' + e.type, icon(e.type, 18)));
