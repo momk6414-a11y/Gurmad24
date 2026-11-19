@@ -1,6 +1,6 @@
 
 // App shell: session, navigation per role, hash router, service worker.
-import { SS, S, t, h, icon, GET, POST, setLang, errText, loading, emptyState, toast, ApiError } from './core.js';
+import { SS, S, t, h, icon, GET, POST, setLang, errText, loading, emptyState, toast, ApiError, modal } from './core.js';
 import * as P from './views/public.js';
 import * as PT from './views/patient.js';
 import * as O from './views/org.js';
@@ -125,6 +125,29 @@ function navItems() {
   return [];
 }
 
+// Which destinations get a slot in the phone bottom bar.
+function primaryPaths(items) {
+  const has = p => items.some(([x]) => x === p);
+  const u = S.user;
+  let want;
+  if (!u) want = ['/', '/hospitals', '/emergency', '/login'];
+  else if (u.role === 'patient') want = ['/', '/hospitals', '/emergency', '/me/account'];
+  else want = [...items.map(([p]) => p).filter(p => p !== '/account').slice(0, 3), '/account'];
+  return want.filter(has);
+}
+
+// "More" sheet: remaining destinations plus session actions.
+function openMore(extra, best) {
+  let m;
+  const close = () => m && m.close();
+  const rows = extra.map(([p, ic, label]) =>
+    h('a', { class: 'more-item', href: '#' + p, 'aria-current': best && best[0] === p ? 'page' : null, onclick: close }, icon(ic, 22), h('span', t(label))));
+  const body = h('div', { class: 'more-sheet' },
+    h('div', { class: 'more-grid' }, rows),
+    S.user ? h('button', { type: 'button', class: 'btn ghost more-logout', onclick: () => { close(); logout(); } }, icon('logout', 16), t('Log out')) : null);
+  m = modal(t('More'), body);
+}
+
 function chrome() {
   const view = document.getElementById('view');
 
@@ -177,13 +200,22 @@ function chrome() {
     .filter(([p]) => cur === p || (p !== '/' && cur.startsWith(p + '/')))
     .sort((a, b) => b[0].length - a[0].length)[0];
 
+  // Phones show a short bottom bar (max 5 slots, Account always reachable);
+  // every other destination lives in the "More" sheet. Desktop shows all items.
+  const primary = primaryPaths(items);
+  const extra = items.filter(([p]) => !primary.includes(p));
+  const navLink = ([p, ic, label], cls) =>
+    h('a', { href: '#' + p, class: cls, 'aria-current': best && best[0] === p ? 'page' : null }, icon(ic, 20), t(label));
+
   document.getElementById('nav').replaceChildren(
-    ...items.map(([p, ic, label]) =>
-      h('a', {
-        href: '#' + p,
-        'aria-current': best && best[0] === p ? 'page' : null
-      }, icon(ic, 20), t(label))
-    )
+    ...items.map(it => navLink(it, primary.includes(it[0]) ? '' : 'nav-extra')),
+    extra.length
+      ? h('button', {
+          type: 'button', class: 'nav-more', 'aria-haspopup': 'dialog',
+          'aria-current': best && extra.some(([p]) => p === best[0]) ? 'page' : null,
+          onclick: () => openMore(extra, best)
+        }, icon('menu', 20), t('More'))
+      : null
   );
 
   document.getElementById('footer').replaceChildren(
@@ -349,6 +381,8 @@ async function render(keepScroll) {
 
 // Navigation.
 window.addEventListener('hashchange', () => render());
+
+window.addEventListener('g24-logout', () => logout());
 
 // Authentication changes.
 window.addEventListener('g24-auth', async () => {

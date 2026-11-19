@@ -2,7 +2,7 @@
 // GURMAD 24 - Service Worker
 // Version 18: refreshes old app cache and keeps API/personal data uncached.
 
-const CACHE = 'g24-v40-full';
+const CACHE = 'g24-v41-account';
 
 const SHELL = [
   '/',
@@ -15,6 +15,7 @@ const SHELL = [
   '/css/onboarding.css',
   '/css/home-app.css',
   '/css/v40-premium.css',
+  '/css/v41-account.css',
   '/js/onboarding.js',
   '/assets/onboarding/ob-sos.svg',
   '/assets/onboarding/ob-care.svg',

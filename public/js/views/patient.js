@@ -95,9 +95,29 @@ function securityPanels() {
   draw().catch(() => {}); return box;
 }
 
+const ROLE_LABEL = { patient: 'Patient', hospital_admin: 'Hospital administrator', provider_admin: 'Provider administrator', operator: 'Operator', admin: 'Administrator' };
+const QUICK = {
+  patient: [['/me/orders', 'bag', 'My cards'], ['/me/appointments', 'calendar', 'Appointments'], ['/me/visits', 'card', 'My visit cards'], ['/me/support', 'chat', 'Support']],
+  hospital_admin: [['/org', 'dash', 'Dashboard'], ['/org/appointments', 'calendar', 'Appointments'], ['/org/profile', 'hospital', 'Profile']],
+  provider_admin: [['/org', 'dash', 'Dashboard'], ['/org/profile', 'hospital', 'Profile']],
+  operator: [['/ops', 'alert', 'Cases'], ['/ops/directory', 'hospital', 'Directory']],
+  admin: [['/admin', 'dash', 'Overview'], ['/admin/orgs', 'hospital', 'Organisations'], ['/admin/security', 'shield', 'Security'], ['/admin/audit', 'audit', 'Audit']],
+};
+function accountHero() {
+  const u = S.user; const ini = String(u.name || '?').trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+  return h('section', { class: 'acct-hero', 'aria-label': t('My account') },
+    h('div', { class: 'acct-id' },
+      h('span', { class: 'acct-avatar', 'aria-hidden': 'true' }, ini),
+      h('div', { class: 'acct-who' }, h('h3', u.name), h('small', u.email),
+        h('div', { class: 'acct-tags' }, h('span', { class: 'badge' }, t(ROLE_LABEL[u.role] || u.role)), S.org ? h('span', { class: 'badge' }, S.org.name) : null,
+          h('span', { class: 'badge ' + (u.twoFactor ? 'ok' : 'warn') }, u.twoFactor ? t('Two-step login is ON.') : t('Two-step login is OFF'))))),
+    h('div', { class: 'acct-quick' }, (QUICK[u.role] || []).map(([p, ic, label]) => h('a', { class: 'acct-tile', href: '#' + p }, icon(ic, 22), h('span', t(label))))),
+    h('div', { class: 'acct-actions' }, h('button', { type: 'button', class: 'btn ghost', onclick: () => window.dispatchEvent(new CustomEvent('g24-logout')) }, icon('logout', 16), t('Log out'))));
+}
+
 export function account() {
   const u = S.user;
-  return h('div', head('My account'), securityPanels(),
+  return h('div', head('My account'), accountHero(), securityPanels(),
     h('div', { class: 'grid g2' },
       panel('Profile', form([{ name: 'name', label: 'Full name', required: true, max: 80 }, { name: 'lang', label: 'Language', type: 'select', options: [['so', 'Somali'], ['en', 'English']] }], { initial: u, submit: 'Save',
         onSubmit: async v => { const r = await PATCH('/auth/profile', v); S.user = r.user; setLang(v.lang); toast(t('Saved.')); window.dispatchEvent(new CustomEvent('g24-auth')); } })),

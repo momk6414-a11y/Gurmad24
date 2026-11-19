@@ -149,6 +149,7 @@ const ICONS = {
   shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
   receipt: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6',
   logout: 'M9 4H4v16h5M16 8l4 4-4 4M20 12H9',
+  menu: 'M4 6h16M4 12h16M4 18h16',
   plus: 'M12 5v14M5 12h14',
   check: 'M5 12l5 5 9-10',
   x: 'M6 6l12 12M18 6L6 18',

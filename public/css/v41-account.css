@@ -1,0 +1,23 @@
+/* V41 — account access & mobile navigation. Uses existing design tokens only. */
+.tabs .nav-more{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex:1 0 0;min-width:0;min-height:48px;padding:6px 4px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:11px;font-weight:600;border-radius:12px;cursor:pointer}
+.tabs .nav-more[aria-current=page]{color:var(--ink);background:var(--panel2)}
+.tabs .nav-more:focus-visible,.more-item:focus-visible,.acct-tile:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+@media (max-width:859px){
+  .tabs{overflow-x:visible;justify-content:space-around}
+  .tabs a{flex:1 0 0;min-width:0}
+  .tabs a.nav-extra{display:none}
+}
+@media (min-width:860px){.tabs .nav-more{display:none}}
+.more-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.more-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px;min-height:76px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);color:var(--ink);text-decoration:none;font-size:13px;font-weight:600;text-align:center}
+.more-item[aria-current=page]{border-color:var(--mint)}
+.more-logout{width:100%;margin-top:14px;justify-content:center}
+.acct-hero{background:linear-gradient(150deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.acct-id{display:flex;gap:14px;align-items:center}
+.acct-avatar{flex:none;width:64px;height:64px;border-radius:20px;display:grid;place-items:center;font-weight:800;font-size:22px;background:var(--mint);color:var(--mint-ink)}
+.acct-who{min-width:0}.acct-who h3{margin:0;overflow-wrap:anywhere}.acct-who small{display:block;color:var(--muted);overflow-wrap:anywhere}
+.acct-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.acct-quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:16px}
+.acct-tile{display:flex;align-items:center;gap:10px;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);color:var(--ink);text-decoration:none;font-weight:600;font-size:14px}
+.acct-actions{margin-top:14px;display:flex;justify-content:flex-end}
+@media (max-width:480px){.acct-actions .btn{width:100%;justify-content:center}}

@@ -65,7 +65,7 @@ export async function home() {
         h('small', t(greeting())),
         h('h1', S.user ? String(S.user.name || '').split(' ')[0] : t('Welcome to GURMAD 24'))),
       S.user
-        ? h('a', { class: 'g24h-avatar', href: '#/me/orders', onclick: nav('/me/orders'), 'aria-label': t('My account') }, initials(S.user.name))
+        ? h('a', { class: 'g24h-avatar', href: '#/me/account', onclick: nav('/me/account'), 'aria-label': t('My account') }, initials(S.user.name))
         : h('a', { class: 'g24h-login', href: '#/login', onclick: nav('/login') }, icon('user', 16), t('Log in'))
     ),
     search,
