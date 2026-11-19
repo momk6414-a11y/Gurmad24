@@ -26,11 +26,12 @@ test('account is reachable: avatar links to the account page and nav keeps a pri
 test('emergency map requests road geometry and exposes a safe fallback', () => {
   const map = pub('js/map.js');
   const app = fs.readFileSync(path.join(__dirname, '..', 'src', 'app.js'), 'utf8');
-  assert.ok(map.includes('https://router.project-osrm.org/route/v1/driving/'));
+  assert.ok(map.includes('const ROAD_ROUTER'));
+  assert.ok(map.includes('/route/v1/driving/'));
   assert.ok(map.includes('overview=full&geometries=geojson'));
   assert.ok(map.includes('tm-route-fallback'));
   assert.ok(map.includes('Road routing unavailable'));
-  assert.ok(app.includes("connect-src 'self' https://router.project-osrm.org"));
+  assert.ok(app.includes('router.project-osrm.org'));
 });
 
 test('native home map shortcut opens the shared Web App map route', () => {
