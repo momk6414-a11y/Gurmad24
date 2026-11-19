@@ -61,6 +61,7 @@ async function roadGeometry(from, to) {
     } catch (_) {
       const result = { points: [from, to], road: false };
       roadRouteCache.set(key, result);
+      setTimeout(() => { if (roadRouteCache.get(key) === result) roadRouteCache.delete(key); }, 30000);
       return result;
     } finally { clearTimeout(timeout); roadRoutePending.delete(key); }
   })();
