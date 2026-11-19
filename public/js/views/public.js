@@ -85,6 +85,8 @@ export async function home() {
         action('/cards', 'card', 'Health cards', 'green'),
         action('/map', 'pin', 'Live map', 'blue'),
         action('/services', 'ambulance', 'Ambulance', 'red'),
+        action('/modules', 'dash', 'All modules', 'blue'),
+        action('/system', 'chart', 'System overview', 'green'),
         action('/me/appointments', 'calendar', 'Appointments', 'green'),
         action('/travel', 'globe', 'Travel & visa', 'blue'),
         action('/me/support', 'chat', 'Support', 'green'),
@@ -137,6 +139,35 @@ export function renderCompareBar() {
     h('span', { class: 'cb-text' }, h('b', t('{n} selected', { n: S.cmp.length })), h('small', ready ? t('Ready to compare') : t('Pick one more card'))),
     h('span', { class: 'actions tight' }, ready ? h('button', { class: 'btn sm', onclick: () => go('/compare') }, t('Compare now')) : null,
       h('button', { class: 'btn sm ghost', onclick: () => { S.cmp = []; renderCompareBar(); document.querySelectorAll('.cmp-pick input').forEach(x => { x.checked = false; }); } }, t('Remove all')))));
+}
+
+// ---------- V30.1 module directory: real routes are clickable; unavailable modules are clearly marked.
+export function modules() {
+  const entries = [
+    ['hospital', 'Hospitals', 'Verified hospital directory and facility details.', '/hospitals', true],
+    ['card', 'Health cards', 'Compare hospital cards and view published services.', '/cards', true],
+    ['calendar', 'Appointments', 'Manage your appointment requests.', S.user && S.user.role === 'patient' ? '/me/appointments' : '/login', true],
+    ['flask', 'Laboratory services', 'Find listed laboratories and request an appointment.', '/services', true],
+    ['ambulance', 'Emergency response', 'Submit a clearly labelled pilot simulation request.', '/emergency', true],
+    ['pin', 'Gaalkacyo map', 'Explore listed facilities and public reference points.', '/map', true],
+    ['chart', 'System overview', 'View pilot service counts and demo system activity.', '/system', true],
+    ['user', 'Patient account', 'Sign in or create a patient account to manage your care.', S.user && S.user.role === 'patient' ? '/me/account' : '/login', true],
+    ['shield', 'Hospital dashboard', 'Hospital teams manage services, appointments and cards.', S.user && ['hospital_admin','provider_admin'].includes(S.user.role) ? '/org' : '/login', true],
+    ['users', 'Administration', 'Protected administration and oversight workspace.', S.user && S.user.role === 'admin' ? '/admin' : '/login', true],
+    ['heart', 'Pharmacy', 'Not yet connected to a verified pharmacy workflow.', '', false],
+    ['home', 'Home care', 'Not yet connected to a verified home-care workflow.', '', false],
+    ['mic', 'Video consultation', 'Not yet connected to a clinical consultation provider.', '', false],
+    ['globe', 'Travel and visa', 'Travel information and service listings.', '/travel', true],
+  ];
+  const cards = entries.map(([ic, title, desc, path, active]) => h('article', { class: 'g24-module' },
+    h('span', { class: 'g24-module__icon' }, icon(ic, 24)),
+    h('div', h('h3', t(title)), h('p', t(desc))),
+    active ? h('button', { class: 'btn sm', type: 'button', onclick: () => go(path) }, t('Open module'), ' →')
+      : h('span', { class: 'g24-module__soon' }, t('Coming soon'))
+  ));
+  return h('div', head('GURMAD 24 modules', 'A single directory for the healthcare marketplace, hospital operations and emergency pilot.'),
+    demoNote('Only modules with an existing route are open. Pharmacy, home care and video consultation are roadmap items, not active services.'),
+    h('div', { class: 'g24-modules-grid' }, cards));
 }
 
 export async function cards() {

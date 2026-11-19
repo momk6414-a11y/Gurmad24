@@ -17,6 +17,7 @@ const SHELL = [
   '/css/v40-premium.css',
   '/css/v41-account.css',
   '/css/v41-map.css',
+  '/css/v30-1-premium.css',
   '/js/onboarding.js',
   '/assets/onboarding/ob-sos.svg',
   '/assets/onboarding/ob-care.svg',

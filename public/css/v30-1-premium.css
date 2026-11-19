@@ -1,0 +1,46 @@
+/* GURMAD 24 — V30.1 visual bridge
+   Applies the supplied V30.1 premium direction to the existing production UI.
+   Presentation only: existing routes, authentication, API and tenant rules stay intact. */
+.g24h{max-width:1120px;gap:22px;padding:10px 0 40px}
+.g24h-top{position:relative;flex-wrap:wrap;padding:4px 2px 12px;border-bottom:1px solid rgba(82,223,208,.18)}
+.g24h-top:after{content:"GURMAD Waqtigiisa. Daryeelkaaga.  •  Gaalkacyo Pilot";display:block;flex-basis:100%;order:3;color:#9dc9d6;font-size:12px;font-weight:750;letter-spacing:.12em;text-transform:uppercase}
+.g24h-hello h1{font-size:clamp(26px,5vw,38px);letter-spacing:-.04em}
+.g24h-avatar{border:1px solid rgba(82,223,208,.4);background:linear-gradient(145deg,#20c997,#087c70);box-shadow:0 12px 28px rgba(32,201,151,.2)}
+.g24h-login{border:1px solid rgba(82,223,208,.35);background:linear-gradient(125deg,#20c997,#087c70);color:#03251f;box-shadow:0 12px 28px rgba(32,201,151,.18)}
+.g24h-search{border-radius:20px;background:linear-gradient(145deg,#0e2d4b,#091f38);border:1px solid rgba(82,223,208,.24);box-shadow:0 14px 34px rgba(0,8,22,.2)}
+.g24h-search__go{background:linear-gradient(130deg,#20c997,#087c70);color:#03251f}
+.g24h-sos{min-height:220px;padding:clamp(22px,4vw,38px);border:1px solid rgba(82,223,208,.35);border-radius:30px;background:radial-gradient(circle at 90% 5%,rgba(32,201,151,.3),transparent 35%),linear-gradient(125deg,#082b43 0%,#0b4d5b 58%,#087c70 100%);box-shadow:0 28px 65px rgba(0,8,22,.34)}
+.g24h-sos h2{font-size:clamp(27px,5vw,42px);max-width:620px;letter-spacing:-.045em}
+.g24h-sos p{max-width:560px;font-size:14px;color:#d4edf2}
+.g24h-sos__tag{border:1px solid rgba(82,223,208,.3);background:rgba(4,27,43,.32);letter-spacing:.08em;text-transform:uppercase}
+.g24h-sos__btn{width:124px;height:124px}
+.g24h-sec{padding:18px;border:1px solid rgba(82,223,208,.14);border-radius:26px;background:linear-gradient(145deg,rgba(13,43,73,.56),rgba(7,27,48,.32))}
+.g24h-sec__head h2{font-size:21px}
+.g24h-sec__head a{color:#55e4ce}
+.g24h-acts{gap:16px 12px}
+.g24h-act{padding:8px 4px;border-radius:18px;transition:background .18s ease}
+.g24h-act:hover{background:rgba(82,223,208,.06)}
+.g24h-act__icon{width:68px;height:68px;border:1px solid rgba(255,255,255,.14);border-radius:22px;background:linear-gradient(145deg,#147f85,#0c4565);box-shadow:0 14px 28px rgba(0,8,22,.28)}
+.g24h-tone-green .g24h-act__icon{background:linear-gradient(145deg,#20c997,#087c70);box-shadow:0 14px 28px rgba(32,201,151,.18)}
+.g24h-tone-red .g24h-act__icon{background:linear-gradient(145deg,#ff7777,#a92f48)}
+.g24h-tone-blue .g24h-act__icon{background:linear-gradient(145deg,#38b8c8,#145a83)}
+.g24h-act__label{font-size:13px;color:#eaf7ff}
+.g24h-hosp{border-radius:22px;background:linear-gradient(145deg,#103653,#0a2541);border-color:rgba(82,223,208,.2)}
+.g24h-hosp__avatar{background:linear-gradient(145deg,#20c997,#087c70)}
+.g24h-promo{border:1px solid rgba(174,255,230,.24);background:radial-gradient(circle at 5% 5%,rgba(255,255,255,.22),transparent 40%),linear-gradient(120deg,#087c70,#0b4d5b);box-shadow:0 20px 45px rgba(0,8,22,.25)}
+.g24h-soon{border-color:rgba(82,223,208,.25);background:rgba(13,43,73,.45)}
+.g24h-trust{padding:12px;border-top:1px solid rgba(82,223,208,.14)}
+@media(min-width:900px){.g24h{grid-template-columns:1fr 1fr}.g24h-top,.g24h-search,.g24h-sos,.g24h-promo,.g24h-trust{grid-column:1/-1}.g24h-sec{align-self:stretch}.g24h-sos{min-height:260px}.g24h-sos__btn{width:144px;height:144px}}
+@media(max-width:480px){.g24h-sec{padding:14px;border-radius:22px}.g24h-acts{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 4px}.g24h-act__icon{width:56px;height:56px;border-radius:18px}.g24h-sos{grid-template-columns:1fr auto;padding:20px}.g24h-sos__btn{width:92px;height:92px}.g24h-sos__btn span{font-size:23px}.g24h-sos__calls{gap:6px}.g24h-call{padding:9px 4px}}
+@media(prefers-reduced-motion:reduce){.g24h *{animation:none!important;transition:none!important}}
+
+/* V30.1 complete module directory */
+.g24-modules-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+.g24-module{display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-height:190px;padding:18px;border:1px solid rgba(82,223,208,.2);border-radius:22px;background:linear-gradient(145deg,rgba(16,54,83,.92),rgba(7,27,48,.92));box-shadow:0 14px 32px rgba(0,8,22,.18)}
+.g24-module__icon{display:grid;place-items:center;width:52px;height:52px;border-radius:17px;color:#eafffa;background:linear-gradient(145deg,#20c997,#087c70)}
+.g24-module h3{margin:0 0 6px;font-size:16px;color:#f0fbff}
+.g24-module p{margin:0;color:#b7d1dc;font-size:13px;line-height:1.5}
+.g24-module .btn{margin-top:auto}
+.g24-module__soon{margin-top:auto;padding:7px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.16);color:#b7d1dc;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.07em}
+@media(min-width:760px){.g24-modules-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:360px){.g24-modules-grid{grid-template-columns:1fr}.g24-module{min-height:unset}}
