@@ -16,7 +16,9 @@ async function hotlines() {
   let ps = []; try { ps = (await GET('/providers')).providers; } catch (_) { /* offline: no list */ }
   const pick = type => { const l = ps.filter(p => p.type === type && p.phone); return l.find(p => p.available) || l[0]; };
   const btn = (type, label) => { const p = pick(type); return p ? h('a', { class: 'call u-' + type, href: 'tel:' + p.phone.replace(/[^+\d]/g, '') }, icon(type, 26), h('span', h('b', t(label)), h('small', p.phone))) : null; };
-  const items = [btn('ambulance', 'Ambulance'), btn('police', 'Police'), btn('fire', 'Fire brigade')].filter(Boolean);
+  // User-provided ambulance contact. This is a phone shortcut only, not a dispatch integration.
+  const ambulance = h('a', { class: 'call u-ambulance', href: 'tel:888' }, icon('ambulance', 26), h('span', h('b', t('Ambulance')), h('small', '888')));
+  const items = [ambulance, btn('police', 'Police'), btn('fire', 'Fire brigade')].filter(Boolean);
   if (!items.length) return null;
   return h('section', { class: 'panel hotlines' }, h('h3', t('Emergency numbers')), h('div', { class: 'calls' }, items), h('small', { class: 'hint' }, t('Demo numbers. One tap to call from your phone.')));
 }
@@ -25,8 +27,9 @@ async function hotlines() {
 async function hotlineItems() {
   let ps = []; try { ps = (await GET('/providers')).providers; } catch (_) { /* offline: no list */ }
   const pick = type => { const l = ps.filter(p => p.type === type && p.phone); return l.find(p => p.available) || l[0]; };
-  return [['ambulance', 'Ambulance'], ['police', 'Police'], ['fire', 'Fire brigade']]
-    .map(([type, label]) => { const p = pick(type); return p ? { type, label, phone: p.phone } : null; }).filter(Boolean);
+  // 888 was supplied by the project owner; it is a direct-call shortcut, not verified dispatch.
+  return [{ type: 'ambulance', label: 'Ambulance', phone: '888' },
+    ...[['police', 'Police'], ['fire', 'Fire brigade']].map(([type, label]) => { const p = pick(type); return p ? { type, label, phone: p.phone } : null; }).filter(Boolean)];
 }
 
 async function homeHospitals() {
