@@ -209,13 +209,11 @@ function chrome() {
 
   document.getElementById('nav').replaceChildren(
     ...items.map(it => navLink(it, primary.includes(it[0]) ? '' : 'nav-extra')),
-    extra.length
-      ? h('button', {
+    ...(extra.length ? [h('button', {
           type: 'button', class: 'nav-more', 'aria-haspopup': 'dialog',
           'aria-current': best && extra.some(([p]) => p === best[0]) ? 'page' : null,
           onclick: () => openMore(extra, best)
-        }, icon('menu', 20), t('More'))
-      : null
+        }, icon('menu', 20), t('More'))] : [])
   );
 
   document.getElementById('footer').replaceChildren(
