@@ -1,0 +1,132 @@
+/* GURMAD 24 — V40 FULL VISUAL SYSTEM
+   Presentation-only layer for public, patient, hospital, operator and admin screens.
+   Existing routes, API contracts, roles and records remain untouched. */
+:root {
+  --v40-bg:#06172d; --v40-surface:#0b2440; --v40-panel:#0e2d4b;
+  --v40-line:rgba(111,177,204,.22); --v40-mint:#20c997; --v40-cyan:#52dfd0;
+  --v40-text:#effaff; --v40-muted:#a8c2d4; --v40-shadow:0 18px 48px rgba(0,8,22,.34);
+}
+html { scroll-behavior:smooth; }
+body { background-color:var(--v40-bg); }
+button,.btn,a,input,select,textarea { -webkit-tap-highlight-color:transparent; }
+button,.btn { transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,filter .18s ease; }
+button:active,.btn:active { transform:translateY(1px) scale(.985); }
+:focus-visible { outline:2px solid var(--v40-cyan)!important; outline-offset:3px; }
+.top { box-shadow:0 8px 28px rgba(0,0,0,.18); }
+.brand { gap:11px; }
+.brand b { font-weight:850; letter-spacing:.13em; }
+.brand small { color:var(--v40-muted); }
+.tabs { scrollbar-width:none; }
+.tabs::-webkit-scrollbar { display:none; }
+.tabs a { border:1px solid transparent; border-radius:14px; transition:all .2s ease; }
+.tabs a:hover { background:rgba(82,223,208,.08); border-color:var(--v40-line); transform:translateY(-1px); }
+.shell { min-height:65vh; }
+.page-banner { border-radius:22px; box-shadow:var(--v40-shadow); border:1px solid var(--v40-line); }
+.panel,.tile,.modal,.cardpass,.wallet-item,.pm-card,.pm-list,.org-card,.hospital-card,.service-card,.visit-card,.appointment-card {
+  border:1px solid var(--v40-line);
+  border-radius:20px;
+  box-shadow:0 14px 34px rgba(0,8,22,.22);
+}
+.panel,.tile,.modal,.wallet-item,.pm-card,.pm-list { background:linear-gradient(145deg,rgba(14,45,75,.98),rgba(8,31,55,.98)); }
+.panel { padding:clamp(15px,2.2vw,24px); }
+.panel-head { gap:12px; }
+.panel-head h3,.page-head h2,.sec-title { letter-spacing:-.025em; }
+.tile { transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+.tile:hover,.wallet-item:hover,.hospital-card:hover,.service-card:hover { transform:translateY(-3px); border-color:rgba(82,223,208,.48); box-shadow:0 20px 42px rgba(0,8,22,.3); }
+.btn:not(.ghost):not(.danger) { background:linear-gradient(125deg,#20c997,#087c70); color:#03251f; border:1px solid rgba(139,240,210,.3); }
+.btn.ghost { border:1px solid var(--v40-line); }
+.btn.danger { box-shadow:0 8px 20px rgba(255,107,107,.16); }
+input,select,textarea { border-radius:13px; }
+label { color:#c5dbe8; }
+.chip,.badge,.pill { border-radius:999px; }
+table { border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:14px; }
+th { background:#103653; color:#dff7ff; }
+td,th { border-color:var(--v40-line); }
+tr:hover td { background:rgba(82,223,208,.035); }
+.actions { gap:9px; flex-wrap:wrap; }
+.empty { border:1px dashed var(--v40-line); border-radius:18px; padding:24px; }
+.toast { border:1px solid var(--v40-line); border-radius:14px; box-shadow:var(--v40-shadow); }
+
+/* Emergency command centre and live map */
+.tmap { position:relative; overflow:hidden; border:1px solid rgba(82,223,208,.34); border-radius:24px; background:#071b30; box-shadow:0 22px 54px rgba(0,0,0,.38); isolation:isolate; }
+.tmap::after { content:""; position:absolute; inset:0; z-index:1; pointer-events:none; background:linear-gradient(180deg,rgba(4,19,34,.12),transparent 28%,transparent 72%,rgba(4,19,34,.24)); }
+.tm-tiles,.tm-overlay,.tm-lines,.tm-marks { position:absolute; inset:0; }
+.tm-tiles { filter:saturate(1.12) contrast(1.04); }
+.tm-overlay { opacity:.72; }
+.tm-lines { z-index:3; overflow:visible; pointer-events:none; }
+.tm-marks { z-index:4; }
+.tm-layers,.tm-zoom,.tm-loc-status,.tm-attr,.tm-msg { z-index:7!important; }
+.tm-layers { padding:5px!important; gap:3px; border:1px solid rgba(82,223,208,.28); border-radius:15px!important; background:rgba(5,24,43,.88)!important; box-shadow:0 10px 28px rgba(0,0,0,.32)!important; backdrop-filter:blur(14px)!important; }
+.tm-layers button { color:#dff7ff!important; border-radius:10px!important; }
+.tm-layers button[aria-pressed=true] { background:linear-gradient(130deg,#20c997,#087c70)!important; color:#03251f!important; }
+.tm-zoom button,.tm-zoom .tm-pl,.tm-zoom .tm-locate { color:#eaffff!important; background:rgba(5,24,43,.9)!important; border:1px solid rgba(82,223,208,.25)!important; border-radius:12px!important; box-shadow:0 8px 22px rgba(0,0,0,.3)!important; backdrop-filter:blur(12px); }
+.tm-zoom button:hover,.tm-zoom .tm-pl:hover,.tm-zoom .tm-locate:hover { border-color:var(--v40-cyan)!important; }
+.tm-attr { background:rgba(5,24,43,.72)!important; color:#d6e9f4!important; border-radius:8px 0 0 0; padding:4px 7px; }
+.tm-attr a { color:#76e8d4!important; }
+.tm-scale { z-index:6; }
+.tm-north { background:rgba(5,24,43,.88)!important; color:#eaffff!important; border:1px solid var(--v40-line); }
+.mk-fac>svg,.mk-station>svg,.mk-unit>svg { filter:drop-shadow(0 4px 8px rgba(0,0,0,.55)); transition:transform .2s ease,filter .2s ease; }
+.mk-fac:hover>svg,.mk-unit:hover>svg { transform:scale(1.18); filter:drop-shadow(0 0 9px rgba(82,223,208,.8)); }
+.mk-fac .clbl,.mk-city .clbl { padding:4px 8px; border:1px solid rgba(82,223,208,.24); border-radius:8px; background:rgba(5,24,43,.9)!important; color:#effaff!important; font-weight:750; backdrop-filter:blur(8px); }
+.mk-unit>svg { width:34px!important; height:34px!important; padding:6px!important; border:2px solid #fff!important; border-radius:12px!important; }
+.mk-unit.u-ambulance>svg { background:#eafcff!important; color:#087caa!important; box-shadow:0 0 0 5px rgba(56,216,255,.18),0 0 22px rgba(56,216,255,.55); animation:v40-vehicle-glow 1.8s ease-in-out infinite; }
+.mk-unit.u-police>svg { background:#dceaff!important; color:#174bba!important; box-shadow:0 0 0 5px rgba(50,111,255,.18),0 0 22px rgba(50,111,255,.5); animation:v40-vehicle-glow 1.5s ease-in-out infinite; }
+.mk-unit.u-fire>svg { background:#fff0e7!important; color:#d83d22!important; box-shadow:0 0 0 5px rgba(255,89,50,.18),0 0 22px rgba(255,89,50,.5); animation:v40-vehicle-glow 1.3s ease-in-out infinite; }
+.mk-station>svg { width:25px!important;height:25px!important;padding:5px!important; }
+.mk-incident .pulse { display:block!important; position:absolute; width:30px;height:30px;border:2px solid #ff6b6b;border-radius:50%; animation:v40-incident-pulse 1.8s ease-out infinite; }
+.mk-incident .dot { position:relative; z-index:1; }
+.tm-route { stroke-width:3.5!important; stroke-dasharray:10 8!important; animation:v40-route-flow 1.4s linear infinite; filter:drop-shadow(0 0 3px rgba(255,255,255,.45)); }
+.tm-trail { stroke-width:5!important; stroke-dasharray:3 9!important; animation:v40-route-flow .9s linear infinite; opacity:.8; }
+.tm-route.u-ambulance,.tm-trail.u-ambulance { stroke:#35d9ff; }
+.tm-route.u-police,.tm-trail.u-police { stroke:#4e8dff; }
+.tm-route.u-fire,.tm-trail.u-fire { stroke:#ff7557; }
+.mk-cluster span { width:39px;height:39px; background:linear-gradient(140deg,#20c997,#087c70); box-shadow:0 0 0 6px rgba(32,201,151,.17),0 8px 20px rgba(0,0,0,.4); }
+
+/* Hospital discovery, provider profiles and visit/appointment wallet */
+.g24h-rail > div { min-height:100%; }
+.g24h-hosp { border-radius:22px; position:relative; overflow:hidden; }
+.g24h-hosp::before { content:""; position:absolute; inset:0 0 auto; height:3px; background:linear-gradient(90deg,#20c997,#52dfd0,transparent); }
+.g24h-hosp__avatar { border:1px solid rgba(255,255,255,.2); box-shadow:0 8px 22px rgba(32,201,151,.2); }
+.g24h-hosp b { color:#f0fbff; }
+.g24h-pill { border:1px solid rgba(82,223,208,.18); }
+.cardpass { position:relative; overflow:hidden; background:radial-gradient(circle at 92% 8%,rgba(82,223,208,.2),transparent 34%),linear-gradient(135deg,#0c705d,#0b2944 68%,#06172d)!important; border:1px solid rgba(82,223,208,.32)!important; border-radius:22px!important; box-shadow:0 18px 38px rgba(0,0,0,.3)!important; }
+.cardpass::after { content:""; position:absolute; width:180px;height:180px;right:-72px;bottom:-100px;border:1px solid rgba(255,255,255,.15);border-radius:50%;box-shadow:0 0 0 18px rgba(255,255,255,.035),0 0 0 38px rgba(255,255,255,.025);pointer-events:none; }
+.cp-top { color:#dffbf5; }
+.cp-state { border:1px solid rgba(255,255,255,.22); }
+.cp-qr { box-shadow:0 8px 20px rgba(0,0,0,.22); }
+.wallet { gap:16px; }
+.wallet-item { padding:12px; }
+.vc { border-left-width:5px; border-radius:16px; }
+
+/* Provider, operator and admin dashboard surfaces */
+.pm { gap:18px; }
+.pm-list { border-radius:18px; }
+.pm-row { min-height:58px; transition:background .18s ease; }
+.pm-row:hover,.pm-row[aria-current=true] { background:rgba(82,223,208,.09)!important; }
+.pm-dot { box-shadow:0 5px 14px rgba(0,0,0,.24); }
+.pm-card { padding:16px; }
+.stats,.stat-grid,.metrics,.kpis { gap:12px; }
+.stat,.metric,.kpi { border:1px solid var(--v40-line); border-radius:18px; background:linear-gradient(145deg,#103653,#0a2540); box-shadow:0 12px 26px rgba(0,0,0,.18); }
+.page-head { margin-bottom:18px; }
+.page-head .eyebrow { letter-spacing:.12em; text-transform:uppercase; font-size:.72rem; }
+@keyframes v40-route-flow { to { stroke-dashoffset:-36; } }
+@keyframes v40-incident-pulse { 0% { transform:scale(.55);opacity:.9; } 100% { transform:scale(1.65);opacity:0; } }
+@keyframes v40-vehicle-glow { 0%,100% { filter:drop-shadow(0 0 4px rgba(82,223,208,.25)); } 50% { filter:drop-shadow(0 0 11px rgba(82,223,208,.85)); } }
+@media(max-width:700px) {
+  .panel { border-radius:17px; }
+  .page-banner { border-radius:16px; }
+  .tmap { border-radius:18px; }
+  .pm-map .tmap { height:58vh; min-height:390px; }
+  .tm-layers { max-width:calc(100% - 18px); }
+  .tm-layers button { padding:7px 8px!important; font-size:11px!important; }
+  .wallet { grid-template-columns:1fr!important; }
+  .cardpass { max-width:none; }
+  .actions .btn { min-height:42px; }
+}
+@media(min-width:1000px) {
+  .shell { max-width:1280px; margin-inline:auto; }
+  .pm { grid-template-columns:minmax(0,1fr) 370px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; }
+}
