@@ -111,12 +111,7 @@ function applyToHospital(store, org) {
       out.cards++;
     }
   }
-  // Starter cards go live only for a verified hospital (same rule as the hospital's own publish button).
-  if (org.status === 'verified') {
-    for (const c of store.filter('cards', x => x.hospitalId === org.id && x.isCatalogSeed && x.status === 'draft' && !x.catalogPublished)) {
-      c.catalogPublished = true; c.status = 'published'; c.hospitalApprovedAt = now; c.approvedBy = 'catalog'; c.updatedAt = now; out.published++;
-    }
-  }
+  // Starter cards always remain drafts. Only the hospital can approve and publish them.
   if (out.services || out.cards || out.published) store.save();
   return out;
 }

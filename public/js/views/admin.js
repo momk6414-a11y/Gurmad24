@@ -12,7 +12,17 @@ const tabs = (items, cur, base) => h('div', { class: 'chips' }, items.map(([k, l
 
 export async function overview() {
   const [d, live] = await Promise.all([GET('/admin/dashboard'), liveBoard().catch(() => null)]);
-  return h('div', head('Administration', 'Platform overview (demo / sandbox values).'), live,
+  const prepareCards = async () => {
+    if (!await confirmBox(t('Create starter services and draft health cards for hospitals that do not already have cards? Existing cards and hospital edits will not be overwritten. Prices and terms are placeholders until each hospital reviews them.'))) return;
+    try {
+      const r = await POST('/admin/catalog/apply', {});
+      const addedCards = r.results.reduce((n, x) => n + x.cards, 0);
+      const hospitals = r.results.filter(x => x.cards > 0).length;
+      toast(t('Prepared {cards} draft cards for {hospitals} hospitals.', { cards: addedCards, hospitals }));
+      refresh();
+    } catch (e) { toast(errText(e), 'err'); }
+  };
+  return h('div', head('Administration', 'Platform overview (demo / sandbox values).', h('button', { class: 'btn', onclick: prepareCards }, icon('plus'), t('Prepare hospital cards'))), live,
     h('div', { class: 'grid g4 keep2' }, tile('Pending verifications', d.orgsPending, t('Open pending organisations'), () => go('/admin/orgs?status=pending')), tile('Pending refunds', d.refundsPending, t('Review orders and refunds'), () => go('/admin/finance?tab=orders')), tile('Open complaints', d.complaintsOpen, t('Review complaints'), () => go('/admin/complaints')), tile('Users', d.users, t('Manage users and roles'), () => go('/admin/users'))),
     h('div', { class: 'grid g4 keep2' }, tile('Verified hospitals', d.hospitalsVerified, t('View verified hospitals'), () => go('/admin/orgs?status=verified&type=hospital')), tile('Verified providers', d.providersVerified, t('View verified providers'), () => go('/admin/orgs?status=verified&type=provider')), tile('Published cards', d.cardsPublished, t('Moderate health cards'), () => go('/admin/cards')), tile('Card orders', d.orders, t('Open card orders'), () => go('/admin/finance?tab=orders'))),
     h('div', { class: 'grid g2' }, tile('Platform revenue this month', money(d.platformRevenueThisMonthCents), t('Open monthly revenue report'), () => go('/admin/revenue?period=month')), tile('Platform revenue total', money(d.platformRevenueTotalCents), t('Open revenue report'), () => go('/admin/revenue?period=year'))),
