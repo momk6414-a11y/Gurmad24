@@ -1,0 +1,19 @@
+/* V41 — hospital profile + hospital dashboard setup checklist. Design tokens only. */
+.hd-hero{background:linear-gradient(150deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);display:grid;gap:16px}
+.hd-id{display:flex;gap:14px;align-items:center;min-width:0}
+.hd-logo{flex:none;width:64px;height:64px;border-radius:20px;display:grid;place-items:center;font-weight:800;font-size:22px;background:var(--mint);color:var(--mint-ink)}
+.hd-title{min-width:0}.hd-title h2{margin:0;overflow-wrap:anywhere}
+.hd-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.hd-tags .badge{display:inline-flex;align-items:center;gap:5px}
+.hd-actions{display:flex;flex-wrap:wrap;gap:10px}.hd-actions .btn{flex:1 1 150px;justify-content:center;min-height:46px}
+@media (min-width:860px){.hd-hero{grid-template-columns:1fr auto;align-items:center}.hd-actions .btn{flex:0 0 auto}}
+.setup{background:linear-gradient(150deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.setup-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.setup-head h3{margin:0;font-size:17px}
+.setup-bar{height:8px;border-radius:99px;background:var(--panel2);margin:12px 0;overflow:hidden}.setup-bar i{display:block;height:100%;background:var(--mint);border-radius:99px;transition:width .4s ease}
+.setup-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.setup-list li{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.setup-list li.ok{opacity:.7}.setup-list a{color:var(--ink);font-weight:600;flex:1;text-decoration:none}.setup-list li span:not(.setup-mark){flex:1}
+.setup-list li:has(a):hover{border-color:var(--mint)}
+.setup-list small{color:var(--muted)}
+.setup-mark{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center}
+.setup-list li.ok .setup-mark{background:var(--mint);border-color:var(--mint);color:var(--mint-ink)}
+@media (prefers-reduced-motion:reduce){.setup-bar i{transition:none}}

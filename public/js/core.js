@@ -858,6 +858,14 @@ export const loading = () =>
 
 // ---------- Panels and dashboard tiles
 
+// A value counts as present only when it is not null/undefined/blank.
+export const hasVal = v => v !== null && v !== undefined && String(v).trim() !== '';
+// Definition list that silently skips rows with no value (no "-" or "null" placeholders). Returns null when empty.
+export function kv(pairs) {
+  const rows = pairs.filter(([, v]) => v !== false && (v && v.nodeType ? true : hasVal(v)));
+  return rows.length ? h('dl', { class: 'kv' }, rows.flatMap(([k, v]) => [h('dt', k), h('dd', v)])) : null;
+}
+
 export const panel = (title, body, right) =>
   h(
     'section',

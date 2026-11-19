@@ -1,5 +1,5 @@
 // Hospital portal and ambulance / lab provider portal.
-import { S, t, h, icon, GET, POST, PATCH, DEL, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, fdate, fdt, confirmBox, downloadApi, link, ApiError } from '../core.js';
+import { S, t, h, icon, GET, POST, PATCH, DEL, form, modal, toast, money, badge, table, panel, tile, list, demoNote, emptyState, errText, go, fdate, fdt, confirmBox, downloadApi, link, ApiError, kv, hasVal } from '../core.js';
 import { receiptNode } from './shared.js';
 import { APPT_CATS, CASE_CATS, stopPoll } from './public.js';
 import { liveMap, osmLink } from '../map.js';
@@ -10,11 +10,31 @@ const isHosp = () => S.org && S.org.type === 'hospital';
 const catName = c => t(([...APPT_CATS, ...CASE_CATS].find(x => x[0] === c) || [0, c])[1]);
 const verifyBanner = o => o.status === 'verified' ? null : h('div', { class: 'note' }, icon('alert', 18), h('span', o.status === 'pending' ? t('Your organisation is waiting for administrator verification. You can prepare your profile and drafts, but nothing is public yet.') : t('Your organisation is {s}. {n}', { s: t(o.status), n: o.statusNote })));
 
+// Real onboarding progress, computed only from data the hospital has actually entered.
+function setupChecklist(org, services, cards) {
+  const steps = [
+    ['Add address and opening hours', hasVal(org.address) && hasVal(org.hours), '/org/profile'],
+    ['Add a public phone and description', hasVal(org.phone) && hasVal(org.description), '/org/profile'],
+    ['List at least one service', services.length > 0, '/org/services'],
+    ['Create a health card', cards.length > 0, '/org/cards'],
+    ['Get verified by an administrator', org.status === 'verified', null],
+  ];
+  const done = steps.filter(x => x[1]).length;
+  if (done === steps.length) return null;
+  return h('section', { class: 'setup', 'aria-label': t('Complete your hospital profile') },
+    h('div', { class: 'setup-head' }, h('h3', t('Complete your hospital profile')), h('span', { class: 'badge' }, done + '/' + steps.length)),
+    h('div', { class: 'setup-bar', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': steps.length, 'aria-valuenow': done }, h('i', { style: 'width:' + Math.round(done / steps.length * 100) + '%' })),
+    h('ul', { class: 'setup-list' }, steps.map(([label, ok, to]) => h('li', { class: ok ? 'ok' : '' },
+      h('span', { class: 'setup-mark', 'aria-hidden': 'true' }, ok ? icon('check', 14) : ''),
+      to && !ok ? h('a', { href: '#' + to }, t(label)) : h('span', t(label)), ok ? h('small', t('Done')) : null))));
+}
+
 export async function dashboard() {
   const { org } = await GET('/org'); S.org = org;
   const wrap = h('div', head(org.name, ({ hospital: 'Hospital portal', lab: 'Laboratory portal', police: 'Police station portal', fire: 'Fire station portal' }[org.type] || 'Ambulance provider portal'), badge(org.status)), verifyBanner(org));
   if (org.type === 'hospital') {
-    const [sales, cards, ap, cm, vr] = await Promise.all([GET('/org/reports/sales'), GET('/org/cards'), GET('/org/appointments'), GET('/org/complaints'), GET('/org/visits')]);
+    const [sales, cards, ap, cm, vr, svc] = await Promise.all([GET('/org/reports/sales'), GET('/org/cards'), GET('/org/appointments'), GET('/org/complaints'), GET('/org/visits'), GET('/org/services')]);
+    wrap.append(setupChecklist(org, svc.services || [], cards.cards || []));
     wrap.append(h('div', { class: 'grid g4 keep2' }, tile('Published cards', cards.cards.filter(c => c.status === 'published').length, null, () => go('/org/cards')), tile('Orders', sales.report.orders, null, () => go('/org/sales')),
       tile('Gross sales (demo)', money(sales.report.grossCents), t('Open sales report'), () => go('/org/sales')), tile('Net to hospital (demo)', money(sales.report.netCents), t('Open sales report'), () => go('/org/sales')),
       tile('Appointment requests', ap.appointments.filter(a => a.status === 'requested').length, null, () => go('/org/appointments')), tile('Visit cards', vr.visits.length, null, () => go('/org/visits')), tile('Open complaints', cm.complaints.filter(c => c.status !== 'resolved').length, null, () => go('/org/complaints'))));
@@ -70,7 +90,7 @@ export async function appointments() {
   };
   const cards = as.map(a => h('article', { class: 'panel appointment-card' },
     h('div', { class: 'appointment-card-head' }, h('div', h('small', t('APPOINTMENT REQUEST')), h('h3', a.patientName)), badge(a.status)),
-    h('dl', { class: 'kv' }, h('dt', t('Phone')), h('dd', a.contactPhone || '-'), h('dt', t('Reason type')), h('dd', catName(a.category)), h('dt', t('Service')), h('dd', a.serviceName || '-'), h('dt', t('Preferred date')), h('dd', fdate(a.preferredDate))),
+    kv([[t('Phone'), a.contactPhone], [t('Reason type'), catName(a.category)], [t('Service'), a.serviceName], [t('Preferred date'), fdate(a.preferredDate)]]),
     a.note ? h('p', h('b', t('Patient note: ')), a.note) : null,
     a.visitConsentAt ? h('p', { class: 'muted' }, t('Patient has consented to a visit card.')) : null,
     h('div', { class: 'actions' },

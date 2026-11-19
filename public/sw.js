@@ -1,12 +1,12 @@
 // GURMAD 24 - Service Worker
 // V45 refreshes the brand motion shell; personal/API data remains uncached.
-const CACHE = 'g24-v45-brand-motion';
+const CACHE = 'g24-v45-brand-motion-hospital';
 const SHELL = [
   '/', '/index.html',
   '/css/app.css', '/css/design-v4.css', '/css/brand-tokens.css', '/css/splash.css',
   '/css/home-premium.css', '/css/onboarding.css', '/css/home-app.css',
   '/css/v40-premium.css', '/css/v41-account.css', '/css/v41-map.css',
-  '/css/v30-1-premium.css', '/css/v44-nextgen.css', '/css/v45-brand-motion.css',
+  '/css/v30-1-premium.css', '/css/v44-nextgen.css', '/css/v45-brand-motion.css', '/css/v41-hospital.css',
   '/js/onboarding.js', '/assets/onboarding/ob-sos.svg', '/assets/onboarding/ob-care.svg',
   '/assets/onboarding/ob-map.svg', '/js/splash.js', '/assets/gurmad-logo.svg',
   '/fonts/Poppins-Regular.ttf', '/fonts/Poppins-Bold.ttf',

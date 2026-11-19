@@ -1,5 +1,5 @@
 // Patient / public account screens.
-import { S, t, h, icon, GET, POST, PATCH, form, modal, toast, money, badge, table, panel, list, demoNote, emptyState, errText, go, fdate, fdt, download, setLang, confirmBox, link } from '../core.js';
+import { S, t, h, icon, GET, POST, PATCH, form, modal, toast, money, badge, table, panel, list, demoNote, emptyState, errText, go, fdate, fdt, download, setLang, confirmBox, link, kv } from '../core.js';
 import { receiptNode, cardPass, payName } from './shared.js';
 import { APPT_CATS } from './public.js';
 
@@ -37,7 +37,7 @@ export async function appointments() {
   const recordedAppointments = new Set(records.map(v => v.appointmentId));
   const cards = as.map(a => h('article', { class: 'panel appointment-card' },
     h('div', { class: 'appointment-card-head' }, h('div', h('small', t('APPOINTMENT CARD')), h('h3', a.orgName)), badge(a.status)),
-    h('dl', { class: 'kv' }, h('dt', t('Reason type')), h('dd', catName(a.category)), h('dt', t('Preferred date')), h('dd', fdate(a.preferredDate)), h('dt', t('Service')), h('dd', a.serviceName || '-')),
+    kv([[t('Reason type'), catName(a.category)], [t('Preferred date'), fdate(a.preferredDate)], [t('Service'), a.serviceName]]),
     a.orgNote ? h('p', h('b', t('Hospital note: ')), a.orgNote) : null,
     h('div', { class: 'actions' },
       a.visitConsentAt ? (recordedAppointments.has(a.id) ? badge('Visit card saved') : h('button', { class: 'btn sm ghost', onclick: async () => { await POST('/appointments/' + a.id + '/visit-consent', { consent: false }); toast(t('Consent withdrawn.')); window.dispatchEvent(new HashChangeEvent('hashchange')); } }, t('Withdraw visit-card consent'))) : ['requested', 'confirmed'].includes(a.status) ? h('button', { class: 'btn sm ghost', onclick: async () => { await POST('/appointments/' + a.id + '/visit-consent', { consent: true }); toast(t('Consent saved.')); window.dispatchEvent(new HashChangeEvent('hashchange')); } }, t('Allow visit card')) : null,
