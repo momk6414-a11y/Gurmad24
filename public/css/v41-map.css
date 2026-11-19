@@ -42,3 +42,7 @@
 .tm-road-status.is-fallback{border-color:rgba(245,185,66,.5);background:rgba(60,40,6,.94);color:#ffe3b0;}
 .tm-road-status[hidden]{display:none;}
 @media(max-width:480px){.tm-road-status{top:48px;font-size:10px;max-width:calc(100% - 20px);}}
+
+/* V42 touch-first interactive map canvas. */
+.tmap{touch-action:none;overscroll-behavior:contain;user-select:none;-webkit-user-select:none;}
+.tm-tiles img{pointer-events:none;}
