@@ -33,6 +33,40 @@ export const PUNTLAND = [{ lat: 6.6, lng: 47.0 }, { lat: 12.1, lng: 51.6 }];
 // Default frame for dispatch/operations maps: Gaalkacyo and its surroundings.
 export const GAALKACYO = [{ lat: 6.735, lng: 47.385 }, { lat: 6.805, lng: 47.475 }];
 const MIN_Z = 5;
+// Public OSRM demo router: road geometry only. Cache requests so the 3–4s dashboard poll
+// does not repeatedly ask the routing service for the same incident.
+const ROAD_ROUTER = 'https://router.project-osrm.org/route/v1/driving/';
+const roadRouteCache = new Map();
+const roadRoutePending = new Map();
+async function roadGeometry(from, to) {
+  const key = [from.lat, from.lng, to.lat, to.lng].map(v => Number(v).toFixed(5)).join(',');
+  if (roadRouteCache.has(key)) return roadRouteCache.get(key);
+  if (roadRoutePending.has(key)) return roadRoutePending.get(key);
+  const task = (async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6500);
+    try {
+      const url = ROAD_ROUTER + from.lng + ',' + from.lat + ';' + to.lng + ',' + to.lat + '?overview=full&geometries=geojson&steps=false';
+      const response = await fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error('Routing service unavailable');
+      const data = await response.json();
+      const coords = data && data.code === 'Ok' && data.routes?.[0]?.geometry?.coordinates;
+      if (!Array.isArray(coords) || coords.length < 2) throw new Error('No road route');
+      const points = coords.map(([lng, lat]) => ({ lat: Number(lat), lng: Number(lng) }))
+        .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+      if (points.length < 2) throw new Error('Invalid road geometry');
+      const result = { points, road: true, distance: data.routes[0].distance, duration: data.routes[0].duration };
+      roadRouteCache.set(key, result);
+      return result;
+    } catch (_) {
+      const result = { points: [from, to], road: false };
+      roadRouteCache.set(key, result);
+      return result;
+    } finally { clearTimeout(timeout); roadRoutePending.delete(key); }
+  })();
+  roadRoutePending.set(key, task);
+  return task;
+}
 
 const NS = 'http://www.w3.org/2000/svg';
 const worldSize = z => TILE * 2 ** z;
@@ -129,14 +163,12 @@ export function liveMap(entries, opts = {}) {
     const steps = [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000];
     const dist = [...steps].reverse().find(d => d / mpp <= 110) || steps[0];
     scale.firstChild.style.width = Math.max(18, dist / mpp) + 'px'; scale.lastChild.textContent = dist >= 1000 ? (dist / 1000) + ' km' : dist + ' m';
-    for (const ln of lines.querySelectorAll('line')) {
-      const d = ln.__d; const [x1, y1] = px(d.a), [x2, y2] = px(d.b);
-      ln.setAttribute('x1', x1); ln.setAttribute('y1', y1); ln.setAttribute('x2', x2); ln.setAttribute('y2', y2);
-    }
-    // Animated dispatch tokens travel along the existing route as an explicitly visual demo.
-    for (const motion of routeMotion) {
-      const [x1, y1] = px(motion.from), [x2, y2] = px(motion.to);
-      motion.anim.setAttribute('path', `M ${x1} ${y1} L ${x2} ${y2}`);
+    for (const route of routeMotion) {
+      const d = route.points.map((point, index) => {
+        const [x, y] = px(point); return (index ? 'L ' : 'M ') + x + ' ' + y;
+      }).join(' ');
+      route.glow.setAttribute('d', d); route.path.setAttribute('d', d);
+      route.anim.setAttribute('path', d);
     }
   }
   const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
@@ -199,7 +231,7 @@ export function liveMap(entries, opts = {}) {
   function build(list) {
     markPane.replaceChildren(); lines.replaceChildren(); items = []; routeMotion = [];
     const add = (o, el) => { markPane.append(el); items.push({ lat: o.lat, lng: o.lng, el }); };
-    const line = (a, b, cls) => { const l = document.createElementNS(NS, 'line'); l.setAttribute('class', cls); l.__d = { a, b }; lines.append(l); };
+    const routePath = (cls) => { const p = document.createElementNS(NS, 'path'); p.setAttribute('class', cls); p.setAttribute('fill', 'none'); lines.append(p); return p; };
     if (opts.places) PLACES.forEach(p => add(p, mk('mk-city', h('span', { class: 'cdot' }), h('span', { class: 'clbl' }, p.name))));
     (opts.markers || []).forEach(m => {
       const el = mk('mk-fac u-' + (m.type || 'hospital'), icon(m.kind === 'hospital' ? 'hospital' : m.kind === 'government' ? 'shield' : m.kind === 'landmark' ? 'pin' : (m.type || 'pin'), 14), m.label ? h('span', { class: 'clbl' }, m.label) : null);
@@ -210,14 +242,16 @@ export function liveMap(entries, opts = {}) {
     });
     if (userLocation) add(userLocation, h('div', { class: 'mk mk-user-location', role: 'img', 'aria-label': t('Your location') }));
     for (const e of list) if (e.station) {
-      line(e.station, e.incident, 'tm-route-glow u-' + e.type);
-      line(e.station, e.incident, 'tm-route u-' + e.type);
-      if (e.unit) line(e.station, e.unit, 'tm-trail u-' + e.type);
-      // Vehicle sprite: a visual simulation only. It is NOT a GPS position or a dispatch confirmation.
+      const glow = routePath('tm-route-glow u-' + e.type);
+      const path = routePath('tm-route u-' + e.type);
+      if (e.unit) {
+        const trail = routePath('tm-trail u-' + e.type);
+        trail.__trail = { from: e.station, to: e.unit };
+      }
+      // Animated responder icon follows the road geometry when available; movement is still simulation.
       const token = document.createElementNS(NS, 'g'); token.setAttribute('class', 'tm-dispatch-motion u-' + e.type);
       const sprite = document.createElementNS(NS, 'g'); sprite.setAttribute('class', 'tm-veh u-' + e.type);
       const sh = (tag, attrs, cls) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (cls) n.setAttribute('class', cls); return n; };
-      // Top-down vehicle facing +x (the motion path rotates it to the heading).
       sprite.append(
         sh('rect', { x: -13, y: -6.5, width: 26, height: 13, rx: 4 }, 'veh-body'),
         sh('rect', { x: 3, y: -5, width: 6, height: 10, rx: 1.5 }, 'veh-glass'),
@@ -225,7 +259,21 @@ export function liveMap(entries, opts = {}) {
         sh('circle', { cx: -2, cy: -6.5, r: 2.6 }, 'veh-light veh-l1'), sh('circle', { cx: -2, cy: 6.5, r: 2.6 }, 'veh-light veh-l2'));
       const anim = document.createElementNS(NS, 'animateMotion'); anim.setAttribute('path', 'M 0 0 L 1 1'); anim.setAttribute('rotate', 'auto');
       anim.setAttribute('dur', e.type === 'police' ? '8s' : e.type === 'fire' ? '10s' : '9s'); anim.setAttribute('begin', '0s'); anim.setAttribute('repeatCount', 'indefinite');
-      token.append(sprite, anim); lines.append(token); routeMotion.push({ from: e.station, to: e.incident, anim });
+      token.append(sprite, anim); lines.append(token);
+      const motion = { from: e.station, to: e.incident, points: [e.station, e.incident], glow, path, anim };
+      routeMotion.push(motion);
+      roadGeometry(e.station, e.incident).then(result => {
+        if (!routeMotion.includes(motion)) return;
+        motion.points = result.points;
+        path.classList.toggle('tm-route-fallback', !result.road);
+        glow.classList.toggle('tm-route-fallback', !result.road);
+        schedule();
+      });
+      if (e.unit) {
+        const trail = lines.lastChild.previousSibling;
+        const [x1, y1] = [e.station, e.unit].map((p, i) => i ? y2lat : lng2x);
+        trail.__trail = { from: e.station, to: e.unit };
+      }
     }
     for (const e of list) if (e.station) add(e.station, mk('mk-station u-' + e.type, icon(e.type, 13)));
     simBadge.hidden = !list.some(e => e.station);
