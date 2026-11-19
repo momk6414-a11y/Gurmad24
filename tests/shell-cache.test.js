@@ -15,7 +15,9 @@ test('service worker precaches every stylesheet linked in index.html', () => {
 });
 
 test('account is reachable: avatar links to the account page and nav keeps a priority Account slot', () => {
-  assert.ok(pub('js/views/public.js').includes("href: '#/me/account'"));
+  const publicView = pub('js/views/public.js');
+  assert.ok(publicView.includes("S.user.role === 'patient' ? '/me/account' : '/account'"));
+  assert.ok(publicView.includes("href: '#' + accountPath"));
   const app = pub('js/app.js');
   assert.ok(app.includes("'/me/account']") && app.includes("'/account']"));
 });
