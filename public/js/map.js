@@ -97,10 +97,11 @@ export function liveMap(entries, opts = {}) {
   const msg = h('div', { class: 'tm-msg', hidden: true, role: 'status' }, t('The map pictures could not load. Check your internet connection. Markers still work.'));
   const attr = h('div', { class: 'tm-attr' });
   const simBadge = h('div', { class: 'tm-sim', role: 'note', hidden: true }, h('i', { 'aria-hidden': 'true' }), t('SIMULATION: vehicle movement is illustrative, not live GPS'));
+  const roadBadge = h('div', { class: 'tm-road-status', role: 'status', 'aria-live': 'polite', hidden: true });
   const locStatus = h('div', { class: 'tm-loc-status', hidden: true, role: 'status', 'aria-live': 'polite' });
   const locateBtn = h('button', { type: 'button', class: 'tm-locate', 'aria-label': t('Show my location'), onclick: () => locateMe() }, t('My location'));
   const seg = h('div', { class: 'seg tm-ctl tm-layers', role: 'group', 'aria-label': t('Map type') });
-  const box = h('div', { class: 'tmap', tabindex: 0, role: 'application', 'aria-label': t('Live map (demo)') }, tilePane, overlayPane, lines, markPane, msg, locStatus, simBadge, seg, scale, north,
+  const box = h('div', { class: 'tmap', tabindex: 0, role: 'application', 'aria-label': t('Live map (demo)') }, tilePane, overlayPane, lines, markPane, msg, locStatus, simBadge, roadBadge, seg, scale, north,
     h('div', { class: 'tm-ctl tm-zoom' },
       h('button', { type: 'button', 'aria-label': t('Zoom in'), onclick: () => zoomBy(1) }, '+'),
       h('button', { type: 'button', 'aria-label': t('Zoom out'), onclick: () => zoomBy(-1) }, '−'),
@@ -268,6 +269,13 @@ export function liveMap(entries, opts = {}) {
         motion.points = result.points;
         path.classList.toggle('tm-route-fallback', !result.road);
         glow.classList.toggle('tm-route-fallback', !result.road);
+        const failed = routeMotion.filter(item => item.path.classList.contains('tm-route-fallback')).length;
+        const pending = routeMotion.length - routeMotion.filter(item => item.path.dataset.routeReady === '1').length;
+        path.dataset.routeReady = '1';
+        const fallbacks = routeMotion.filter(item => item.path.classList.contains('tm-route-fallback')).length;
+        roadBadge.hidden = false;
+        roadBadge.textContent = fallbacks ? t('Road routing unavailable for {n} route(s) — straight-line fallback', { n: fallbacks }) : t('Road routes loaded · OpenStreetMap routing demo');
+        roadBadge.classList.toggle('is-fallback', fallbacks > 0);
         schedule();
       });
 
