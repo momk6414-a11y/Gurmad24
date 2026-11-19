@@ -15,7 +15,27 @@ test('service worker precaches every stylesheet linked in index.html', () => {
 });
 
 test('account is reachable: avatar links to the account page and nav keeps a priority Account slot', () => {
-  assert.ok(pub('js/views/public.js').includes("href: '#/me/account'"));
+  const publicView = pub('js/views/public.js');
+  assert.ok(publicView.includes("S.user.role === 'patient' ? '/me/account' : '/account'"));
+  assert.ok(publicView.includes("href: '#' + accountPath"));
   const app = pub('js/app.js');
   assert.ok(app.includes("'/me/account']") && app.includes("'/account']"));
+});
+
+
+test('emergency map requests road geometry and exposes a safe fallback', () => {
+  const map = pub('js/map.js');
+  const app = fs.readFileSync(path.join(__dirname, '..', 'src', 'app.js'), 'utf8');
+  assert.ok(map.includes('const ROAD_ROUTER'));
+  assert.ok(map.includes('/route/v1/driving/'));
+  assert.ok(map.includes('overview=full&geometries=geojson'));
+  assert.ok(map.includes('tm-route-fallback'));
+  assert.ok(map.includes('Road routing unavailable'));
+  assert.ok(app.includes("connect-src 'self'"));
+});
+
+test('native home map shortcut opens the shared Web App map route', () => {
+  const native = fs.readFileSync(path.join(__dirname, '..', 'mobile-native', 'App.tsx'), 'utf8');
+  assert.ok(native.includes("setWebPath('/#/map')"));
+  assert.ok(native.includes('<WebPage path={webPath} />'));
 });

@@ -33,3 +33,16 @@
   .tm-route{animation:none}.tm-sim i,.tm-veh .veh-light{animation:none}.tm-veh .veh-light{opacity:1}
 }
 @media (max-width:480px){.tm-sim{font-size:11px;bottom:72px}}
+
+/* V42 — road route geometry and clear provider/fallback status. */
+.tm-route{stroke-width:4!important;stroke-dasharray:12 8!important;filter:drop-shadow(0 0 3px rgba(255,255,255,.55));}
+.tm-route-glow{stroke-width:11!important;opacity:.25;}
+.tm-route-fallback{stroke-dasharray:5 10!important;opacity:.48!important;}
+.tm-road-status{position:absolute;left:10px;top:52px;z-index:7;max-width:min(440px,calc(100% - 20px));padding:7px 10px;border:1px solid rgba(82,223,208,.32);border-radius:10px;background:rgba(5,24,43,.92);color:#c9fff1;font-size:11px;font-weight:750;box-shadow:0 8px 22px rgba(0,0,0,.28);pointer-events:none;}
+.tm-road-status.is-fallback{border-color:rgba(245,185,66,.5);background:rgba(60,40,6,.94);color:#ffe3b0;}
+.tm-road-status[hidden]{display:none;}
+@media(max-width:480px){.tm-road-status{top:48px;font-size:10px;max-width:calc(100% - 20px);}}
+
+/* V42 touch-first interactive map canvas. */
+.tmap{touch-action:none;overscroll-behavior:contain;user-select:none;-webkit-user-select:none;}
+.tm-tiles img{pointer-events:none;}

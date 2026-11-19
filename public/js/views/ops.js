@@ -30,9 +30,19 @@ export async function dashboard({ query }) {
     { name: 'area', label: 'Area (general)', max: 60 }, { name: 'note', label: 'Note (no names, no medical details)', max: 200 }],
   { submit: 'Create', cancel: () => m.close(), onSubmit: async v => { await POST('/ops/cases', v); m.close(); toast(t('Simulated request created.')); refresh(); } })); };
 
+  const [hospitalDirectory, responderDirectory] = await Promise.all([
+    GET('/hospitals').catch(() => ({ hospitals: [] })),
+    GET('/providers').catch(() => ({ providers: [] })),
+  ]);
+  const facilityMarkers = [
+    ...(hospitalDirectory.hospitals || []).filter(x => x.lat != null && x.lng != null && Number.isFinite(Number(x.lat)) && Number.isFinite(Number(x.lng)))
+      .map(x => ({ kind: 'hospital', type: 'hospital', lat: Number(x.lat), lng: Number(x.lng), label: x.name, id: x.id })),
+    ...(responderDirectory.providers || []).filter(x => RESP.includes(x.type) && x.lat != null && x.lng != null && Number.isFinite(Number(x.lat)) && Number.isFinite(Number(x.lng)))
+      .map(x => ({ kind: 'station', type: x.type, lat: Number(x.lat), lng: Number(x.lng), label: x.name, id: x.id })),
+  ];
   const statsBox = h('div'); const casesBox = h('div');
-  const map = liveMap([], { places: true });
-  const mapPanel = panel('Live map (demo)', h('div', map, h('div', { class: 'legend' }, RESP.map(r => respTag(r)))));
+  const map = liveMap([], { places: true, markers: facilityMarkers, center: { lat: 6.7697, lng: 47.4308, z: 12 }, height: 'min(58vh, 520px)' });
+  const mapPanel = panel('Live map (demo)', h('div', map, h('div', { class: 'legend' }, RESP.map(r => respTag(r)), h('span', { class: 'rtag u-hospital' }, icon('hospital', 16), t('Hospital')))));
   const load = async () => {
     const [st, cs, all] = await Promise.all([
       GET('/ops/stats'),

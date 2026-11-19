@@ -113,7 +113,7 @@ function V40Hero({ onOpenHospitals }: { onOpenHospitals: () => void }) {
     <View style={styles.heroV40BottomLine}><Text style={styles.heroV40BottomText}>GAALKACYO PILOT</Text><Text style={styles.heroV40BottomText}>CARE · CONNECT · RESPOND</Text></View>
   </View>;
 }
-function Home({ data, openHospitals, openWeb }: { data: ReturnType<typeof useHospitals>; openHospitals: () => void; openWeb: () => void }) {
+function Home({ data, openHospitals, openWeb, openMap }: { data: ReturnType<typeof useHospitals>; openHospitals: () => void; openWeb: () => void; openMap: () => void }) {
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
     <View style={styles.top}><View style={styles.brandRow}><Mark small /><View><Text style={styles.brand}>GURMAD <Text style={styles.greenText}>24</Text></Text><Text style={styles.brandSub}>Caafimaad iyo gargaar</Text></View></View><Pressable style={styles.webChip} onPress={openWeb}><Text style={styles.webChipText}>Web App ↗</Text></Pressable></View>
     <View style={styles.location}><Text style={styles.pin}>⌖</Text><View><Text style={styles.locationLabel}>GOOBTA MASHRUUCA</Text><Text style={styles.locationName}>Gaalkacyo, Soomaaliya</Text></View></View>
@@ -126,7 +126,7 @@ function Home({ data, openHospitals, openWeb }: { data: ReturnType<typeof useHos
     </View>
     <Heading title="Adeegyada" /><View style={styles.grid}>
       <Pressable style={styles.quickCard} onPress={openHospitals}><Text style={styles.quickIcon}>✚</Text><Text style={styles.quickTitle}>Isbitaallo</Text><Text style={styles.quickSub}>Xarumaha caafimaadka</Text></Pressable>
-      <Pressable style={styles.quickCard} onPress={openWeb}><Text style={styles.quickIconGreen}>⌖</Text><Text style={styles.quickTitle}>Khariidad</Text><Text style={styles.quickSub}>Ka fur Web App-ka</Text></Pressable>
+      <Pressable style={styles.quickCard} onPress={openMap} accessibilityRole="button" accessibilityLabel="Fur khariidadda GURMAD 24"><Text style={styles.quickIconGreen}>⌖</Text><Text style={styles.quickTitle}>Khariidad</Text><Text style={styles.quickSub}>Ka fur Web App-ka</Text></Pressable>
       <Pressable style={styles.quickCard} onPress={openWeb}><Text style={styles.quickIconPurple}>▣</Text><Text style={styles.quickTitle}>Tikidyo</Text><Text style={styles.quickSub}>Codsiyada iyo safarrada</Text></Pressable>
       <Pressable style={styles.quickCard} onPress={openWeb}><Text style={styles.quickIconOrange}>＋</Text><Text style={styles.quickTitle}>Adeeg caafimaad</Text><Text style={styles.quickSub}>Eeg adeegyada</Text></Pressable>
     </View>
@@ -211,30 +211,32 @@ function ActivityPage({ auth, onLogin, onRefreshAuth }: { auth: ReturnType<typeo
 function SimplePage({ title, subtitle, onOpenWeb }: { title: string; subtitle: string; onOpenWeb: () => void }) {
   return <ScrollView contentContainerStyle={styles.content}><Text style={styles.pageEyebrow}>GURMAD 24</Text><Text style={styles.pageTitle}>{title}</Text><Text style={styles.pageSub}>{subtitle}</Text><View style={styles.emptyCard}><Text style={styles.emptyIcon}>◷</Text><Text style={styles.emptyTitle}>Qaybtan wali waa la dhisayaa</Text><Text style={styles.emptyCopy}>Adeegyada hadda shaqaynaya ka isticmaal Web App-ka isku xiran.</Text><Pressable style={styles.secondaryButton} onPress={onOpenWeb}><Text style={styles.secondaryText}>Fur Web App-ka ↗</Text></Pressable></View></ScrollView>;
 }
-function WebPage() {
+function WebPage({ path }: { path: string }) {
   const [failed, setFailed] = useState(false);
   const [version, setVersion] = useState(0);
   return <View style={styles.webPage}><View style={styles.webHeader}><View><Text style={styles.webTitle}>GURMAD 24 Web App</Text><Text style={styles.webSub}>Isla website-ka iyo isla backend-ka</Text></View><Pressable style={styles.refresh} onPress={() => { setFailed(false); setVersion(v => v + 1); }}><Text style={styles.refreshText}>Cusboonaysii</Text></Pressable></View>
     {failed ? <View style={styles.webFailed}><Text style={styles.emptyTitle}>Web App-ka lama xiriirin karo</Text><Text style={styles.emptyCopy}>Hubi internet-ka, kadib mar kale isku day.</Text><Pressable style={styles.secondaryButton} onPress={() => Linking.openURL('https://gurmad24.onrender.com')}><Text style={styles.secondaryText}>Ku fur browser-ka ↗</Text></Pressable></View> :
-      <WebView key={version} style={styles.webView} source={{ uri: 'https://gurmad24.onrender.com' }} javaScriptEnabled domStorageEnabled sharedCookiesEnabled thirdPartyCookiesEnabled setSupportMultipleWindows={false} onError={() => setFailed(true)} startInLoadingState renderLoading={() => <View style={styles.webLoading}><ActivityIndicator size="large" color={colors.green} /><Text style={styles.muted}>Web App-ka ayaa furmaya…</Text></View>} />}
+      <WebView key={version} style={styles.webView} source={{ uri: 'https://gurmad24.onrender.com' + path }} javaScriptEnabled domStorageEnabled sharedCookiesEnabled thirdPartyCookiesEnabled setSupportMultipleWindows={false} onError={() => setFailed(true)} startInLoadingState renderLoading={() => <View style={styles.webLoading}><ActivityIndicator size="large" color={colors.green} /><Text style={styles.muted}>Web App-ka ayaa furmaya…</Text></View>} />}
   </View>;
 }
 export default function App() {
   const [tab, setTab] = useState<Tab>('home');
+  const [webPath, setWebPath] = useState('/');
   const [splash, setSplash] = useState(true);
   const data = useHospitals();
   const auth = useAuth();
   useEffect(() => { const t = setTimeout(() => setSplash(false), 900); return () => clearTimeout(t); }, []);
   if (splash) return <><StatusBar barStyle="light-content" /><Splash /></>;
-  const openWeb = () => setTab('web');
+  const openWeb = () => { setWebPath('/'); setTab('web'); };
+  const openMap = () => { setWebPath('/#/map'); setTab('web'); };
   return <SafeAreaView style={styles.safe}><StatusBar barStyle="dark-content" /><View style={styles.shell}>
-    {tab === 'home' ? <Home data={data} openHospitals={() => setTab('hospitals')} openWeb={openWeb} /> : null}
+    {tab === 'home' ? <Home data={data} openHospitals={() => setTab('hospitals')} openWeb={openWeb} openMap={openMap} /> : null}
     {tab === 'hospitals' ? <Hospitals data={data} /> : null}
     {tab === 'activity' ? <ActivityPage auth={auth} onLogin={() => setTab('account')} onRefreshAuth={() => auth.refresh()} /> : null}
     {tab === 'account' ? <AccountPage auth={auth} openWeb={openWeb} onOpenAdmin={() => setTab('adminPreview')} onOpenHospital={() => setTab('hospitalPreview')} /> : null}
     {tab === 'adminPreview' && auth.user?.role === 'admin' ? <AdminDashboard onBack={() => setTab('account')} /> : null}
     {tab === 'hospitalPreview' && auth.user && ['hospital_admin','provider_admin'].includes(auth.user.role) ? <HospitalDashboard onBack={() => setTab('account')} role={auth.user.role} /> : null}
-    {tab === 'web' ? <WebPage /> : null}
+    {tab === 'web' ? <WebPage path={webPath} /> : null}
     <View style={styles.bottom}>{tabs.map(t => <Pressable key={t.key} style={styles.tab} onPress={() => setTab(t.key)} accessibilityRole="button" accessibilityState={{ selected: tab === t.key }}><Text style={[styles.tabIcon, tab === t.key && styles.tabActive]}>{t.icon}</Text><Text style={[styles.tabLabel, tab === t.key && styles.tabActive]}>{t.label}</Text>{tab === t.key ? <View style={styles.indicator} /> : null}</Pressable>)}</View>
   </View></SafeAreaView>;
 }
