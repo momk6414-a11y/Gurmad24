@@ -31,7 +31,7 @@ test('emergency map requests road geometry and exposes a safe fallback', () => {
   assert.ok(map.includes('overview=full&geometries=geojson'));
   assert.ok(map.includes('tm-route-fallback'));
   assert.ok(map.includes('Road routing unavailable'));
-  assert.ok(app.includes('router.project-osrm.org'));
+  assert.ok(app.includes("connect-src 'self'"));
 });
 
 test('native home map shortcut opens the shared Web App map route', () => {
