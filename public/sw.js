@@ -1,8 +1,7 @@
-
 // GURMAD 24 - Service Worker
-// Version 18: refreshes old app cache and keeps API/personal data uncached.
+// V44 refreshes the premium app shell and keeps API/personal data uncached.
 
-const CACHE = 'g24-v43-dispatch-lock';
+const CACHE = 'g24-v44-nextgen';
 
 const SHELL = [
   '/',
@@ -18,6 +17,7 @@ const SHELL = [
   '/css/v41-account.css',
   '/css/v41-map.css',
   '/css/v30-1-premium.css',
+  '/css/v44-nextgen.css',
   '/js/onboarding.js',
   '/assets/onboarding/ob-sos.svg',
   '/assets/onboarding/ob-care.svg',
