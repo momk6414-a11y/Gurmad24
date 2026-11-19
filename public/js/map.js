@@ -30,6 +30,8 @@ export const PLACES = [
 ];
 // Frame that shows the whole of Puntland. No borders are drawn: the picture comes from the map provider.
 export const PUNTLAND = [{ lat: 6.6, lng: 47.0 }, { lat: 12.1, lng: 51.6 }];
+// Default frame for dispatch/operations maps: Gaalkacyo and its surroundings.
+export const GAALKACYO = [{ lat: 6.735, lng: 47.385 }, { lat: 6.805, lng: 47.475 }];
 const MIN_Z = 5;
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -60,14 +62,16 @@ export function liveMap(entries, opts = {}) {
   const markPane = h('div', { class: 'tm-marks' });
   const msg = h('div', { class: 'tm-msg', hidden: true, role: 'status' }, t('The map pictures could not load. Check your internet connection. Markers still work.'));
   const attr = h('div', { class: 'tm-attr' });
+  const simBadge = h('div', { class: 'tm-sim', role: 'note', hidden: true }, h('i', { 'aria-hidden': 'true' }), t('SIMULATION: vehicle movement is illustrative, not live GPS'));
   const locStatus = h('div', { class: 'tm-loc-status', hidden: true, role: 'status', 'aria-live': 'polite' });
   const locateBtn = h('button', { type: 'button', class: 'tm-locate', 'aria-label': t('Show my location'), onclick: () => locateMe() }, t('My location'));
   const seg = h('div', { class: 'seg tm-ctl tm-layers', role: 'group', 'aria-label': t('Map type') });
-  const box = h('div', { class: 'tmap', tabindex: 0, role: 'application', 'aria-label': t('Live map (demo)') }, tilePane, overlayPane, lines, markPane, msg, locStatus, seg, scale, north,
+  const box = h('div', { class: 'tmap', tabindex: 0, role: 'application', 'aria-label': t('Live map (demo)') }, tilePane, overlayPane, lines, markPane, msg, locStatus, simBadge, seg, scale, north,
     h('div', { class: 'tm-ctl tm-zoom' },
       h('button', { type: 'button', 'aria-label': t('Zoom in'), onclick: () => zoomBy(1) }, '+'),
       h('button', { type: 'button', 'aria-label': t('Zoom out'), onclick: () => zoomBy(-1) }, '−'),
       locateBtn,
+      h('button', { type: 'button', class: 'tm-pl', onclick: () => { userMoved = true; fit(GAALKACYO, 0); } }, t('Gaalkacyo')),
       h('button', { type: 'button', class: 'tm-pl', onclick: () => { userMoved = true; fit(PUNTLAND, 0); } }, t('Puntland'))), attr);
 
   const size = () => ({ w: box.clientWidth, h: box.clientHeight });
@@ -119,6 +123,7 @@ export function liveMap(entries, opts = {}) {
       c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.onclick(); } };
     }
     for (; ci < clusterPool.length; ci++) clusterPool[ci].hidden = true;
+    markPane.classList.toggle('z-labels', view.z >= 13);
     // scale bar
     const mpp = 156543.03392 * Math.cos(view.lat * Math.PI / 180) / 2 ** z;
     const steps = [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000];
@@ -205,17 +210,25 @@ export function liveMap(entries, opts = {}) {
     });
     if (userLocation) add(userLocation, h('div', { class: 'mk mk-user-location', role: 'img', 'aria-label': t('Your location') }));
     for (const e of list) if (e.station) {
+      line(e.station, e.incident, 'tm-route-glow u-' + e.type);
       line(e.station, e.incident, 'tm-route u-' + e.type);
       if (e.unit) line(e.station, e.unit, 'tm-trail u-' + e.type);
-      // This token is a visual simulation only; it is not a GPS position or dispatch confirmation.
+      // Vehicle sprite: a visual simulation only. It is NOT a GPS position or a dispatch confirmation.
       const token = document.createElementNS(NS, 'g'); token.setAttribute('class', 'tm-dispatch-motion u-' + e.type);
-      const circle = document.createElementNS(NS, 'circle'); circle.setAttribute('r', '11'); circle.setAttribute('class', 'tm-dispatch-halo');
-      const letter = document.createElementNS(NS, 'text'); letter.setAttribute('text-anchor', 'middle'); letter.setAttribute('dominant-baseline', 'central'); letter.setAttribute('class', 'tm-dispatch-letter');
-      letter.textContent = e.type === 'ambulance' ? 'A' : e.type === 'police' ? 'P' : 'F';
-      const anim = document.createElementNS(NS, 'animateMotion'); anim.setAttribute('path', 'M 0 0 L 1 1'); anim.setAttribute('dur', e.type === 'police' ? '8s' : e.type === 'fire' ? '10s' : '9s'); anim.setAttribute('begin', '0s'); anim.setAttribute('repeatCount', 'indefinite'); anim.setAttribute('rotate', 'auto');
-      token.append(circle, letter, anim); lines.append(token); routeMotion.push({ from: e.station, to: e.incident, anim });
+      const sprite = document.createElementNS(NS, 'g'); sprite.setAttribute('class', 'tm-veh u-' + e.type);
+      const sh = (tag, attrs, cls) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (cls) n.setAttribute('class', cls); return n; };
+      // Top-down vehicle facing +x (the motion path rotates it to the heading).
+      sprite.append(
+        sh('rect', { x: -13, y: -6.5, width: 26, height: 13, rx: 4 }, 'veh-body'),
+        sh('rect', { x: 3, y: -5, width: 6, height: 10, rx: 1.5 }, 'veh-glass'),
+        e.type === 'fire' ? sh('rect', { x: -11, y: -2, width: 11, height: 4, rx: 1 }, 'veh-ladder') : sh('rect', { x: -4, y: -1.5, width: 6, height: 3, rx: 1 }, 'veh-mark'),
+        sh('circle', { cx: -2, cy: -6.5, r: 2.6 }, 'veh-light veh-l1'), sh('circle', { cx: -2, cy: 6.5, r: 2.6 }, 'veh-light veh-l2'));
+      const anim = document.createElementNS(NS, 'animateMotion'); anim.setAttribute('path', 'M 0 0 L 1 1'); anim.setAttribute('rotate', 'auto');
+      anim.setAttribute('dur', e.type === 'police' ? '8s' : e.type === 'fire' ? '10s' : '9s'); anim.setAttribute('begin', '0s'); anim.setAttribute('repeatCount', 'indefinite');
+      token.append(sprite, anim); lines.append(token); routeMotion.push({ from: e.station, to: e.incident, anim });
     }
     for (const e of list) if (e.station) add(e.station, mk('mk-station u-' + e.type, icon(e.type, 13)));
+    simBadge.hidden = !list.some(e => e.station);
     for (const e of list) add(e.incident, mk('mk-incident' + (e.done ? ' done' : ''), h('span', { class: 'pulse' }), h('span', { class: 'dot' })));
     for (const e of list) if (e.unit) add(e.unit, mk('mk-unit u-' + e.type, icon(e.type, 18)));
   }
@@ -223,7 +236,7 @@ export function liveMap(entries, opts = {}) {
   const points = list => list.flatMap(e => [e.incident, e.unit, e.station].filter(Boolean));
   box.update = (list, { refit = true } = {}) => {
     const l = (list || []).filter(e => e && e.incident); current = l; build(l);
-    if (refit && !userMoved) { const pts = mode === 'puntland' ? [] : points(l); if (pts.length) fit(pts); else if (!opts.center) fit(PUNTLAND, 0); }
+    if (refit && !userMoved) { const pts = mode === 'puntland' ? [] : points(l); if (pts.length) fit(pts); else if (!opts.center) fit(mode === 'puntland' ? PUNTLAND : GAALKACYO, 0); }
     schedule();
   };
   box.select = id => items.forEach(it => { if (it.fac) it.el.classList.toggle('sel', !!id && it.m && it.m.id === id); });

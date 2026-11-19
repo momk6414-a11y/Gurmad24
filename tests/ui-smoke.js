@@ -49,6 +49,14 @@ const { chromium } = require('playwright');
   await session('ambulance', 'ambulance@demo.gurmad24.test', 'DemoPass12345', ['/org', '/org/requests', '/org/services', '/org/sales', '/org/subscription']);
   await session('operator', 'operator@demo.gurmad24.test', 'DemoPass12345', ['/ops', '/ops/case/' + caseId, '/ops/directory']);
   await session('admin', 'admin@test.local', 'AdminPass123', ['/admin', '/admin/orgs', '/admin/users', '/admin/cards', '/admin/finance', '/admin/finance?tab=orders', '/admin/finance?tab=invoices', '/admin/finance?tab=statements', '/admin/revenue', '/admin/revenue?period=year', '/admin/settings', '/admin/complaints', '/admin/audit', '/account'], { width: 1100, height: 800 });
+  // Simulated dispatch map: vehicle sprite + SIMULATION label must render for a case with a simulated route.
+  {
+    const cc = t.store.col('cases')[0]; cc.sim = { start: { lat: 6.752, lng: 47.405 }, demoPlaced: true, distKm: 3, travelSec: 600 }; cc.location = cc.location || { lat: 6.77, lng: 47.43 }; cc.status = 'en_route';
+    cc.history.push({ ts: new Date().toISOString(), status: 'en_route', by: 'smoke', note: 'smoke' });
+    const op = await session('operator-map', 'operator@demo.gurmad24.test', 'DemoPass12345', ['/ops/case/' + cc.id]);
+    await op.waitForSelector('.tm-veh', { timeout: 6000 }).catch(() => errors.push('map: simulated vehicle sprite was not rendered'));
+    if (!(await op.locator('.tm-sim:not([hidden])').count())) errors.push('map: SIMULATION label is not visible next to vehicles');
+  }
   await browser.close(); await t.stop();
   console.log(`routes checked: ${checked}`); console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'No browser errors.'); process.exit(errors.length ? 1 : 0);
 })();
