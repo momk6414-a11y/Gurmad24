@@ -17,33 +17,38 @@ test('specialty is detected from the hospital name', () => {
   assert.equal(s('Isbitaal Guud Gaalkacyo'), 'general');
 });
 
-test('new hospital gets starter services/cards; cards go live only after verification; never duplicated or overwritten', async () => {
+test('verified hospitals receive starter cards as drafts and must approve them before public listing', async () => {
   const c = t.client();
   const r = await c.post('/api/auth/register-org', { name: 'Eye Admin', email: 'eye@test.local', password: 'EyePass12345', consent: true, orgType: 'hospital', orgName: 'Digfeer eye specialists', area: 'Gaalkacyo' });
   assert.equal(r.status, 201);
   const org = t.store.find('orgs', o => o.name === 'Digfeer eye specialists');
   const adm = await H.admin(t);
 
-  // pending: nothing is created yet at registration; applying makes drafts only
-  catalog.applyToHospital(t.store, org);
-  assert.ok(t.store.filter('cards', x => x.hospitalId === org.id).every(x => x.status === 'draft'), 'pending hospital: drafts only');
-
+  // Verification seeds the specialty catalogue, but never publishes on the hospital's behalf.
   assert.equal((await adm.patch('/api/admin/orgs/' + org.id, { status: 'verified' })).status, 200);
-  const pub = (await t.client().get('/api/hospitals/' + org.id)).data;
-  assert.ok(pub.services.length >= 5, 'services listed');
-  assert.ok(pub.cards.length >= 2 && pub.cards.every(x => /ndha/i.test(x.name)), 'eye-specific published cards');
+  const drafts = t.store.filter('cards', x => x.hospitalId === org.id);
+  assert.ok(drafts.length >= 2 && drafts.every(x => x.status === 'draft'), 'starter cards remain drafts');
+  const pubBefore = (await t.client().get('/api/hospitals/' + org.id)).data;
+  assert.ok(pubBefore.services.length >= 5, 'starter services are listed');
+  assert.equal(pubBefore.cards.length, 0, 'draft cards are hidden from the marketplace');
+
+  // The hospital itself approves a card before it becomes public.
+  const hospital = await H.login(t, 'eye@test.local', 'EyePass12345');
+  const first = (await hospital.get('/api/org/cards')).data.cards[0];
+  assert.equal((await hospital.post('/api/org/cards/' + first.id + '/publish', { attest: true })).status, 200);
+  const pubAfter = (await t.client().get('/api/hospitals/' + org.id)).data;
+  assert.equal(pubAfter.cards.length, 1, 'only the hospital-approved card is public');
 
   const before = [t.store.filter('services', s => s.orgId === org.id).length, t.store.filter('cards', x => x.hospitalId === org.id).length];
   const again = (await adm.post('/api/admin/catalog/apply', {})).data.results.find(x => x.orgId === org.id);
   assert.deepEqual([again.services, again.cards, again.published], [0, 0, 0]);
   assert.deepEqual([t.store.filter('services', s => s.orgId === org.id).length, t.store.filter('cards', x => x.hospitalId === org.id).length], before);
 
-  // hospital edits a card (goes back to draft): the catalogue must not re-publish it
-  const card = t.store.find('cards', x => x.hospitalId === org.id); card.status = 'draft'; card.hospitalApprovedAt = null;
+  // Re-applying the catalogue must never re-publish a card the hospital returned to draft.
+  first.status = 'draft'; first.hospitalApprovedAt = null; first.approvedBy = null;
   catalog.applyToAll(t.store);
-  assert.equal(card.status, 'draft');
+  assert.equal(first.status, 'draft');
 });
-
 test('non-admin cannot run the catalogue', async () => {
   assert.equal((await (await H.demo(t, 'hospital')).post('/api/admin/catalog/apply', {})).status, 403);
   assert.equal((await t.client().post('/api/admin/catalog/apply', {})).status, 401);
