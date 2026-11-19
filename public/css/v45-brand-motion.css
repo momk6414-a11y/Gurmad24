@@ -1,20 +1,18 @@
 /* GURMAD 24 V45 — brand motion identity and premium light environment. */
 :root{
   color-scheme:light;
-  --v44-bg:#f4f8ff;--v44-bg2:#edf4ff;--v44-surface:#ffffff;--v44-surface2:#f5f9ff;
+  --v44-bg:#EAF3FF;--v44-bg2:#F4F8FF;--v44-surface:#ffffff;--v44-surface2:#f5f9ff;
   --v44-line:rgba(11,61,145,.12);--v44-mint:#2EB82E;--v44-cyan:#0B75bd;
   --v44-ink:#12345e;--v44-muted:#58708f;--v44-shadow:0 18px 48px rgba(11,61,145,.09);
 }
-html{background:#f4f8ff;color-scheme:light}
+html{background:#EAF3FF;color-scheme:light}
 body{
   color:#12345e;
   background:
-    radial-gradient(ellipse at 8% 8%,rgba(46,184,46,.075),transparent 28%),
-    radial-gradient(ellipse at 92% 18%,rgba(11,61,145,.09),transparent 30%),
-    linear-gradient(180deg,#f8fbff 0%,#f1f6ff 52%,#f8fbff 100%);
+    linear-gradient(180deg,#F4F8FF 0%,#EAF3FF 55%,#F2F7FF 100%);
 }
 body::before{
-  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.38;
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;
   background-image:radial-gradient(rgba(11,61,145,.13) .7px,transparent .7px);
   background-size:24px 24px;mask-image:linear-gradient(180deg,#000,transparent 72%);
 }
@@ -76,15 +74,15 @@ td,th{border-color:rgba(11,61,145,.1);color:#315477}
 .gurmad-splash__ambient{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:-1}
 .gurmad-splash__ambient::before,.gurmad-splash__ambient::after{
   content:"";position:absolute;width:min(82vw,560px);aspect-ratio:1;border-radius:50%;filter:blur(3px);
-  background:radial-gradient(circle,rgba(46,184,46,.12),rgba(11,61,145,.055) 42%,transparent 70%);
-  animation:gurmad-aurora 7s ease-in-out infinite alternate;
+  background:radial-gradient(circle,rgba(11,61,145,.055),rgba(11,61,145,.025) 42%,transparent 70%);
+  animation:gurmad-aurora 12s ease-in-out infinite alternate;
 }
 .gurmad-splash__ambient::before{top:2%;left:-24%}
 .gurmad-splash__ambient::after{right:-24%;bottom:5%;animation-delay:-3.5s}
 .gurmad-splash__logo{width:clamp(150px,39vw,206px);filter:drop-shadow(0 18px 26px rgba(11,61,145,.16));animation:gurmad-logo-cinema 2s cubic-bezier(.18,.78,.2,1) .15s both,gurmad-logo-breathe 3.2s ease-in-out 2.2s infinite}
 .gurmad-splash__name{color:#0B3D91;font-size:clamp(44px,11vw,60px);letter-spacing:-.06em;animation:gurmad-text-cinema .72s cubic-bezier(.2,.8,.2,1) .65s both}
 .gurmad-splash__name::first-letter{color:#2EB82E}
-.gurmad-splash__tagline{color:#35577f;font-size:clamp(14px,3.8vw,18px);animation:gurmad-text-cinema .72s cubic-bezier(.2,.8,.2,1) .9s both}
+.gurmad-splash__tagline{color:#365574;font-size:clamp(14px,3.8vw,18px);animation:gurmad-text-cinema .72s cubic-bezier(.2,.8,.2,1) .9s both}
 .gurmad-splash__waves{height:clamp(125px,25vh,220px);filter:drop-shadow(0 -8px 24px rgba(11,61,145,.06))}
 .gurmad-splash__waves path{transform-box:fill-box;transform-origin:center;animation:gurmad-wave-float 5.5s ease-in-out infinite alternate}
 .gurmad-splash__waves path:nth-child(2){animation-delay:-1.4s}
@@ -92,7 +90,7 @@ td,th{border-color:rgba(11,61,145,.1);color:#315477}
 .gurmad-splash__waves path:nth-child(4){animation-delay:-4s}
 .gurmad-splash.is-leaving{transition:opacity .65s ease,visibility .65s ease}
 @keyframes gurmad-logo-cinema{0%{opacity:0;transform:translateY(26px) scale(.68) rotate(-5deg)}65%{opacity:1;transform:translateY(-5px) scale(1.045) rotate(1deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
-@keyframes gurmad-logo-breathe{0%,100%{filter:drop-shadow(0 18px 26px rgba(11,61,145,.16))}50%{filter:drop-shadow(0 22px 34px rgba(46,184,46,.22))}}
+@keyframes gurmad-logo-breathe{0%,100%{filter:drop-shadow(0 18px 26px rgba(11,61,145,.16))}50%{filter:drop-shadow(0 22px 34px rgba(11,61,145,.10))}}
 @keyframes gurmad-text-cinema{from{opacity:0;transform:translateY(16px);letter-spacing:.02em}to{opacity:1;transform:translateY(0)}}
 @keyframes gurmad-aurora{from{transform:translate3d(-4%,0,0) scale(.88);opacity:.62}to{transform:translate3d(7%,8%,0) scale(1.12);opacity:1}}
 @keyframes gurmad-wave-float{from{transform:translate3d(-1.2%,0,0) scaleY(.98)}to{transform:translate3d(1.2%,-9px,0) scaleY(1.025)}}
