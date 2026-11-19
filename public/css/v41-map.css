@@ -1,0 +1,35 @@
+/* V41 — emergency map: distinct vehicle identities, emergency lights, route glow, SIMULATION label. */
+.tm-sim{position:absolute;left:10px;bottom:56px;z-index:6;display:flex;align-items:center;gap:7px;max-width:calc(100% - 120px);padding:6px 10px;border-radius:10px;background:rgba(60,40,6,.92);border:1px solid #f5b94266;color:#ffe3b0;font-size:12px;font-weight:700;line-height:1.25;pointer-events:none}
+.tm-sim[hidden]{display:none}
+.tm-sim i{flex:none;width:8px;height:8px;border-radius:50%;background:#f5b942;box-shadow:0 0 0 0 #f5b94288;animation:v41-sim 1.8s ease-out infinite}
+@keyframes v41-sim{70%{box-shadow:0 0 0 7px #f5b94200}100%{box-shadow:0 0 0 0 #f5b94200}}
+/* routes */
+.tm-route-glow{stroke:var(--uc);stroke-width:9;stroke-linecap:round;opacity:.22;filter:blur(2px)}
+.tm-route{stroke-width:2.5!important;stroke-dasharray:2 9!important;animation:v41-flow 1s linear infinite}
+@keyframes v41-flow{to{stroke-dashoffset:-22}}
+/* vehicle sprites (SVG, rotate along the route) */
+.tm-veh{filter:drop-shadow(0 2px 3px rgba(0,0,0,.65));transform-box:fill-box}
+.tm-veh .veh-body{stroke:#fff;stroke-width:1.5;fill:var(--vc,#fff)}
+.tm-veh .veh-glass{fill:#0b2a3a;opacity:.85}
+.tm-veh .veh-mark,.tm-veh .veh-ladder{fill:#fff;opacity:.9}
+.tm-veh.u-ambulance{--vc:#f6fbff}.tm-veh.u-ambulance .veh-mark{fill:#d6342a}
+.tm-veh.u-police{--vc:#1d4ed8}.tm-veh.u-police .veh-mark{fill:#fff}
+.tm-veh.u-fire{--vc:#d6342a}.tm-veh.u-fire .veh-ladder{fill:#f4c542}
+/* emergency lights: alternate per side */
+.tm-veh .veh-light{animation:v41-l1 .7s steps(1) infinite}
+.tm-veh .veh-l2{animation-name:v41-l2}
+.tm-veh.u-ambulance .veh-l1,.tm-veh.u-fire .veh-l1{fill:#ff3b30}.tm-veh.u-ambulance .veh-l2{fill:#fff}.tm-veh.u-fire .veh-l2{fill:#ffb020}
+.tm-veh.u-police .veh-l1{fill:#ff3b30}.tm-veh.u-police .veh-l2{fill:#3b82ff}
+@keyframes v41-l1{0%{opacity:1}50%{opacity:.15}}
+@keyframes v41-l2{0%{opacity:.15}50%{opacity:1}}
+/* unit marker identity colours (replaces the generic glow) */
+.mk-unit.u-ambulance>svg{border-color:#fff}
+/* hospitals and facilities: bigger pin-like markers, labels at city zoom */
+.mk-fac.u-hospital>svg{width:30px;height:30px;padding:6px;box-shadow:0 0 0 4px rgba(47,181,150,.28),0 2px 6px rgba(0,0,0,.6)}
+.z-labels .mk-fac .clbl{display:block}
+.tmap .tm-pl{margin-top:0}
+.tm-zoom{max-width:46vw}
+@media (prefers-reduced-motion:reduce){
+  .tm-route{animation:none}.tm-sim i,.tm-veh .veh-light{animation:none}.tm-veh .veh-light{opacity:1}
+}
+@media (max-width:480px){.tm-sim{font-size:11px;bottom:72px}}

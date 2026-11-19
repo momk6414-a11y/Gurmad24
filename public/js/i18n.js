@@ -498,5 +498,5 @@ export const so = {
 "Hajj and Umrah":"Xajka iyo Cumro",
 "Hotel and bus booking":"Dhigashada hudheel iyo baska",
 "Domestic flights Mogadishu - Galkacyo":"Duulimaadyada gudaha Muqdisho - Gaalkacyo",
-"More":"Intaa kale","My visit cards":"Kaararkayga booqashada","Hospital administrator":"Maamulaha isbitaalka","Provider administrator":"Maamulaha bixiyaha","Two-step login is OFF":"Gelitaanka laba-tallaabo wuu xiran yahay",
+"More":"Intaa kale","SIMULATION: vehicle movement is illustrative, not live GPS":"JILITAAN: dhaqdhaqaaqa gaadhigu waa tusaale, ma aha GPS toos ah","My visit cards":"Kaararkayga booqashada","Hospital administrator":"Maamulaha isbitaalka","Provider administrator":"Maamulaha bixiyaha","Two-step login is OFF":"Gelitaanka laba-tallaabo wuu xiran yahay",
 };
