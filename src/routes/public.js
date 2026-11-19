@@ -17,7 +17,7 @@ module.exports = function (app) {
 
   app.get('/api/config', { summary: 'Public client configuration and safety notices' }, () => ({
     mode: 'PILOT', currency: D.settings(store).currency, languages: ['so', 'en'],
-    caseCategories: CASE_CATEGORIES, areas: R.AREAS, responderTypes: R.RESPONDER_TYPES, liveDispatch: !!D.settings(store).realMode, realMode: !!D.settings(store).realMode, payments: 'sandbox',
+    caseCategories: CASE_CATEGORIES, areas: R.AREAS, responderTypes: R.RESPONDER_TYPES, liveDispatch: false, realMode: false, payments: 'sandbox',
     notices: { dispatch: 'simulation_only', location: 'demo_map_only', cards: 'not_insurance', data: 'no_real_patient_data' },
   }));
 
@@ -153,10 +153,9 @@ module.exports = function (app) {
       voice = { mime: String(vo.mime).split(';')[0], data: vo.data, at: new Date().toISOString() };
     }
     const user = app.loadUser(req);
-    const real = !!D.settings(store).realMode;
-    const c = createCase(store, { category: b.category, area: b.area, note: b.note, location, source: 'public', createdBy: user ? user.id : null, autopilot: !real && config.demoMode !== false, mode: real ? 'REAL' : 'SIMULATION' });
+    const c = createCase(store, { category: b.category, area: b.area, note: b.note, location, source: 'public', createdBy: user ? user.id : null, autopilot: config.demoMode !== false, mode: 'SIMULATION' });
     if (voice) { c.voice = voice; for (const old of store.col('cases').filter(x => x.voice).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1).slice(60)) delete old.voice; store.save(); }
-    return created({ case: { code: c.code, status: c.status, mode: c.mode, responder: c.responder, trackToken: c.trackToken }, notice: real ? 'REAL_REQUEST_QUEUED_FOR_OPERATORS' : 'SIMULATION_ONLY_NO_REAL_HELP_SENT' });
+    return created({ case: { code: c.code, status: c.status, mode: c.mode, responder: c.responder, trackToken: c.trackToken }, notice: 'SIMULATION_ONLY_NO_REAL_HELP_SENT' });
   });
   app.get('/api/emergency/track/:code', { summary: 'Live (simulated) status of a test request. Needs the token returned at creation.' }, req => {
     const c = store.find('cases', x => x.code === req.params.code);

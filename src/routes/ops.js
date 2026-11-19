@@ -23,7 +23,7 @@ module.exports = function (app) {
   const view = c => {
     const { trackToken, sim, voice, ...rest } = c;
     const org = c.assignedOrgId ? store.get('orgs', c.assignedOrgId) : null;
-    return { ...rest, hasVoice: !!voice, responder: c.responder || R.responderFor(c.category), assignedOrgName: org ? org.name : null, assignedOrgType: org ? org.type : null, next: D.CASE_FLOW[c.status], track: R.trackView(store, c) };
+    return { ...rest, mode: 'SIMULATION', legacyMode: c.mode === 'REAL' ? 'REAL' : null, hasVoice: !!voice, responder: c.responder || R.responderFor(c.category), assignedOrgName: org ? org.name : null, assignedOrgType: org ? org.type : null, next: D.CASE_FLOW[c.status], track: R.trackView(store, c) };
   };
 
   app.get('/api/ops/cases', { auth: OPS, summary: 'Case list (?status=&responder=&active=1&today=1)' }, req => {

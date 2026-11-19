@@ -6,9 +6,16 @@ const { App } = require('./app');
 const migrations = require('./migrations');
 const seed = require('./seed');
 const catalog = require('./catalog');
+const D = require('./domain');
 
 function wire(config, store, overrides = {}) {
   store.migrate(migrations);
+  // Institutional pilot safety: a persisted legacy flag must never enable live dispatch.
+  if (D.settings(store).realMode !== false) {
+    D.settings(store).realMode = false;
+    D.settings(store).realModeAt = new Date().toISOString();
+    store.save();
+  }
   const app = new App({ store, config, push: require('./push').createSender(process.env) });
   const log = overrides.quiet ? () => {} : console.log;
   for (const r of ['auth', 'public', 'patient', 'org', 'ops', 'admin', 'travel']) require('./routes/' + r)(app);

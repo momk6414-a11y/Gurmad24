@@ -68,8 +68,8 @@ export async function dashboard({ query }) {
   await load();
   S.poll = setInterval(() => load().catch(() => stopPoll()), 3000);
   const pageTitle = view === 'active' ? 'Active cases' : view === 'today' ? 'Today’s requests' : 'Coordination dashboard';
-  const pageSub = view === 'active' ? 'Requests that are not closed, cancelled or handed over.' : view === 'today' ? 'Requests created today in Somalia local time (Africa/Mogadishu).' : cfg.realMode ? 'Ambulance, police and fire requests (real mode is ON).' : 'Ambulance, police and fire requests in simulation mode.';
-  return h('div', head(pageTitle, pageSub, h('button', { class: 'btn', onclick: add }, icon('plus'), t('New simulated request'))), cfg.realMode ? REALN() : SIM(), statsBox, mapPanel, casesBox);
+  const pageSub = view === 'active' ? 'Requests that are not closed, cancelled or handed over.' : view === 'today' ? 'Requests created today in Somalia local time (Africa/Mogadishu).' : 'Ambulance, police and fire requests in simulation mode.';
+  return h('div', head(pageTitle, pageSub, h('button', { class: 'btn', onclick: add }, icon('plus'), t('New simulated request'))), SIM(), statsBox, mapPanel, casesBox);
 }
 
 function voicePlayer(id) {
@@ -88,9 +88,9 @@ export async function caseDetail({ id }) {
   const sel = h('select', { 'aria-label': t('Provider') }, h('option', { value: '' }, t('Choose provider')), sorted.map(p => h('option', { value: p.id, selected: p.id === c.assignedOrgId }, t(SERVICE_NAME[p.type] || p.type) + ' - ' + p.name + (p.available ? '' : ' (' + t('Unavailable') + ')'))));
   const L = { assigned: 'Assigned', received: 'Back to queue', en_route: 'En route (sim)', arrived: 'Arrived (sim)', handed_over: 'Handed over', closed: 'Closed', cancelled: 'Cancel case' };
   const tr = c.track; const loc = c.location;
-  return h('div', head(c.code, catName(c.category) + (c.area ? ' - ' + c.area : ''), badge(c.status)), c.mode === 'REAL' ? REALN() : SIM(),
+  return h('div', head(c.code, catName(c.category) + (c.area ? ' - ' + c.area : ''), badge(c.status)), SIM(),
     h('div', { class: 'grid g2' },
-      panel('Case', h('div', h('dl', { class: 'kv' }, h('dt', t('Mode')), h('dd', t(c.mode === 'REAL' ? 'REAL' : 'SIMULATION')), h('dt', t('Service')), h('dd', respTag(c.responder)), h('dt', t('Source')), h('dd', c.source), h('dt', t('Created')), h('dd', fdt(c.createdAt)), h('dt', t('Note')), h('dd', c.note || '-'),
+      panel('Case', h('div', h('dl', { class: 'kv' }, h('dt', t('Mode')), h('dd', t('SIMULATION')), h('dt', t('Service')), h('dd', respTag(c.responder)), h('dt', t('Source')), h('dd', c.source), h('dt', t('Created')), h('dd', fdt(c.createdAt)), h('dt', t('Note')), h('dd', c.note || '-'),
         h('dt', t('Location')), h('dd', loc ? h('a', { href: osmLink(loc), target: '_blank', rel: 'noopener noreferrer' }, icon('pin', 16), loc.lat + ', ' + loc.lng + (loc.source === 'gps' ? ' (GPS)' : '')) : '-'),
         h('dt', t('Provider')), h('dd', c.assignedOrgName || '-'), tr && tr.etaMinutes ? h('dt', t('ETA')) : null, tr && tr.etaMinutes ? h('dd', t('{m} min (simulated)', { m: tr.etaMinutes })) : null))),
       panel('Actions', h('div', c.autopilot ? h('p', { class: 'hint' }, t('Demo autopilot is moving this case. Any action you take stops it.')) : null,
@@ -129,7 +129,7 @@ export async function liveBoard() {
       { label: 'Code', render: c => link('/ops/case/' + c.id, c.code) }, { label: 'Service', render: c => respTag(c.responder) },
       { label: 'Area', render: c => c.area || '-' }, { label: 'Status', render: c => badge(c.status) },
       { label: 'Location', render: c => c.track && c.track.location ? h('a', { href: osmLink(c.track.location), target: '_blank', rel: 'noopener noreferrer' }, icon('pin', 14), ' ' + c.track.location.lat + ', ' + c.track.location.lng) : '-' },
-      { label: 'Mode', render: c => c.mode === 'REAL' ? badge('REAL') : t('Demo') }], active, { empty: 'No active requests right now.' }));
+      { label: 'Mode', render: () => t('Demo') }], active, { empty: 'No active requests right now.' }));
   };
   await load();
   S.poll = setInterval(() => load().catch(() => stopPoll()), 4000);
