@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, RefreshControl, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Linking, Pressable, RefreshControl, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { apiRequest } from './src/api/client';
 import { colors } from './src/theme/tokens';
@@ -79,11 +79,45 @@ function HospitalCard({ item }: { item: Hospital }) {
     {item.phone ? <Pressable style={styles.callButton} onPress={() => Linking.openURL('tel:' + item.phone).catch(() => Alert.alert('Wicitaan', 'Telefoonka lagama furi karin.'))}><Text style={styles.callText}>☎  {item.phone}  ·  Wac</Text></Pressable> : null}
   </View>;
 }
+function V40Hero({ onOpenHospitals }: { onOpenHospitals: () => void }) {
+  const motion = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(motion, { toValue: 1, duration: 2200, useNativeDriver: true }),
+      Animated.timing(motion, { toValue: 0, duration: 2200, useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [motion]);
+  const pulseScale = motion.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] });
+  const pulseOpacity = motion.interpolate({ inputRange: [0, 1], outputRange: [0.42, 0.9] });
+  const floatY = motion.interpolate({ inputRange: [0, 1], outputRange: [0, -9] });
+  return <View style={styles.heroV40}>
+    <View style={styles.heroV40Glow} />
+    <View style={styles.heroV40Top}>
+      <View style={styles.heroV40Tag}><View style={styles.heroV40Dot} /><Text style={styles.heroV40TagText}>GURMAD 24 · HEALTH NETWORK</Text></View>
+      <Text style={styles.heroV40Edition}>V40</Text>
+    </View>
+    <Animated.View style={[styles.heroV40Orbit, { transform: [{ scale: pulseScale }], opacity: pulseOpacity }]} />
+    <Animated.View style={[styles.heroV40Emblem, { transform: [{ translateY: floatY }] }]}>
+      <View style={styles.heroV40EmblemInner}><Text style={styles.heroV40Cross}>✚</Text></View>
+      <View style={styles.heroV40EmblemHalo} />
+    </Animated.View>
+    <Text style={styles.heroV40Kicker}>CAAFIMAAD · ADEEGYO · ISKU XIR</Text>
+    <Text style={styles.heroV40Title}>Daryeel casri ah.{"\n"}Hal meel ku wada xiran.</Text>
+    <Text style={styles.heroV40Copy}>Raadi xarumaha caafimaadka, maamul hawlahaaga, kuna hel adeegyada GURMAD 24.</Text>
+    <View style={styles.heroV40Actions}>
+      <Pressable style={styles.heroV40Primary} onPress={onOpenHospitals}><Text style={styles.heroV40PrimaryText}>Raadi isbitaal  →</Text></Pressable>
+      <View style={styles.heroV40Trust}><Text style={styles.heroV40TrustMark}>✓</Text><Text style={styles.heroV40TrustText}>Xog la kala hubiyey</Text></View>
+    </View>
+    <View style={styles.heroV40BottomLine}><Text style={styles.heroV40BottomText}>GAALKACYO PILOT</Text><Text style={styles.heroV40BottomText}>CARE · CONNECT · RESPOND</Text></View>
+  </View>;
+}
 function Home({ data, openHospitals, openWeb }: { data: ReturnType<typeof useHospitals>; openHospitals: () => void; openWeb: () => void }) {
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
     <View style={styles.top}><View style={styles.brandRow}><Mark small /><View><Text style={styles.brand}>GURMAD <Text style={styles.greenText}>24</Text></Text><Text style={styles.brandSub}>Caafimaad iyo gargaar</Text></View></View><Pressable style={styles.webChip} onPress={openWeb}><Text style={styles.webChipText}>Web App ↗</Text></Pressable></View>
     <View style={styles.location}><Text style={styles.pin}>⌖</Text><View><Text style={styles.locationLabel}>GOOBTA MASHRUUCA</Text><Text style={styles.locationName}>Gaalkacyo, Soomaaliya</Text></View></View>
-    <View style={styles.hero}><View style={styles.orb} /><Text style={styles.eyebrow}>KU SOO DHAWOOW GURMAD 24</Text><Text style={styles.heroTitle}>Caafimaadkaaga{'\n'}waa mudnaantayada.</Text><Text style={styles.heroCopy}>Hal meel ka hel macluumaadka xarumaha caafimaadka iyo adeegyada.</Text><Pressable style={styles.heroButton} onPress={openHospitals}><Text style={styles.heroButtonText}>Raadi isbitaallo  →</Text></Pressable><View style={styles.heroBadge}><Mark small /></View></View>
+    <V40Hero onOpenHospitals={openHospitals} />
     <View style={styles.notice}><Text style={styles.noticeIcon}>!</Text><View style={{ flex: 1 }}><Text style={styles.noticeTitle}>Xaaladda adeegga gurmadka</Text><Text style={styles.noticeCopy}>Codsiga gurmadku wali waa SIMULATION; gargaar dhab ah lama dirayo. Ha u adeegsan xaalad degdeg ah.</Text></View></View>
     <View style={styles.statsRow}>
       <View style={styles.statCard}><Text style={styles.statValue}>{data.items.length}</Text><Text style={styles.statLabel}>Liiska guud</Text></View>
@@ -211,6 +245,29 @@ const styles = StyleSheet.create({
   top:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:18},brandRow:{flexDirection:'row',alignItems:'center'},brand:{fontSize:18,fontWeight:'900',color:colors.navy},brandSub:{fontSize:10,color:colors.muted,marginTop:2},webChip:{backgroundColor:'#FFFFFF',borderWidth:1,borderColor:colors.border,borderRadius:12,paddingHorizontal:12,paddingVertical:9},webChipText:{fontSize:10,fontWeight:'900',color:colors.navy},
   location:{flexDirection:'row',alignItems:'center',marginBottom:15},
   statsRow:{flexDirection:'row',gap:8,marginBottom:15},statCard:{flex:1,backgroundColor:'#FFFFFF',borderRadius:13,borderWidth:1,borderColor:'#E7EDF2',paddingVertical:12,paddingHorizontal:9},statValue:{fontSize:20,fontWeight:'900',color:colors.navy},statLabel:{fontSize:8,fontWeight:'700',color:colors.muted,marginTop:3},pin:{fontSize:23,color:colors.green,marginRight:9},locationLabel:{fontSize:9,color:colors.muted,fontWeight:'900',letterSpacing:1},locationName:{fontSize:12,color:colors.ink,fontWeight:'800',marginTop:3},
+  heroV40:{backgroundColor:'#06172D',borderRadius:28,padding:20,minHeight:405,overflow:'hidden',marginBottom:18,borderWidth:1,borderColor:'#174B67'},
+  heroV40Glow:{position:'absolute',width:290,height:290,borderRadius:145,backgroundColor:'#0C5260',opacity:0.48,right:-120,top:-80},
+  heroV40Top:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
+  heroV40Tag:{flexDirection:'row',alignItems:'center',backgroundColor:'#102E46',borderWidth:1,borderColor:'#24536A',borderRadius:20,paddingHorizontal:10,paddingVertical:7},
+  heroV40Dot:{width:7,height:7,borderRadius:4,backgroundColor:'#2BE0A2',marginRight:7},
+  heroV40TagText:{fontSize:8,fontWeight:'900',letterSpacing:0.7,color:'#D1E6F1'},
+  heroV40Edition:{fontSize:9,fontWeight:'900',letterSpacing:1.4,color:'#53D7C3'},
+  heroV40Orbit:{position:'absolute',width:122,height:122,borderRadius:61,borderWidth:1.5,borderColor:'#38D8C0',right:24,top:67},
+  heroV40Emblem:{position:'absolute',right:49,top:91,width:72,height:72,borderRadius:24,backgroundColor:'#123C59',alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:'#4AB8B1'},
+  heroV40EmblemInner:{width:53,height:53,borderRadius:18,backgroundColor:'#1B6C73',alignItems:'center',justifyContent:'center'},
+  heroV40Cross:{fontSize:35,fontWeight:'900',color:'#FFFFFF'},
+  heroV40EmblemHalo:{position:'absolute',width:9,height:9,borderRadius:5,backgroundColor:'#FF6B6B',right:-3,top:4,borderWidth:2,borderColor:'#06172D'},
+  heroV40Kicker:{fontSize:9,fontWeight:'900',letterSpacing:1.3,color:'#51D9C1',marginTop:47},
+  heroV40Title:{fontSize:28,lineHeight:35,fontWeight:'900',color:'#FFFFFF',marginTop:12,maxWidth:'88%'},
+  heroV40Copy:{fontSize:11,lineHeight:18,color:'#C7DCE8',marginTop:10,maxWidth:'91%'},
+  heroV40Actions:{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:12,marginTop:19},
+  heroV40Primary:{backgroundColor:'#20C997',borderRadius:13,paddingHorizontal:16,paddingVertical:13},
+  heroV40PrimaryText:{fontSize:11,fontWeight:'900',color:'#052C31'},
+  heroV40Trust:{flexDirection:'row',alignItems:'center'},
+  heroV40TrustMark:{fontSize:12,fontWeight:'900',color:'#54E2B1',marginRight:5},
+  heroV40TrustText:{fontSize:9,fontWeight:'800',color:'#C7DCE8'},
+  heroV40BottomLine:{position:'absolute',left:20,right:20,bottom:15,borderTopWidth:1,borderTopColor:'#1D4057',paddingTop:10,flexDirection:'row',justifyContent:'space-between'},
+  heroV40BottomText:{fontSize:7,fontWeight:'900',letterSpacing:0.8,color:'#82A8BC'},
   hero:{backgroundColor:'#071B35',borderRadius:25,padding:20,minHeight:235,overflow:'hidden',marginBottom:15},orb:{position:'absolute',width:200,height:200,borderRadius:100,backgroundColor:'#174775',right:-75,top:-55},eyebrow:{fontSize:9,color:'#C5D9ED',fontWeight:'900',letterSpacing:1},heroTitle:{fontSize:27,lineHeight:34,color:'#FFFFFF',fontWeight:'900',marginTop:17},heroCopy:{fontSize:11,lineHeight:18,color:'#D6E4F2',marginTop:8,maxWidth:'84%'},heroButton:{alignSelf:'flex-start',backgroundColor:colors.green,borderRadius:11,paddingHorizontal:14,paddingVertical:11,marginTop:16},heroButtonText:{fontSize:11,color:'#FFFFFF',fontWeight:'900'},heroBadge:{position:'absolute',right:16,bottom:15,opacity:0.75},
   notice:{flexDirection:'row',alignItems:'flex-start',backgroundColor:'#FFF7E5',borderWidth:1,borderColor:'#F0DDAF',borderRadius:14,padding:12,marginBottom:21},noticeIcon:{width:25,height:25,textAlign:'center',textAlignVertical:'center',overflow:'hidden',borderRadius:8,backgroundColor:'#F3E5BF',color:'#805B13',fontWeight:'900',marginRight:10},noticeTitle:{fontSize:11,fontWeight:'900',color:'#805B13',marginBottom:3},noticeCopy:{fontSize:10,lineHeight:16,color:'#6B571F'},
   headingRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:11},sectionTitle:{fontSize:16,fontWeight:'900',color:colors.ink},action:{fontSize:10,fontWeight:'900',color:colors.navy},
