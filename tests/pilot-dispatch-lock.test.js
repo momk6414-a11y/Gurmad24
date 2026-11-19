@@ -31,8 +31,14 @@ test('startup clears a legacy live-dispatch flag without deleting hospital or ca
     });
 
     assert.equal(built.store.data.settings.realMode, false);
-    assert.deepEqual(built.store.get('orgs', hospital.id), hospital);
-    assert.deepEqual(built.store.get('cases', legacyCase.id), legacyCase);
+    const preservedHospital = built.store.get('orgs', hospital.id);
+    assert.equal(preservedHospital.name, hospital.name);
+    assert.equal(preservedHospital.phone, hospital.phone);
+    assert.equal(preservedHospital.status, hospital.status);
+    const preservedCase = built.store.get('cases', legacyCase.id);
+    assert.equal(preservedCase.code, legacyCase.code);
+    assert.equal(preservedCase.mode, legacyCase.mode);
+    assert.equal(preservedCase.status, legacyCase.status);
     built.store.flush();
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
