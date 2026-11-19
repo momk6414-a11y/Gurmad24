@@ -37,7 +37,7 @@ export async function dashboard({ query }) {
   const facilityMarkers = [
     ...(hospitalDirectory.hospitals || []).filter(x => x.lat != null && x.lng != null && Number.isFinite(Number(x.lat)) && Number.isFinite(Number(x.lng)))
       .map(x => ({ kind: 'hospital', type: 'hospital', lat: Number(x.lat), lng: Number(x.lng), label: x.name, id: x.id })),
-    ...(responderDirectory.providers || []).filter(x => RESP.includes(x.type) && Number.isFinite(Number(x.lat)) && Number.isFinite(Number(x.lng)))
+    ...(responderDirectory.providers || []).filter(x => RESP.includes(x.type) && x.lat != null && x.lng != null && Number.isFinite(Number(x.lat)) && Number.isFinite(Number(x.lng)))
       .map(x => ({ kind: 'station', type: x.type, lat: Number(x.lat), lng: Number(x.lng), label: x.name, id: x.id })),
   ];
   const statsBox = h('div'); const casesBox = h('div');
