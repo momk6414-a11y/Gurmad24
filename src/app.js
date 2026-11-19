@@ -105,7 +105,7 @@ class App {
     res.setHeader('X-DNS-Prefetch-Control', 'off');
     res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
     res.setHeader('Permissions-Policy', 'geolocation=(self), camera=(), microphone=(self), payment=()');
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com https://tile.openstreetmap.org; media-src 'self' blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com https://tile.openstreetmap.org; media-src 'self' blob:; connect-src 'self' https://router.project-osrm.org; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
     if (this.ctx.config.cookieSecure) res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
   }
 
