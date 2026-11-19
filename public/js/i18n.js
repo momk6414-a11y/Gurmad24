@@ -497,5 +497,6 @@ export const so = {
 "Domestic and international flight tickets":"Tikidhka duulimaadka gudaha iyo dibadda",
 "Hajj and Umrah":"Xajka iyo Cumro",
 "Hotel and bus booking":"Dhigashada hudheel iyo baska",
-"Domestic flights Mogadishu - Galkacyo":"Duulimaadyada gudaha Muqdisho - Gaalkacyo"
+"Domestic flights Mogadishu - Galkacyo":"Duulimaadyada gudaha Muqdisho - Gaalkacyo",
+"More":"Intaa kale","My visit cards":"Kaararkayga booqashada","Hospital administrator":"Maamulaha isbitaalka","Provider administrator":"Maamulaha bixiyaha","Two-step login is OFF":"Gelitaanka laba-tallaabo wuu xiran yahay",
 };

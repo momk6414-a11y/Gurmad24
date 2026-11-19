@@ -19,6 +19,7 @@ const { chromium } = require('playwright');
       checked++;
       if (shots && r.length < 40) await page.screenshot({ path: `${shots}/${role}-${r.replace(/[^a-z0-9]/gi, '_')}.png` });
     }
+    const navTxt = await page.locator('#nav').innerText(); if (/\bnull\b|undefined/.test(navTxt)) errors.push(`[${role}] bad text in navigation: ${navTxt.slice(0, 80)}`);
     return page;
   }
   const cardId = t.store.find('cards', c => c.status === 'published').id; const hospId = t.store.find('orgs', o => o.type === 'hospital').id;
