@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - main
+      - feature/native-premium-home-and-splash
+      - release/official-gurmad24-android
+    paths:
+      - "mobile-native/**"
+      - ".github/workflows/build-gurmad24-apk.yml"
+  pull_request:
+    branches:
+      - main
     paths:
       - "mobile-native/**"
       - ".github/workflows/build-gurmad24-apk.yml"
@@ -14,7 +22,7 @@ permissions:
 
 jobs:
   build-android-apk:
-    name: Build installable test APK
+    name: Build official GURMAD 24 pilot APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -50,17 +58,29 @@ jobs:
       - name: Generate Android project
         run: CI=1 npx expo prebuild --platform android
 
+      # React Native's legacy variant API is not yet compatible with AGP 9's default DSL.
+      - name: Keep Android legacy DSL enabled for React Native
+        run: printf '\nandroid.newDsl=false\n' >> android/gradle.properties
+
       - name: Type-check React Native app
         run: npm run typecheck
 
-      - name: Build debug APK
+      # A debug APK expects Metro. A release APK embeds index.android.bundle.
+      - name: Build standalone release APK
         working-directory: mobile-native/android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
 
-      - name: Upload test APK
+      - name: Verify embedded JavaScript bundle
+        working-directory: mobile-native/android
+        run: |
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          unzip -l "$APK" | grep -E 'assets/index.android.bundle|assets/index.android.bundle.hbc'
+
+      - name: Upload official GURMAD 24 pilot APK
         uses: actions/upload-artifact@v4
         with:
-          name: gurmad24-android-test-apk
-          path: mobile-native/android/app/build/outputs/apk/debug/app-debug.apk
+          name: gurmad24-android-official-pilot-apk
+          path: mobile-native/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
