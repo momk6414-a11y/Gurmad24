@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="title desc">
   <title id="title">Gurmad</title>
-  <desc id="desc">A protective heart holding an open helping hand, with a medical cross.</desc>
+  <desc id="desc">A protective heart holding an open helping hand, with a red medical cross.</desc>
   <defs>
     <linearGradient id="heartStroke" x1="35" y1="24" x2="205" y2="210" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#2EB82E"/><stop offset=".42" stop-color="#0B3D91"/><stop offset="1" stop-color="#0B3D91"/>
+      <stop stop-color="#D71920"/><stop offset=".48" stop-color="#0B3D91"/><stop offset="1" stop-color="#082B66"/>
     </linearGradient>
     <linearGradient id="handFill" x1="56" y1="138" x2="184" y2="204" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#E8F1FB"/><stop offset="1" stop-color="#FFFFFF"/>
+      <stop stop-color="#F4F8FF"/><stop offset="1" stop-color="#FFFFFF"/>
     </linearGradient>
     <filter id="softShadow" x="5" y="5" width="230" height="230" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#0B3D91" flood-opacity=".12"/>
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#0B3D91" flood-opacity=".14"/>
     </filter>
   </defs>
   <g filter="url(#softShadow)">
@@ -17,7 +17,7 @@
       fill="#FFFFFF" stroke="url(#heartStroke)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M48 146c15-4 29-2 42 5l27 14c7 4 15 3 21-2l31-25c7-6 17-5 22 2 4 6 3 14-3 19l-35 30c-15 12-34 15-52 8l-31-13c-10-4-19-6-29-6"
       fill="url(#handFill)" stroke="#0B3D91" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="m84 145 19-11c7-4 15-3 21 1l12 8" fill="none" stroke="#2EB82E" stroke-width="8" stroke-linecap="round"/>
-    <path d="M120 75v37M101.5 93.5h37" fill="none" stroke="#0B3D91" stroke-width="10" stroke-linecap="round"/>
+    <path d="m84 145 19-11c7-4 15-3 21 1l12 8" fill="none" stroke="#D71920" stroke-width="8" stroke-linecap="round"/>
+    <path d="M120 75v37M101.5 93.5h37" fill="none" stroke="#D71920" stroke-width="11" stroke-linecap="round"/>
   </g>
 </svg>
