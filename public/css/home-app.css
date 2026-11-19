@@ -107,3 +107,197 @@
   .g24h-sos__btn { width: 132px; height: 132px; }
   .g24h-rail > div { width: 240px; }
 }
+
+
+/* =========================================================
+   GURMAD 24 · V40 WEB — visual language shared with Native
+   Navy / emerald / cyan, responsive, motion-safe.
+   Presentation only: routes, forms, API and role rules unchanged.
+   ========================================================= */
+:root {
+  color-scheme: dark;
+  --bg: #06172D;
+  --bg2: #0A2340;
+  --panel: #0D2B49;
+  --panel2: #123653;
+  --line: #214A67;
+  --ink: #EAF7FF;
+  --muted: #A5C1D4;
+  --mint: #20C997;
+  --mint-ink: #04251F;
+  --gold: #38D8C0;
+  --red: #FF6B6B;
+  --blue: #38D8C0;
+  --brand-soft: #103D4B;
+  --brand-strong: #55E4CE;
+  --ok-bg: #103D35;
+  --ok-ink: #75E7C1;
+  --warn-bg: #3B321D;
+  --warn-ink: #F6D58C;
+  --bad-bg: #49272D;
+  --bad-ink: #FF9B9B;
+  --info-bg: #123B54;
+  --info-ink: #83DDF0;
+  --hero-a: #082B43;
+  --hero-b: #087C70;
+  --shadow: 0 18px 44px rgba(0, 8, 22, .34);
+  --r: 22px;
+}
+body {
+  background:
+    radial-gradient(ellipse at 88% -12%, rgba(32,201,151,.16), transparent 38%),
+    radial-gradient(ellipse at 4% 18%, rgba(56,216,192,.10), transparent 32%),
+    var(--bg);
+  color: var(--ink);
+}
+.top {
+  background: rgba(6,23,45,.92);
+  border-bottom: 1px solid rgba(56,216,192,.14);
+  backdrop-filter: blur(18px);
+}
+.brand b { letter-spacing: .12em; }
+.logo-img { filter: drop-shadow(0 8px 18px rgba(32,201,151,.18)); }
+.tabs {
+  background: rgba(8,29,51,.96);
+  border-color: rgba(56,216,192,.18);
+  backdrop-filter: blur(18px);
+}
+.tabs a[aria-current=page] {
+  background: linear-gradient(135deg, rgba(32,201,151,.2), rgba(56,216,192,.1));
+  color: #65E8CF;
+}
+.demo-banner {
+  background: rgba(59,50,29,.92);
+  color: #F6D58C;
+  border: 1px solid rgba(246,213,140,.16);
+}
+.shell { padding-top: 18px; }
+.panel, .tile, .modal, .g24h-hosp {
+  border-color: rgba(75,143,171,.25);
+  box-shadow: 0 14px 34px rgba(0,8,22,.2);
+}
+.panel {
+  background: linear-gradient(145deg, rgba(13,43,73,.98), rgba(10,35,64,.98));
+}
+.btn:not(.ghost):not(.danger), .g24h-login, .g24h-search__go {
+  background: linear-gradient(135deg, #20C997, #087C70);
+  color: #03251F;
+  box-shadow: 0 10px 24px rgba(32,201,151,.2);
+}
+.btn.ghost { background: #123653; color: var(--ink); }
+input, select, textarea {
+  background: #0A2340;
+  border-color: #214A67;
+  color: var(--ink);
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #38D8C0;
+  box-shadow: 0 0 0 3px rgba(56,216,192,.16);
+}
+.page-head h2, .panel-head h3, .sec-title { color: #F1FAFF; }
+.eyebrow, .page-head .eyebrow { color: #55E4CE; }
+
+/* V40 web splash — same dark premium palette as the native app. */
+.gurmad-splash {
+  background:
+    radial-gradient(ellipse at 50% 34%, rgba(32,201,151,.18), transparent 48%),
+    radial-gradient(ellipse at 50% 100%, rgba(56,216,192,.12), transparent 55%),
+    #06172D;
+}
+.gurmad-splash::before {
+  border: 1px solid rgba(56,216,192,.13);
+  background: radial-gradient(circle, rgba(32,201,151,.12), rgba(56,216,192,.035) 48%, transparent 70%);
+  box-shadow: 0 0 90px rgba(32,201,151,.08);
+}
+.gurmad-splash__name { color: #EAF7FF; }
+.gurmad-splash__tagline { color: #A5C1D4; }
+.gurmad-splash__waves { opacity: .12; }
+
+/* V40 home hero: animated orbit around SOS, with clear simulation status. */
+.g24h { gap: 20px; }
+.g24h-hello h1 { color: #F1FAFF; }
+.g24h-hello small { color: #A5C1D4; }
+.g24h-search {
+  background: rgba(13,43,73,.94);
+  border: 1px solid rgba(75,143,171,.3);
+  box-shadow: 0 12px 28px rgba(0,8,22,.2);
+}
+.g24h-search:focus-within { border-color: #38D8C0; box-shadow: 0 0 0 4px rgba(56,216,192,.12); }
+.g24h-search__go { background: linear-gradient(135deg,#20C997,#087C70); }
+.g24h-sos {
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 86% 18%, rgba(32,201,151,.28), transparent 34%),
+    radial-gradient(circle at 4% 100%, rgba(56,216,192,.14), transparent 42%),
+    linear-gradient(145deg,#0D2B49 0%,#08243D 58%,#06172D 100%);
+  border: 1px solid rgba(56,216,192,.26);
+  box-shadow: 0 24px 54px rgba(0,8,22,.38), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.g24h-sos::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 190px; height: 190px;
+  right: 12px; top: -28px;
+  border-radius: 50%;
+  border: 1px solid rgba(56,216,192,.28);
+  box-shadow: 0 0 0 18px rgba(56,216,192,.035), 0 0 0 38px rgba(56,216,192,.025);
+  animation: g24-v40-orbit 5s ease-in-out infinite;
+}
+.g24h-sos__tag { background: rgba(32,201,151,.14); color: #8BF0D2; border: 1px solid rgba(32,201,151,.2); }
+.g24h-sos__tag i { background: #20C997; }
+.g24h-sos h2 { color: #F1FAFF; }
+.g24h-sos p { color: #B8D2E2; }
+.g24h-sos__btn {
+  background: radial-gradient(circle at 30% 24%, #FF8585, #D83D50 72%);
+  box-shadow: 0 16px 36px rgba(216,61,80,.35), inset 0 2px 0 rgba(255,255,255,.3);
+}
+.g24h-call {
+  background: rgba(255,255,255,.07);
+  border-color: rgba(255,255,255,.12);
+}
+.g24h-call small { color: #B8D2E2; }
+.g24h-sec__head h2 { color: #F1FAFF; }
+.g24h-sec__head a { color: #55E4CE; }
+.g24h-act__icon {
+  background: linear-gradient(145deg,#1A7890,#0D4565);
+  border: 1px solid rgba(102,220,221,.22);
+  box-shadow: 0 12px 24px rgba(0,8,22,.24);
+}
+.g24h-tone-blue .g24h-act__icon { background: linear-gradient(145deg,#1D829A,#0D4565); }
+.g24h-tone-green .g24h-act__icon { background: linear-gradient(145deg,#20C997,#087C70); }
+.g24h-tone-red .g24h-act__icon { background: linear-gradient(145deg,#FF8585,#C63D50); }
+.g24h-hosp {
+  background: linear-gradient(145deg,#0D2B49,#0A2340);
+  border-color: rgba(75,143,171,.24);
+}
+.g24h-hosp__avatar { background: linear-gradient(145deg,#20C997,#087C70); color: #03251F; }
+.g24h-hosp__call { background: rgba(32,201,151,.12); color: #70E8CB; }
+.g24h-promo {
+  background: radial-gradient(circle at 0 0,rgba(255,255,255,.14),transparent 45%),linear-gradient(135deg,#087C70,#0D4565);
+  box-shadow: 0 18px 38px rgba(0,8,22,.26);
+}
+.g24h-promo__go { color: #087C70; }
+.g24h-soon { border-color: rgba(75,143,171,.3); background: rgba(13,43,73,.35); }
+.g24h-soon em { background: rgba(56,216,192,.12); color: #70E8CB; }
+.g24h-trust svg { color: #55E4CE; }
+
+@keyframes g24-v40-orbit {
+  0%,100% { transform: scale(.94) rotate(-8deg); opacity: .62; }
+  50% { transform: scale(1.06) rotate(8deg); opacity: 1; }
+}
+@media (max-width: 520px) {
+  .top { padding-left: 12px; padding-right: 12px; }
+  .brand small { max-width: 180px; }
+  .shell { padding: 12px 12px 24px; }
+  .g24h-sos { padding: 19px; }
+  .g24h-sos::before { width: 150px; height: 150px; right: -24px; top: -14px; }
+}
+@media (min-width: 900px) {
+  .g24h { max-width: 1080px; }
+  .g24h-sos { padding: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .g24h-sos::before { animation: none !important; }
+  .gurmad-splash, .gurmad-splash * { animation: none !important; transition: none !important; }
+}
