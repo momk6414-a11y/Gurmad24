@@ -84,7 +84,7 @@ export function liveMap(entries, opts = {}) {
   let layer = LAYERS[opts.layer] ? opts.layer : 'hybrid';
   const view = { lat: opts.center?.lat ?? 8.4, lng: opts.center?.lng ?? 49.3, z: opts.center?.z ?? 6 };
   const mode = opts.view === 'puntland' ? 'puntland' : 'points';
-  let items = []; let current = entries || []; let userMoved = false; let raf = 0; let loaded = 0; let userLocation = null; let locStatusTimer = 0; let routeMotion = [];
+  let items = []; let current = entries || []; let userMoved = false; let raf = 0; let loaded = 0; let userLocation = null; let locStatusTimer = 0; let routeMotion = []; let routeTrails = [];
   const tiles = new Map();
 
   const tilePane = h('div', { class: 'tm-tiles' });
@@ -170,6 +170,10 @@ export function liveMap(entries, opts = {}) {
       route.glow.setAttribute('d', d); route.path.setAttribute('d', d);
       route.anim.setAttribute('path', d);
     }
+    for (const trail of routeTrails) {
+      const [x1, y1] = px(trail.from), [x2, y2] = px(trail.to);
+      trail.path.setAttribute('d', `M ${x1} ${y1} L ${x2} ${y2}`);
+    }
   }
   const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
 
@@ -229,7 +233,7 @@ export function liveMap(entries, opts = {}) {
 
   const mk = (cls, ...kids) => h('div', { class: 'mk ' + cls }, ...kids);
   function build(list) {
-    markPane.replaceChildren(); lines.replaceChildren(); items = []; routeMotion = [];
+    markPane.replaceChildren(); lines.replaceChildren(); items = []; routeMotion = []; routeTrails = [];
     const add = (o, el) => { markPane.append(el); items.push({ lat: o.lat, lng: o.lng, el }); };
     const routePath = (cls) => { const p = document.createElementNS(NS, 'path'); p.setAttribute('class', cls); p.setAttribute('fill', 'none'); lines.append(p); return p; };
     if (opts.places) PLACES.forEach(p => add(p, mk('mk-city', h('span', { class: 'cdot' }), h('span', { class: 'clbl' }, p.name))));
@@ -244,10 +248,7 @@ export function liveMap(entries, opts = {}) {
     for (const e of list) if (e.station) {
       const glow = routePath('tm-route-glow u-' + e.type);
       const path = routePath('tm-route u-' + e.type);
-      if (e.unit) {
-        const trail = routePath('tm-trail u-' + e.type);
-        trail.__trail = { from: e.station, to: e.unit };
-      }
+      if (e.unit) routeTrails.push({ path: routePath('tm-trail u-' + e.type), from: e.station, to: e.unit });
       // Animated responder icon follows the road geometry when available; movement is still simulation.
       const token = document.createElementNS(NS, 'g'); token.setAttribute('class', 'tm-dispatch-motion u-' + e.type);
       const sprite = document.createElementNS(NS, 'g'); sprite.setAttribute('class', 'tm-veh u-' + e.type);
@@ -269,11 +270,7 @@ export function liveMap(entries, opts = {}) {
         glow.classList.toggle('tm-route-fallback', !result.road);
         schedule();
       });
-      if (e.unit) {
-        const trail = lines.lastChild.previousSibling;
-        const [x1, y1] = [e.station, e.unit].map((p, i) => i ? y2lat : lng2x);
-        trail.__trail = { from: e.station, to: e.unit };
-      }
+
     }
     for (const e of list) if (e.station) add(e.station, mk('mk-station u-' + e.type, icon(e.type, 13)));
     simBadge.hidden = !list.some(e => e.station);
