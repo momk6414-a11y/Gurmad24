@@ -11,6 +11,14 @@
 - Asturnaan: ogolaansho, soo dejis xogta, tirtirid akoon (magac-ka-qaad), kaydin xadidan, magac-ka-qaadka kiisaska hore.
 - Database joogto ah (JSON atomic + **migrations** + kayd maalinle + soo celin), PWA oo la rakibi karo, Soomaali/Ingiriis.
 
+## 📱 Mobile app — xaaladda React Native / Expo
+- Waxaa jira app gaar ah oo ku jira `mobile-native/`, kuna dhisan React Native + Expo; wuxuu la wadaagaa backend-ka Web App-ka.
+- App-ku wuxuu leeyahay hoy, tusaha isbitaallada, tab hawlaha, tab akoon iyo WebView.
+- Gelitaanka native-ka iyo role-based screens **weli ma dhammaystirna**; hawlaha la ilaaliyo hadda waxaa laga isticmaalaa Web App-ka ku dhex jira.
+- GitHub Actions workflow `.github/workflows/build-gurmad24-apk.yml` wuxuu dhisaa **debug/test APK** oo artifact ah. Taasi kaligeed ma caddaynayso in build-kii ugu dambeeyey guulaystay ama app Play Store diyaar yahay; hubi Actions run-ka.
+- PWA-ga browser-ka laga rakibo iyo React Native APK waa laba hab oo rakibid oo kala duwan. Ha isku khaldin.
+- iOS bundle identifier iyo taageerada tablet-ka way ku qoran yihiin Expo config, balse iOS build/release lama xaqiijin.
+
 ## 🔶 Waa tijaabo / waxaa la dayacay si ammaan ah
 - **Safar (Tikit/Visa):** waa codsi KALIYA. Bukaanku wuu dirayaa codsi, maamuluhu wuu eegayaa oo jawaab buu qorayaa. Tikidh lama dhigto, visa lama bixiyo, lacag lama qaado, lambarka baasaboorka lama ururiyo. Tikidh dhab ah waxay u baahan tahay wakiil safar oo shati leh ama API duulimaad; visa-na waxaa go'aamisa dowladda.
 - **Lacag-bixin:** kaliya `sandbox`. Mobile-money/kaar **MA XIRNA** (ma jiro API credentials). Eeg `docs/PAYMENTS.md`.
@@ -25,5 +33,5 @@
 4. Bixiye lacag-bixin la xaqiijiyey (shuruudo: akoon ganacsi, API, dib-u-eegis sharci).
 5. Dib-u-eegis amni/asturnaan oo madaxbanaan (penetration test), siyaasad asturnaan sharci ahaan la hubiyey.
 6. Hosting HTTPS + disk joogto ah + kormeer; haddii isticmaalayaal aad u badan: u wareeji PostgreSQL (eeg `docs/ARCHITECTURE.md`).
-7. App Android Play Store (TWA/Capacitor) — PWA hadda waa la rakibi karaa; Play Store waxay u baahan tahay akoon developer ($25 hal mar) iyo domain HTTPS ah.
+7. **Android:** PWA waa la rakibi karaa; React Native/Expo test APK workflow wuu jiraa. Google Play release weli wuxuu u baahan yahay build la saxiixay, tijaabo, privacy disclosures iyo akoon developer ($25 hal mar).
 8. Hawlgalayaal tababaran iyo tijaabooyin la kormeero.
