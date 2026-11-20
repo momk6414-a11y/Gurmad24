@@ -1,6 +1,6 @@
 // GURMAD 24 - Service Worker
-// V45 refreshes the brand motion shell; personal/API data remains uncached.
-const CACHE = 'g24-v45-brand-motion-hospital';
+// V47 refreshes the premium black shell; personal/API data remains uncached.
+const CACHE = 'g24-v47-premium-black';
 const SHELL = [
   '/', '/index.html',
   '/css/app.css', '/css/design-v4.css', '/css/brand-tokens.css', '/css/splash.css',
