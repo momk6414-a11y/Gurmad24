@@ -39,3 +39,19 @@ test('native home map shortcut opens the shared Web App map route', () => {
   assert.ok(native.includes("setWebPath('/#/map')"));
   assert.ok(native.includes('<WebPage path={webPath} />'));
 });
+
+
+test('V47 premium black theme is reflected in browser chrome and the installed PWA shell', () => {
+  const html = pub('index.html');
+  assert.match(html, /<meta name="theme-color" content="#05070B">/);
+  assert.match(html, /<meta name="apple-mobile-web-app-status-bar-style" content="black">/);
+
+  const manifest = JSON.parse(pub('manifest.webmanifest'));
+  assert.equal(manifest.theme_color, '#05070B');
+  assert.equal(manifest.background_color, '#05070B');
+
+  const sw = pub('sw.js');
+  assert.match(sw, /const CACHE = 'g24-v47-premium-black';/);
+  assert.ok(sw.includes("'/manifest.webmanifest'"));
+  assert.ok(sw.includes("'/css/v45-brand-motion.css'"));
+});
