@@ -36,3 +36,22 @@ test('native admin and hospital dashboard screens remain gated by signed-in role
     /tab === 'hospitalPreview' && auth\.user && \['hospital_admin','provider_admin'\]\.includes\(auth\.user\.role\)/,
   );
 });
+
+test('patient activity login and retry controls expose Somali accessible names and hints', () => {
+  assert.match(
+    app,
+    /accessibilityRole="button" accessibilityLabel="Soo gal ama isdiiwaangeli" accessibilityHint="Soo gal si aad u aragto ballamahaaga iyo kaararkaaga gaarka ah\\." hitSlop=\\{8\\} style=\\{\\[styles\\.primaryButton, styles\\.activityLoginButton\\]\\} onPress=\\{onLogin\\}/,
+  );
+  assert.match(
+    app,
+    /accessibilityRole="button" accessibilityLabel="Mar kale isku day" accessibilityHint="Dib u soo geli ballamahaaga, kaararkaaga iyo booqashooyinkaaga\\." hitSlop=\\{8\\} style=\\{styles\\.activityRetry\\} onPress=\\{error\.includes\('soo gal'\) \? onRefreshAuth : load\\}/,
+  );
+  assert.match(app, /accessibilityLiveRegion="polite" style=\\{styles\\.noticeCopy\\}/);
+});
+
+test('patient activity keeps its personal data behind authentication and loads all three record types', () => {
+  assert.match(app, /if \(!auth\.user\) return; setLoading\(true\)/);
+  assert.match(app, /apiRequest<\\{ orders: ActivityOrder\\[\\] \\}>\('\/api\/orders'\)/);
+  assert.match(app, /apiRequest<\\{ appointments: ActivityAppointment\\[\\] \\}>\('\/api\/appointments'\)/);
+  assert.match(app, /apiRequest<\\{ visits: ActivityVisit\\[\\] \\}>\('\/api\/visits'\)/);
+});
